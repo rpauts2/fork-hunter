@@ -1,0 +1,1219 @@
+{
+  "generated_at": "2026-11-26T17:12:54.870313668Z",
+  "summary": {
+    "requested_slugs": [
+      "sportbet",
+      "marathon",
+      "baltbet",
+      "betboom",
+      "olimp",
+      "zenit",
+      "leon",
+      "ligastavok",
+      "winline",
+      "betcity",
+      "melbet",
+      "bettery",
+      "fonbet",
+      "pari",
+      "betm",
+      "bet24"
+    ],
+    "total_reports": 16,
+    "passed_reports": 12,
+    "failed_reports": 4,
+    "live_threshold": 150,
+    "prematch_threshold": 3000
+  },
+  "aggregate": {
+    "total_events": 41190,
+    "live_events": 2216,
+    "prematch_events": 38974,
+    "live_threshold_passes": 12,
+    "prematch_threshold_passes": 12,
+    "passed_reports": 12,
+    "failed_reports": 4
+  },
+  "nightly": {
+    "status": "fail",
+    "exit_code": 2,
+    "failing_slugs": [
+      "betboom",
+      "betm",
+      "ligastavok",
+      "melbet"
+    ],
+    "live_gap_total": 600,
+    "prematch_gap_total": 12000
+  },
+  "reports": [
+    {
+      "bookmaker_slug": "baltbet",
+      "total_events": 4003,
+      "live_events": 213,
+      "prematch_events": 3790,
+      "total_odds": 21565,
+      "valid_odds": 21565,
+      "events_with_odds": 3858,
+      "events_without_odds_samples": [
+        {
+          "id": "baltbet-32126420",
+          "sport": "Esports",
+          "league": "Counter-Strike. Европа. Fiesta",
+          "home_team": "FORZE Reload",
+          "away_team": "Morrow Esports",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32126416",
+          "sport": "Esports",
+          "league": "DOTA 2. Европа. Esports Pro Circuit",
+          "home_team": "Team Synapse",
+          "away_team": "Amaru Gaming",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32126119",
+          "sport": "Esports",
+          "league": "DOTA 2. Европа. European Pro League",
+          "home_team": "Angry Birds",
+          "away_team": "Power Rangers",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32126634",
+          "sport": "Esports",
+          "league": "DOTA 2. Мир. BLAST Slam Плей-офф",
+          "home_team": "Team Yandex",
+          "away_team": "GamerLegion",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32126484",
+          "sport": "Esports",
+          "league": "DOTA 2. Мир. BLAST Slam. Дуэль игроков (Убийства)",
+          "home_team": "watson(Team Yandex)",
+          "away_team": "Yuma(GamerLegion)",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32126485",
+          "sport": "Esports",
+          "league": "DOTA 2. Мир. BLAST Slam. Дуэль игроков (Убийства)",
+          "home_team": "CHIRA_JUNIOR(Team Yandex)",
+          "away_team": "RCY(GamerLegion)",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32127196",
+          "sport": "Other",
+          "league": "Unknown",
+          "home_team": "Миннесота Тимбервулвз(Bazuka)",
+          "away_team": "Майами Хит(veljouni)",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32126994",
+          "sport": "Other",
+          "league": "Unknown",
+          "home_team": "Скорпионс",
+          "away_team": "Долфинс",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32126766",
+          "sport": "Other",
+          "league": "Индия. T20. Лига Ньюлендс",
+          "home_team": "XI Хайваан",
+          "away_team": "Гьярах Шайтан",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32120857",
+          "sport": "Tennis",
+          "league": "UTR Pro Tennis Tour (мужчины). Буэнос-Айрес",
+          "home_team": "Бранчетти Джованни",
+          "away_team": "Дория Лусиано",
+          "is_live": true
+        }
+      ],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 96.37771671246566,
+      "live_events_with_odds": 196,
+      "prematch_events_with_odds": 3662,
+      "live_odds_coverage_percent": 92.01877934272301,
+      "prematch_odds_coverage_percent": 96.62269129287598,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 196,
+        "target": 150,
+        "missing": 0,
+        "passed": true
+      },
+      "prematch_kpi": {
+        "actual": 3662,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": true,
+      "prematch_threshold_met": true,
+      "passed": true,
+      "runtime_only": false,
+      "duration_ms": 37586,
+      "error": null
+    },
+    {
+      "bookmaker_slug": "bet24",
+      "total_events": 3574,
+      "live_events": 177,
+      "prematch_events": 3397,
+      "total_odds": 93083,
+      "valid_odds": 93083,
+      "events_with_odds": 3574,
+      "events_without_odds_samples": [],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 100.0,
+      "live_events_with_odds": 177,
+      "prematch_events_with_odds": 3397,
+      "live_odds_coverage_percent": 100.0,
+      "prematch_odds_coverage_percent": 100.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 177,
+        "target": 150,
+        "missing": 0,
+        "passed": true
+      },
+      "prematch_kpi": {
+        "actual": 3397,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": true,
+      "prematch_threshold_met": true,
+      "passed": true,
+      "runtime_only": false,
+      "duration_ms": 12074,
+      "error": null
+    },
+    {
+      "bookmaker_slug": "betboom",
+      "total_events": 0,
+      "live_events": 0,
+      "prematch_events": 0,
+      "total_odds": 0,
+      "valid_odds": 0,
+      "events_with_odds": 0,
+      "events_without_odds_samples": [],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 0.0,
+      "live_events_with_odds": 0,
+      "prematch_events_with_odds": 0,
+      "live_odds_coverage_percent": 0.0,
+      "prematch_odds_coverage_percent": 0.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": false,
+      "quality_issue": "BetBoom official sport page is protected by QRATOR (HTTP 401); browser/feed probing was not started",
+      "live_kpi": {
+        "actual": 0,
+        "target": 150,
+        "missing": 150,
+        "passed": false
+      },
+      "prematch_kpi": {
+        "actual": 0,
+        "target": 3000,
+        "missing": 3000,
+        "passed": false
+      },
+      "live_threshold_met": false,
+      "prematch_threshold_met": false,
+      "passed": false,
+      "runtime_only": true,
+      "duration_ms": 102,
+      "error": "BetBoom official sport page is protected by QRATOR (HTTP 401); browser/feed probing was not started"
+    },
+    {
+      "bookmaker_slug": "betcity",
+      "total_events": 4526,
+      "live_events": 231,
+      "prematch_events": 4295,
+      "total_odds": 40689,
+      "valid_odds": 40689,
+      "events_with_odds": 4500,
+      "events_without_odds_samples": [
+        {
+          "id": "betcity-23790553",
+          "sport": "Football",
+          "league": "Россия. Кубок. Статистика",
+          "home_team": "УГЛ Динамо Москва",
+          "away_team": "УГЛ Факел",
+          "is_live": true
+        },
+        {
+          "id": "betcity-23790555",
+          "sport": "Football",
+          "league": "Россия. Кубок. Статистика",
+          "home_team": "Динамо Москва удары в створ",
+          "away_team": "Факел удары в створ",
+          "is_live": true
+        },
+        {
+          "id": "betcity-24116042",
+          "sport": "Football",
+          "league": "Лига конференций УЕФА. Статистика",
+          "home_team": "УГЛ Кайрат-Алматы",
+          "away_team": "УГЛ Мьельбю",
+          "is_live": true
+        },
+        {
+          "id": "betcity-24116043",
+          "sport": "Football",
+          "league": "Лига конференций УЕФА. Статистика",
+          "home_team": "ЖК Кайрат-Алматы",
+          "away_team": "ЖК Мьельбю",
+          "is_live": true
+        },
+        {
+          "id": "betcity-24116044",
+          "sport": "Football",
+          "league": "Лига конференций УЕФА. Статистика",
+          "home_team": "Кайрат-Алматы удары в створ",
+          "away_team": "Мьельбю удары в створ",
+          "is_live": true
+        },
+        {
+          "id": "betcity-24116045",
+          "sport": "Football",
+          "league": "Лига конференций УЕФА. Статистика",
+          "home_team": "Кайрат-Алматы фолы",
+          "away_team": "Мьельбю фолы",
+          "is_live": true
+        },
+        {
+          "id": "betcity-24700745",
+          "sport": "Football",
+          "league": "Лига конференций УЕФА. Статистика",
+          "home_team": "Кайрат-Алматы удары от ворот",
+          "away_team": "Мьельбю удары от ворот",
+          "is_live": true
+        },
+        {
+          "id": "betcity-25125475",
+          "sport": "Football",
+          "league": "Киберфутбол. EA Sports FC. H2H лига. Stream 2 Тур №6. Матчи 8 минут",
+          "home_team": "Бразилия (ANTOHABEL17)",
+          "away_team": "Испания (PRITISTREET)",
+          "is_live": true
+        },
+        {
+          "id": "betcity-24081367",
+          "sport": "Football",
+          "league": "Лига конференций УЕФА. Общий этап",
+          "home_team": "Кайрат-Алматы",
+          "away_team": "Мьельбю",
+          "is_live": true
+        },
+        {
+          "id": "betcity-25048225",
+          "sport": "Football",
+          "league": "Уганда. Премьер-лига",
+          "home_team": "УРА",
+          "away_team": "Кигези Хоумбойз ФК",
+          "is_live": true
+        }
+      ],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 99.42554131683606,
+      "live_events_with_odds": 205,
+      "prematch_events_with_odds": 4295,
+      "live_odds_coverage_percent": 88.74458874458875,
+      "prematch_odds_coverage_percent": 100.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 205,
+        "target": 140,
+        "missing": 0,
+        "passed": true
+      },
+      "prematch_kpi": {
+        "actual": 4295,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": true,
+      "prematch_threshold_met": true,
+      "passed": true,
+      "runtime_only": true,
+      "duration_ms": 9191,
+      "error": null
+    },
+    {
+      "bookmaker_slug": "betm",
+      "total_events": 0,
+      "live_events": 0,
+      "prematch_events": 0,
+      "total_odds": 0,
+      "valid_odds": 0,
+      "events_with_odds": 0,
+      "events_without_odds_samples": [],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 0.0,
+      "live_events_with_odds": 0,
+      "prematch_events_with_odds": 0,
+      "live_odds_coverage_percent": 0.0,
+      "prematch_odds_coverage_percent": 0.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": false,
+      "quality_issue": "Bet-M official sports page is unavailable from this region (HTTP 403 Forbidden); headless feed parsing was not started",
+      "live_kpi": {
+        "actual": 0,
+        "target": 150,
+        "missing": 150,
+        "passed": false
+      },
+      "prematch_kpi": {
+        "actual": 0,
+        "target": 3000,
+        "missing": 3000,
+        "passed": false
+      },
+      "live_threshold_met": false,
+      "prematch_threshold_met": false,
+      "passed": false,
+      "runtime_only": false,
+      "duration_ms": 724,
+      "error": "Bet-M official sports page is unavailable from this region (HTTP 403 Forbidden); headless feed parsing was not started"
+    },
+    {
+      "bookmaker_slug": "bettery",
+      "total_events": 3587,
+      "live_events": 190,
+      "prematch_events": 3397,
+      "total_odds": 185433,
+      "valid_odds": 185433,
+      "events_with_odds": 3578,
+      "events_without_odds_samples": [
+        {
+          "id": "bettery-live-70279601",
+          "sport": "Other",
+          "league": "",
+          "home_team": "watson (Team Yandex)",
+          "away_team": "Yuma (GamerLegion)",
+          "is_live": true
+        },
+        {
+          "id": "bettery-live-70279605",
+          "sport": "Other",
+          "league": "",
+          "home_team": "CHIRA_JUNIOR (Team Yandex)",
+          "away_team": "RCY (GamerLegion)",
+          "is_live": true
+        },
+        {
+          "id": "bettery-live-70263355",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Team Synapse",
+          "away_team": "Amaru Gaming",
+          "is_live": true
+        },
+        {
+          "id": "bettery-live-70282026",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Скорпионс",
+          "away_team": "Долфинс",
+          "is_live": true
+        },
+        {
+          "id": "bettery-live-70202203",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Линкс (ж)",
+          "away_team": "Долфинс (ж)",
+          "is_live": true
+        },
+        {
+          "id": "bettery-live-70202202",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Редемпшон",
+          "away_team": "Аутлос",
+          "is_live": true
+        },
+        {
+          "id": "bettery-live-70214153",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Скрамин ду Лагу Ж-В",
+          "away_team": "Гальярдо Л",
+          "is_live": true
+        },
+        {
+          "id": "bettery-live-70248065",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Шри-Ланка А",
+          "away_team": "Индия А",
+          "is_live": true
+        },
+        {
+          "id": "bettery-live-70282490",
+          "sport": "Other",
+          "league": "",
+          "home_team": "XI Хайваан",
+          "away_team": "Гьярах Шайтан",
+          "is_live": true
+        }
+      ],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 99.74909395037635,
+      "live_events_with_odds": 181,
+      "prematch_events_with_odds": 3397,
+      "live_odds_coverage_percent": 95.26315789473684,
+      "prematch_odds_coverage_percent": 100.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 181,
+        "target": 150,
+        "missing": 0,
+        "passed": true
+      },
+      "prematch_kpi": {
+        "actual": 3397,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": true,
+      "prematch_threshold_met": true,
+      "passed": true,
+      "runtime_only": false,
+      "duration_ms": 14616,
+      "error": null
+    },
+    {
+      "bookmaker_slug": "fonbet",
+      "total_events": 3577,
+      "live_events": 180,
+      "prematch_events": 3397,
+      "total_odds": 93428,
+      "valid_odds": 93428,
+      "events_with_odds": 3576,
+      "events_without_odds_samples": [
+        {
+          "id": "fonbet-live-70202202",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Редемпшон",
+          "away_team": "Аутлос",
+          "is_live": true
+        }
+      ],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 99.97204361196533,
+      "live_events_with_odds": 179,
+      "prematch_events_with_odds": 3397,
+      "live_odds_coverage_percent": 99.44444444444444,
+      "prematch_odds_coverage_percent": 100.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 179,
+        "target": 150,
+        "missing": 0,
+        "passed": true
+      },
+      "prematch_kpi": {
+        "actual": 3397,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": true,
+      "prematch_threshold_met": true,
+      "passed": true,
+      "runtime_only": false,
+      "duration_ms": 11274,
+      "error": null
+    },
+    {
+      "bookmaker_slug": "leon",
+      "total_events": 3080,
+      "live_events": 188,
+      "prematch_events": 2892,
+      "total_odds": 8314,
+      "valid_odds": 8314,
+      "events_with_odds": 3080,
+      "events_without_odds_samples": [],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 100.0,
+      "live_events_with_odds": 188,
+      "prematch_events_with_odds": 2892,
+      "live_odds_coverage_percent": 100.0,
+      "prematch_odds_coverage_percent": 100.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 188,
+        "target": 100,
+        "missing": 0,
+        "passed": true
+      },
+      "prematch_kpi": {
+        "actual": 2892,
+        "target": 2800,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": true,
+      "prematch_threshold_met": true,
+      "passed": true,
+      "runtime_only": false,
+      "duration_ms": 4231,
+      "error": null
+    },
+    {
+      "bookmaker_slug": "ligastavok",
+      "total_events": 0,
+      "live_events": 0,
+      "prematch_events": 0,
+      "total_odds": 0,
+      "valid_odds": 0,
+      "events_with_odds": 0,
+      "events_without_odds_samples": [],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 0.0,
+      "live_events_with_odds": 0,
+      "prematch_events_with_odds": 0,
+      "live_odds_coverage_percent": 0.0,
+      "prematch_odds_coverage_percent": 0.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": false,
+      "quality_issue": "Liga Stavok runtime branch: catalog bootstrap failed: Liga Stavok preflight branch: warm-up navigation refused before API bootstrap: QRATOR blocked warm-up navigation for https://www.ligastavok.ru/line/football; bootstrap_blocker=bootstrap_unavailable; validated_session_bootstrap=false; cookie_names=-; cookie_count=0; non_protection_cookie_count=0; protection_only=false; has_manual_cookie_header=false; accept_language=ru-RU,ru;q=0.9,en;q=0.8; origin=https://www.ligastavok.ru; referer=https://www.ligastavok.ru/; api_accept_language=-; api_origin=-; api_referer=-; browser_verified_api_probe_status=-; browser_verified_api_probe=false; direct_probe_status=-; direct_probe_success=false",
+      "live_kpi": {
+        "actual": 0,
+        "target": 150,
+        "missing": 150,
+        "passed": false
+      },
+      "prematch_kpi": {
+        "actual": 0,
+        "target": 3000,
+        "missing": 3000,
+        "passed": false
+      },
+      "live_threshold_met": false,
+      "prematch_threshold_met": false,
+      "passed": false,
+      "runtime_only": true,
+      "duration_ms": 374,
+      "error": "Liga Stavok runtime branch: catalog bootstrap failed: Liga Stavok preflight branch: warm-up navigation refused before API bootstrap: QRATOR blocked warm-up navigation for https://www.ligastavok.ru/line/football; bootstrap_blocker=bootstrap_unavailable; validated_session_bootstrap=false; cookie_names=-; cookie_count=0; non_protection_cookie_count=0; protection_only=false; has_manual_cookie_header=false; accept_language=ru-RU,ru;q=0.9,en;q=0.8; origin=https://www.ligastavok.ru; referer=https://www.ligastavok.ru/; api_accept_language=-; api_origin=-; api_referer=-; browser_verified_api_probe_status=-; browser_verified_api_probe=false; direct_probe_status=-; direct_probe_success=false"
+    },
+    {
+      "bookmaker_slug": "marathon",
+      "total_events": 3601,
+      "live_events": 191,
+      "prematch_events": 3410,
+      "total_odds": 184207,
+      "valid_odds": 184207,
+      "events_with_odds": 3591,
+      "events_without_odds_samples": [
+        {
+          "id": "marathon-live-70279601",
+          "sport": "Other",
+          "league": "",
+          "home_team": "watson (Team Yandex)",
+          "away_team": "Yuma (GamerLegion)",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70279605",
+          "sport": "Other",
+          "league": "",
+          "home_team": "CHIRA_JUNIOR (Team Yandex)",
+          "away_team": "RCY (GamerLegion)",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70263355",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Team Synapse",
+          "away_team": "Amaru Gaming",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70214153",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Скрамин ду Лагу Ж-В",
+          "away_team": "Гальярдо Л",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70282026",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Скорпионс",
+          "away_team": "Долфинс",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70259241",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Догс",
+          "away_team": "Кемелс",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70202203",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Линкс (ж)",
+          "away_team": "Долфинс (ж)",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70248065",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Шри-Ланка А",
+          "away_team": "Индия А",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70282490",
+          "sport": "Other",
+          "league": "",
+          "home_team": "XI Хайваан",
+          "away_team": "Гьярах Шайтан",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70269943",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Суд А / Уолпен М",
+          "away_team": "Поульсен И / Йоргенсен А",
+          "is_live": true
+        }
+      ],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 99.72229936128853,
+      "live_events_with_odds": 181,
+      "prematch_events_with_odds": 3410,
+      "live_odds_coverage_percent": 94.76439790575915,
+      "prematch_odds_coverage_percent": 100.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 181,
+        "target": 150,
+        "missing": 0,
+        "passed": true
+      },
+      "prematch_kpi": {
+        "actual": 3410,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": true,
+      "prematch_threshold_met": true,
+      "passed": true,
+      "runtime_only": false,
+      "duration_ms": 9756,
+      "error": null
+    },
+    {
+      "bookmaker_slug": "melbet",
+      "total_events": 0,
+      "live_events": 0,
+      "prematch_events": 0,
+      "total_odds": 0,
+      "valid_odds": 0,
+      "events_with_odds": 0,
+      "events_without_odds_samples": [],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 0.0,
+      "live_events_with_odds": 0,
+      "prematch_events_with_odds": 0,
+      "live_odds_coverage_percent": 0.0,
+      "prematch_odds_coverage_percent": 0.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": false,
+      "quality_issue": "Melbet official sportsbook is region-blocked (HTTP 403); headless feed inspection was not started",
+      "live_kpi": {
+        "actual": 0,
+        "target": 150,
+        "missing": 150,
+        "passed": false
+      },
+      "prematch_kpi": {
+        "actual": 0,
+        "target": 3000,
+        "missing": 3000,
+        "passed": false
+      },
+      "live_threshold_met": false,
+      "prematch_threshold_met": false,
+      "passed": false,
+      "runtime_only": true,
+      "duration_ms": 630,
+      "error": "Melbet official sportsbook is region-blocked (HTTP 403); headless feed inspection was not started"
+    },
+    {
+      "bookmaker_slug": "olimp",
+      "total_events": 1764,
+      "live_events": 213,
+      "prematch_events": 1551,
+      "total_odds": 34114,
+      "valid_odds": 34114,
+      "events_with_odds": 1764,
+      "events_without_odds_samples": [],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 100.0,
+      "live_events_with_odds": 213,
+      "prematch_events_with_odds": 1551,
+      "live_odds_coverage_percent": 100.0,
+      "prematch_odds_coverage_percent": 100.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 213,
+        "target": 100,
+        "missing": 0,
+        "passed": true
+      },
+      "prematch_kpi": {
+        "actual": 1551,
+        "target": 1450,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": true,
+      "prematch_threshold_met": true,
+      "passed": true,
+      "runtime_only": false,
+      "duration_ms": 6319,
+      "error": null
+    },
+    {
+      "bookmaker_slug": "pari",
+      "total_events": 3575,
+      "live_events": 172,
+      "prematch_events": 3403,
+      "total_odds": 93237,
+      "valid_odds": 93237,
+      "events_with_odds": 3574,
+      "events_without_odds_samples": [
+        {
+          "id": "pari-live-70224331",
+          "sport": "Cricket",
+          "league": "T20. Оман. Д20",
+          "home_team": "ИАС Инвинсиблес",
+          "away_team": "Ялла Шабаб Джиантс",
+          "is_live": true
+        }
+      ],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 99.97202797202797,
+      "live_events_with_odds": 171,
+      "prematch_events_with_odds": 3403,
+      "live_odds_coverage_percent": 99.4186046511628,
+      "prematch_odds_coverage_percent": 100.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 171,
+        "target": 150,
+        "missing": 0,
+        "passed": true
+      },
+      "prematch_kpi": {
+        "actual": 3403,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": true,
+      "prematch_threshold_met": true,
+      "passed": true,
+      "runtime_only": false,
+      "duration_ms": 12947,
+      "error": null
+    },
+    {
+      "bookmaker_slug": "sportbet",
+      "total_events": 1838,
+      "live_events": 69,
+      "prematch_events": 1769,
+      "total_odds": 31202,
+      "valid_odds": 31202,
+      "events_with_odds": 1838,
+      "events_without_odds_samples": [],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 100.0,
+      "live_events_with_odds": 69,
+      "prematch_events_with_odds": 1769,
+      "live_odds_coverage_percent": 100.0,
+      "prematch_odds_coverage_percent": 100.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 69,
+        "target": 25,
+        "missing": 0,
+        "passed": true
+      },
+      "prematch_kpi": {
+        "actual": 1769,
+        "target": 1000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": true,
+      "prematch_threshold_met": true,
+      "passed": true,
+      "runtime_only": false,
+      "duration_ms": 11898,
+      "error": null
+    },
+    {
+      "bookmaker_slug": "winline",
+      "total_events": 3278,
+      "live_events": 191,
+      "prematch_events": 3087,
+      "total_odds": 87689,
+      "valid_odds": 87689,
+      "events_with_odds": 3264,
+      "events_without_odds_samples": [
+        {
+          "id": "winline-live-17257198",
+          "sport": "TableTennis",
+          "league": "Лига Про",
+          "home_team": "Мартычан И.",
+          "away_team": "Львов Д.",
+          "is_live": true
+        },
+        {
+          "id": "winline-live-17258060",
+          "sport": "TableTennis",
+          "league": "Лига Про",
+          "home_team": "Данилов Е.",
+          "away_team": "Куликов А.",
+          "is_live": true
+        },
+        {
+          "id": "winline-live-17265183",
+          "sport": "WaterPolo",
+          "league": "Хорватия, Кубок",
+          "home_team": "Ядран Сплит",
+          "away_team": "Дубровник",
+          "is_live": true
+        },
+        {
+          "id": "winline-live-17265216",
+          "sport": "Basketball",
+          "league": "BSKT Cup",
+          "home_team": "Скорпионс",
+          "away_team": "Долфинс",
+          "is_live": true
+        },
+        {
+          "id": "winline-live-17265639",
+          "sport": "Other",
+          "league": "eAdriatic League (2x5)",
+          "home_team": "Самсунспор (Maverick)",
+          "away_team": "Фенербахче (Noah)",
+          "is_live": true
+        },
+        {
+          "id": "winline-live-17265698",
+          "sport": "Volleyball",
+          "league": "UPVL, 3 сета (3-й до 15)",
+          "home_team": "Канада (люб.)",
+          "away_team": "Бельгия (люб.)",
+          "is_live": true
+        },
+        {
+          "id": "winline-live-17265716",
+          "sport": "Basketball",
+          "league": "IPBL, Pro Division 2",
+          "home_team": "Улан-Удэ",
+          "away_team": "Челябинск",
+          "is_live": true
+        },
+        {
+          "id": "winline-live-17265721",
+          "sport": "Basketball",
+          "league": "IPBL, Pro Division 2, Женщины",
+          "home_team": "Нижнекамск (ж)",
+          "away_team": "Армавир (ж)",
+          "is_live": true
+        },
+        {
+          "id": "winline-prematch-17255837",
+          "sport": "Esports",
+          "league": "ESEA",
+          "home_team": "OLDBOYS PL",
+          "away_team": "99FIREPOWER 1UTILITY",
+          "is_live": false
+        },
+        {
+          "id": "winline-prematch-17262950",
+          "sport": "Football",
+          "league": "1-й Дивизион",
+          "home_team": "Загатала",
+          "away_team": "Ханкенди",
+          "is_live": false
+        }
+      ],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 99.57291031116534,
+      "live_events_with_odds": 183,
+      "prematch_events_with_odds": 3081,
+      "live_odds_coverage_percent": 95.81151832460732,
+      "prematch_odds_coverage_percent": 99.80563654033043,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 183,
+        "target": 100,
+        "missing": 0,
+        "passed": true
+      },
+      "prematch_kpi": {
+        "actual": 3081,
+        "target": 2500,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": true,
+      "prematch_threshold_met": true,
+      "passed": true,
+      "runtime_only": true,
+      "duration_ms": 19087,
+      "error": null
+    },
+    {
+      "bookmaker_slug": "zenit",
+      "total_events": 4787,
+      "live_events": 201,
+      "prematch_events": 4586,
+      "total_odds": 34562,
+      "valid_odds": 34562,
+      "events_with_odds": 4776,
+      "events_without_odds_samples": [
+        {
+          "id": "zenit-live-28082620",
+          "sport": "Cricket",
+          "league": "Мир. ODI",
+          "home_team": "Шри-Ланка А",
+          "away_team": "Индия А",
+          "is_live": true
+        },
+        {
+          "id": "zenit-live-28087769",
+          "sport": "WaterPolo",
+          "league": "Хорватия. Кубок",
+          "home_team": "Ядран Сплит",
+          "away_team": "Юг Дубровник",
+          "is_live": true
+        },
+        {
+          "id": "zenit-live-28087873",
+          "sport": "Hockey",
+          "league": "Россия. РХЛ. Регулярный сезон",
+          "home_team": "МХК Рязань-ВДВ",
+          "away_team": "Протон",
+          "is_live": true
+        },
+        {
+          "id": "zenit-live-28088017",
+          "sport": "Basketball",
+          "league": "Россия. IPBL. Prime Division. 3x3. 4x12 мин",
+          "home_team": "Догс",
+          "away_team": "Кемелс",
+          "is_live": true
+        },
+        {
+          "id": "zenit-live-28088073",
+          "sport": "Basketball",
+          "league": "Россия. IPBL. CAGE Division. 2x2. 4x10 мин",
+          "home_team": "Редемпшон",
+          "away_team": "Аутлоус",
+          "is_live": true
+        },
+        {
+          "id": "zenit-live-28088501",
+          "sport": "Esports",
+          "league": "NHL. UEL",
+          "home_team": "Оттава Сенаторз (Kloze)",
+          "away_team": "Баффало Сейбрз (Ovi)",
+          "is_live": true
+        },
+        {
+          "id": "zenit-live-28088513",
+          "sport": "Football",
+          "league": "Мир. Товарищеские матчи. Клубы",
+          "home_team": "ФА 2000",
+          "away_team": "Бронсхой",
+          "is_live": true
+        },
+        {
+          "id": "zenit-live-28088519",
+          "sport": "Esports",
+          "league": "NBA 2K. eSports Battle",
+          "home_team": "Миннесота Тимбервулвз (Bazuka)",
+          "away_team": "Майами Хит (veljouni)",
+          "is_live": true
+        },
+        {
+          "id": "zenit-live-28088564",
+          "sport": "Badminton",
+          "league": "Welsh International. Мужчины",
+          "home_team": "Лукас Пацак",
+          "away_team": "Филип Крайгер Бо",
+          "is_live": true
+        },
+        {
+          "id": "zenit-live-28088717",
+          "sport": "Mma",
+          "league": "AMC Fight Nights",
+          "home_team": "Эльдар Тагиров",
+          "away_team": "Савелий Солдатенков",
+          "is_live": true
+        }
+      ],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 99.77021098809276,
+      "live_events_with_odds": 190,
+      "prematch_events_with_odds": 4586,
+      "live_odds_coverage_percent": 94.5273631840796,
+      "prematch_odds_coverage_percent": 100.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 190,
+        "target": 125,
+        "missing": 0,
+        "passed": true
+      },
+      "prematch_kpi": {
+        "actual": 4586,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": true,
+      "prematch_threshold_met": true,
+      "passed": true,
+      "runtime_only": true,
+      "duration_ms": 85376,
+      "error": null
+    }
+  ]
+}

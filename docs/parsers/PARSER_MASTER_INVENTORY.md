@@ -144,3 +144,13 @@ No third-party odds providers were added or evaluated as fallback sources. No CA
 - Seven reachable operators pass structural quality but miss a volume threshold: Baltbet, Bet24, Bettery, Fonbet, Marathon, Olimp, PARI.
 - All 12 reachable reports have zero duplicate event IDs, zero duplicate odd IDs and zero invalid odds. Parser-ingestion timestamps still do not prove bookmaker-side quote freshness.
 - The 09:42 snapshot is retained as a historical comparison; no parser code changed between the two runtime sweeps.
+
+## Latest full runtime sweep — 2026-11-26 17:12 UTC
+
+- Snapshot: [runtime_audit_2026-11-26_1712_full_16.json](runtime_audit_2026-11-26_1712_full_16.json).
+- Runtime gate: **12/16 passed**. All 12 reachable feeds passed both configured volume gates and structural quality checks.
+- Aggregate reachable-feed catalogue: **41,190 events** (2,216 live / 38,974 prematch). The four blocked operators returned no parsed events and are excluded from those aggregate counts.
+- Structural checks across all 16 reports: **0 duplicate event IDs, 0 duplicate odds IDs, 0 invalid odds and 0 stale-ingestion flags**.
+- The four pre-parse blockers are unchanged: BetBoom (QRATOR HTTP 401), Liga Stavok (QRATOR blocks warm-up before API bootstrap), Melbet (regional HTTP 403) and Bet-M (regional HTTP 403). No challenge, CAPTCHA, authentication or regional restriction was bypassed.
+- Nightly strict status remains **fail / exit 2** because those four active feeds are unavailable to this development environment; this does not indicate a parsing regression in the 12 reachable feeds.
+- `bookmaker_quote_freshness_verified=false` remains in force: zero stale-ingestion flags do not prove that source-side bookmaker quote timestamps are fresh. Parser ingestion timestamps are not bookmaker quote-update timestamps.
