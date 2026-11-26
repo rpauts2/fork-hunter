@@ -9,6 +9,7 @@ const MAX_ODDS_AGE_SECS: i64 = 5 * 60;
 const MAX_FUTURE_SKEW_SECS: i64 = 30;
 const MIN_OVERALL_ODDS_COVERAGE: f64 = 0.90;
 const MIN_FEED_ODDS_COVERAGE: f64 = 0.80;
+const MAX_STALE_ODDS_RATIO: f64 = 0.01;
 const MAX_INVALID_ODDS_RATIO: f64 = 0.01;
 
 #[derive(Clone)]
@@ -261,12 +262,12 @@ fn assess_result(slug: &str, result: &ParserResult) -> (bool, Option<String>) {
             )),
         );
     }
-    if stale_ratio > MAX_INVALID_ODDS_RATIO {
+    if stale_ratio > MAX_STALE_ODDS_RATIO {
         return (
             false,
             Some(format!(
                 "capture-timestamp outliers exceed {:.0}% of odds ({:.1}%); bookmaker quote freshness is not measured",
-                MAX_INVALID_ODDS_RATIO * 100.0,
+                MAX_STALE_ODDS_RATIO * 100.0,
                 stale_ratio * 100.0
             )),
         );
