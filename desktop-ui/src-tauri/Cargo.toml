@@ -1,0 +1,14 @@
+[package]
+name = "ghost-imperium-desktop"
+version = "2.0.0"
+description = "Ghost Imperium Pro — Арбитражный сканер"
+edition = "2021"
+
+[workspace]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"

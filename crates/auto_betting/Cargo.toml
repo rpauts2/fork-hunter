@@ -1,0 +1,33 @@
+[package]
+name = "auto_betting"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+shared = { path = "../shared" }
+engine = { path = "../engine" }
+parsers = { path = "../parsers" }
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+tracing.workspace = true
+tokio.workspace = true
+parking_lot.workspace = true
+dashmap.workspace = true
+async-trait.workspace = true
+reqwest.workspace = true
+rand.workspace = true
+futures = "0.3"
+rust_decimal.workspace = true
+playwright.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+base64 = "0.22"
+whoami = "1.5"
+
+[features]
+# Enable Marathon MVP path behind a feature flag
+marathon_mvp = []
+# Compile/test without downloading the Playwright browser driver.
+test-no-browser-download = ["playwright/only-for-docs-rs"]

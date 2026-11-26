@@ -1,0 +1,63 @@
+[package]
+name = "fork_hunter_bin"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "fork_hunter_bin"
+path = "src/main.rs"
+
+[[bin]]
+name = "debug_matching"
+path = "src/debug_matching.rs"
+
+[[bin]]
+name = "check_1x2"
+path = "src/check_1x2.rs"
+
+[[bin]]
+name = "final_check"
+path = "src/final_check.rs"
+
+[[bin]]
+name = "check_fp"
+path = "src/check_fp.rs"
+
+[[bin]]
+name = "scanner_test"
+path = "src/bin/scanner_test.rs"
+
+[[bin]]
+name = "parser_test"
+path = "src/bin/parser_test.rs"
+
+[[bin]]
+name = "check_pari"
+path = "src/bin/check_pari.rs"
+
+[[bin]]
+name = "verify_parsers"
+path = "src/bin/verify_parsers.rs"
+
+[dependencies]
+shared = { path = "../shared" }
+engine = { path = "../engine" }
+persistence = { path = "../persistence" }
+scanner = { path = "../scanner" }
+api = { path = "../api" }
+bot = { path = "../bot" }
+parsers = { path = "../parsers" }
+corridor_scanner = { path = "../corridor_scanner" }
+express_forks = { path = "../express_forks" }
+bankroll_manager = { path = "../bankroll_manager" }
+bonus_hunter = { path = "../bonus_hunter" }
+auto_betting = { path = "../auto_betting" }
+tokio = { version = "1", features = ["full"] }
+axum = { version = "0.7", features = ["ws"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+anyhow = "1.0"
+serde_json = "1.0"
+reqwest = { version = "0.12", features = ["json", "cookies"] }
+chrono = { version = "0.4", features = ["serde"] }
+rust_decimal = { version = "1.35", features = ["serde"] }

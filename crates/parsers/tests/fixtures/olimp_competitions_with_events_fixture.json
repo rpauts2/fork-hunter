@@ -1,0 +1,40 @@
+[
+  {
+    "payload": {
+      "sport": {
+        "id": "1",
+        "name": "Футбол"
+      },
+      "competitionsWithEvents": [
+        {
+          "name": "Лига Чемпионов UEFA. 1/2 финала. Первые матчи",
+          "events": [
+            {
+              "id": 481516,
+              "team1Name": "ПСЖ",
+              "team2Name": "Арсенал",
+              "startDateTime": "2026-04-30T19:00:00+00:00",
+              "outcomes": [
+                {
+                  "shortName": "П1",
+                  "probability": "2.10",
+                  "groupName": "Исход матча (основное время)"
+                },
+                {
+                  "shortName": "Х",
+                  "probability": "3.40",
+                  "groupName": "Исход матча (основное время)"
+                },
+                {
+                  "shortName": "П2",
+                  "probability": "3.60",
+                  "groupName": "Исход матча (основное время)"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

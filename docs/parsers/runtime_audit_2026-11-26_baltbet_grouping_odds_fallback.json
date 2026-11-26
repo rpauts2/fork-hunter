@@ -1,0 +1,154 @@
+{
+  "generated_at": "2026-11-26T13:07:43.894994332Z",
+  "summary": {
+    "requested_slugs": [
+      "baltbet"
+    ],
+    "total_reports": 1,
+    "passed_reports": 1,
+    "failed_reports": 0,
+    "live_threshold": 150,
+    "prematch_threshold": 3000
+  },
+  "aggregate": {
+    "total_events": 3914,
+    "live_events": 207,
+    "prematch_events": 3707,
+    "live_threshold_passes": 1,
+    "prematch_threshold_passes": 1,
+    "passed_reports": 1,
+    "failed_reports": 0
+  },
+  "nightly": {
+    "status": "pass",
+    "exit_code": 0,
+    "failing_slugs": [],
+    "live_gap_total": 0,
+    "prematch_gap_total": 0
+  },
+  "reports": [
+    {
+      "bookmaker_slug": "baltbet",
+      "total_events": 3914,
+      "live_events": 207,
+      "prematch_events": 3707,
+      "total_odds": 18728,
+      "valid_odds": 18728,
+      "events_with_odds": 3746,
+      "events_without_odds_samples": [
+        {
+          "id": "baltbet-32125342",
+          "sport": "Esports",
+          "league": "Counter-Strike. Европа. Fiesta",
+          "home_team": "QUAZAR",
+          "away_team": "Infurity Gaming",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32125579",
+          "sport": "Other",
+          "league": "StarCraft II. Kung Fu Cup",
+          "home_team": "Rogue",
+          "away_team": "Percival",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32125580",
+          "sport": "Other",
+          "league": "Valorant. Champions Tour. Kickoff. Pacific. Квалификация. Океания",
+          "home_team": "Troopers",
+          "away_team": "Finishers",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32116463",
+          "sport": "Badminton",
+          "league": "Syed Modi India International. Мужчины. Пары",
+          "home_team": "Мэдии Тх. / Тхонгкхам П",
+          "away_team": "Чень Ч К / Лю К Х",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32125314",
+          "sport": "Other",
+          "league": "Unknown",
+          "home_team": "Миннесота Тимбервулвз(Satamor)",
+          "away_team": "Майами Хит(lucker)",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32125457",
+          "sport": "Other",
+          "league": "Unknown",
+          "home_team": "Миннесота Тимбервулвз(rema)",
+          "away_team": "Оклахома Сити Тандер(Pex)",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32125458",
+          "sport": "Other",
+          "league": "Unknown",
+          "home_team": "Торонто Рэпторс(Losmi)",
+          "away_team": "Детройт Пистонс(Rale)",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32125382",
+          "sport": "Other",
+          "league": "Unknown",
+          "home_team": "Партизан Белград(Josh)",
+          "away_team": "Олимпиакос(LeviDunk)",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32125383",
+          "sport": "Other",
+          "league": "Unknown",
+          "home_team": "Црвена Звезда(MrMike)",
+          "away_team": "Панатинаикос(MP12JM)",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32107788",
+          "sport": "Other",
+          "league": "Зимбабве. One-Day. Pro 50 Чемпионшип",
+          "home_team": "Матабеленд Таскерс",
+          "away_team": "Саутерн Рокс",
+          "is_live": true
+        }
+      ],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 95.70771589167093,
+      "live_events_with_odds": 169,
+      "prematch_events_with_odds": 3577,
+      "live_odds_coverage_percent": 81.64251207729468,
+      "prematch_odds_coverage_percent": 96.49312112220125,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 169,
+        "target": 150,
+        "missing": 0,
+        "passed": true
+      },
+      "prematch_kpi": {
+        "actual": 3577,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": true,
+      "prematch_threshold_met": true,
+      "passed": true,
+      "runtime_only": false,
+      "duration_ms": 26020,
+      "error": null
+    }
+  ]
+}

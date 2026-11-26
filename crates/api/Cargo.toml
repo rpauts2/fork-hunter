@@ -1,0 +1,32 @@
+[package]
+name = "api"
+version.workspace = true
+edition.workspace = true
+
+[features]
+default = ["full"]
+full = ["dep:scanner", "dep:parsers"]
+
+[dependencies]
+shared = { path = "../shared" }
+engine = { path = "../engine" }
+persistence = { path = "../persistence" }
+scanner = { path = "../scanner", optional = true }
+parsers = { path = "../parsers", optional = true }
+auto_betting = { path = "../auto_betting" }
+bankroll_manager = { path = "../bankroll_manager" }
+bonus_hunter = { path = "../bonus_hunter" }
+tokio.workspace = true
+axum.workspace = true
+tower.workspace = true
+tower-http = { workspace = true, features = ["fs", "cors"] }
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+thiserror.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+futures.workspace = true
+reqwest.workspace = true
+rust_decimal.workspace = true

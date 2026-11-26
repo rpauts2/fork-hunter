@@ -1,0 +1,375 @@
+{
+  "generated_at": "2026-11-26T14:00:07.150194316Z",
+  "summary": {
+    "requested_slugs": [
+      "marathon",
+      "bettery",
+      "fonbet",
+      "pari",
+      "bet24"
+    ],
+    "total_reports": 5,
+    "passed_reports": 5,
+    "failed_reports": 0,
+    "live_threshold": 150,
+    "prematch_threshold": 3000
+  },
+  "aggregate": {
+    "total_events": 17205,
+    "live_events": 790,
+    "prematch_events": 16415,
+    "live_threshold_passes": 5,
+    "prematch_threshold_passes": 5,
+    "passed_reports": 5,
+    "failed_reports": 0
+  },
+  "nightly": {
+    "status": "pass",
+    "exit_code": 0,
+    "failing_slugs": [],
+    "live_gap_total": 0,
+    "prematch_gap_total": 0
+  },
+  "reports": [
+    {
+      "bookmaker_slug": "bet24",
+      "total_events": 3439,
+      "live_events": 156,
+      "prematch_events": 3283,
+      "total_odds": 91731,
+      "valid_odds": 91731,
+      "events_with_odds": 3439,
+      "events_without_odds_samples": [],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 100.0,
+      "live_events_with_odds": 156,
+      "prematch_events_with_odds": 3283,
+      "live_odds_coverage_percent": 100.0,
+      "prematch_odds_coverage_percent": 100.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 156,
+        "target": 150,
+        "missing": 0,
+        "passed": true
+      },
+      "prematch_kpi": {
+        "actual": 3283,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": true,
+      "prematch_threshold_met": true,
+      "passed": true,
+      "runtime_only": false,
+      "duration_ms": 4013,
+      "error": null
+    },
+    {
+      "bookmaker_slug": "bettery",
+      "total_events": 3447,
+      "live_events": 164,
+      "prematch_events": 3283,
+      "total_odds": 181396,
+      "valid_odds": 181396,
+      "events_with_odds": 3439,
+      "events_without_odds_samples": [
+        {
+          "id": "bettery-live-70248291",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Тампа-Бэй (MASTER_ILY)",
+          "away_team": "Даллас (RXR3TYP)",
+          "is_live": true
+        },
+        {
+          "id": "bettery-live-70245082",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Каролина (Purik)",
+          "away_team": "Баффало (m0R1SS)",
+          "is_live": true
+        },
+        {
+          "id": "bettery-live-70256982",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Семенистая Д",
+          "away_team": "Кониши Камаргу-Сильва Ж",
+          "is_live": true
+        },
+        {
+          "id": "bettery-live-70258995",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Блажкова К",
+          "away_team": "Хонер А",
+          "is_live": true
+        },
+        {
+          "id": "bettery-live-70235914",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Фирман А / Фонтенель Ч",
+          "away_team": "Агра-Аморим Г / Иванцив М",
+          "is_live": true
+        },
+        {
+          "id": "bettery-live-70235840",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Аллани С / Гарби Э",
+          "away_team": "Грекул Е / Роотс А",
+          "is_live": true
+        },
+        {
+          "id": "bettery-live-70238958",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Цзюньхуэй Д",
+          "away_team": "Уильямс Р",
+          "is_live": true
+        },
+        {
+          "id": "bettery-live-70239007",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Уэллс Д",
+          "away_team": "Чжоу Ю",
+          "is_live": true
+        }
+      ],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 99.76791412822745,
+      "live_events_with_odds": 156,
+      "prematch_events_with_odds": 3283,
+      "live_odds_coverage_percent": 95.1219512195122,
+      "prematch_odds_coverage_percent": 100.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 156,
+        "target": 150,
+        "missing": 0,
+        "passed": true
+      },
+      "prematch_kpi": {
+        "actual": 3283,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": true,
+      "prematch_threshold_met": true,
+      "passed": true,
+      "runtime_only": false,
+      "duration_ms": 28159,
+      "error": null
+    },
+    {
+      "bookmaker_slug": "fonbet",
+      "total_events": 3436,
+      "live_events": 154,
+      "prematch_events": 3282,
+      "total_odds": 92016,
+      "valid_odds": 92016,
+      "events_with_odds": 3436,
+      "events_without_odds_samples": [],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 100.0,
+      "live_events_with_odds": 154,
+      "prematch_events_with_odds": 3282,
+      "live_odds_coverage_percent": 100.0,
+      "prematch_odds_coverage_percent": 100.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 154,
+        "target": 150,
+        "missing": 0,
+        "passed": true
+      },
+      "prematch_kpi": {
+        "actual": 3282,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": true,
+      "prematch_threshold_met": true,
+      "passed": true,
+      "runtime_only": false,
+      "duration_ms": 9061,
+      "error": null
+    },
+    {
+      "bookmaker_slug": "marathon",
+      "total_events": 3446,
+      "live_events": 164,
+      "prematch_events": 3282,
+      "total_odds": 179897,
+      "valid_odds": 179897,
+      "events_with_odds": 3438,
+      "events_without_odds_samples": [
+        {
+          "id": "marathon-live-70256982",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Семенистая Д",
+          "away_team": "Кониши Камаргу-Сильва Ж",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70258995",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Блажкова К",
+          "away_team": "Хонер А",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70235914",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Фирман А / Фонтенель Ч",
+          "away_team": "Агра-Аморим Г / Иванцив М",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70235840",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Аллани С / Гарби Э",
+          "away_team": "Грекул Е / Роотс А",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70248291",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Тампа-Бэй (MASTER_ILY)",
+          "away_team": "Даллас (RXR3TYP)",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70245082",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Каролина (Purik)",
+          "away_team": "Баффало (m0R1SS)",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70238958",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Цзюньхуэй Д",
+          "away_team": "Уильямс Р",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70239007",
+          "sport": "Other",
+          "league": "",
+          "home_team": "Уэллс Д",
+          "away_team": "Чжоу Ю",
+          "is_live": true
+        }
+      ],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 99.76784677887406,
+      "live_events_with_odds": 156,
+      "prematch_events_with_odds": 3282,
+      "live_odds_coverage_percent": 95.1219512195122,
+      "prematch_odds_coverage_percent": 100.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 156,
+        "target": 150,
+        "missing": 0,
+        "passed": true
+      },
+      "prematch_kpi": {
+        "actual": 3282,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": true,
+      "prematch_threshold_met": true,
+      "passed": true,
+      "runtime_only": false,
+      "duration_ms": 15139,
+      "error": null
+    },
+    {
+      "bookmaker_slug": "pari",
+      "total_events": 3437,
+      "live_events": 152,
+      "prematch_events": 3285,
+      "total_odds": 91917,
+      "valid_odds": 91917,
+      "events_with_odds": 3437,
+      "events_without_odds_samples": [],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 100.0,
+      "live_events_with_odds": 152,
+      "prematch_events_with_odds": 3285,
+      "live_odds_coverage_percent": 100.0,
+      "prematch_odds_coverage_percent": 100.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 152,
+        "target": 150,
+        "missing": 0,
+        "passed": true
+      },
+      "prematch_kpi": {
+        "actual": 3285,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": true,
+      "prematch_threshold_met": true,
+      "passed": true,
+      "runtime_only": false,
+      "duration_ms": 18110,
+      "error": null
+    }
+  ]
+}

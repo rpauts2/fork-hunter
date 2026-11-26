@@ -1,0 +1,73 @@
+{
+  "generated_at": "2026-11-26T04:24:00.270543604Z",
+  "summary": {
+    "requested_slugs": [
+      "betcity"
+    ],
+    "total_reports": 1,
+    "passed_reports": 0,
+    "failed_reports": 1,
+    "live_threshold": 150,
+    "prematch_threshold": 3000
+  },
+  "aggregate": {
+    "total_events": 3622,
+    "live_events": 87,
+    "prematch_events": 3535,
+    "live_threshold_passes": 0,
+    "prematch_threshold_passes": 1,
+    "passed_reports": 0,
+    "failed_reports": 1
+  },
+  "nightly": {
+    "status": "fail",
+    "exit_code": 2,
+    "failing_slugs": [
+      "betcity"
+    ],
+    "live_gap_total": 64,
+    "prematch_gap_total": 0
+  },
+  "reports": [
+    {
+      "bookmaker_slug": "betcity",
+      "total_events": 3622,
+      "live_events": 87,
+      "prematch_events": 3535,
+      "total_odds": 29188,
+      "valid_odds": 29188,
+      "events_with_odds": 3611,
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "invalid_odds": 0,
+      "odds_coverage_percent": 99.69630038652679,
+      "live_events_with_odds": 76,
+      "prematch_events_with_odds": 3535,
+      "live_odds_coverage_percent": 87.35632183908046,
+      "prematch_odds_coverage_percent": 100.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 76,
+        "target": 140,
+        "missing": 64,
+        "passed": false
+      },
+      "prematch_kpi": {
+        "actual": 3535,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": false,
+      "prematch_threshold_met": true,
+      "passed": false,
+      "runtime_only": true,
+      "duration_ms": 5952,
+      "error": null
+    }
+  ]
+}

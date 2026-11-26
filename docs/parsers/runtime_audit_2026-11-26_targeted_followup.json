@@ -1,0 +1,199 @@
+{
+  "generated_at": "2026-11-26T06:02:08.943857871Z",
+  "summary": {
+    "requested_slugs": [
+      "baltbet",
+      "betcity",
+      "zenit",
+      "winline"
+    ],
+    "total_reports": 4,
+    "passed_reports": 0,
+    "failed_reports": 4,
+    "live_threshold": 150,
+    "prematch_threshold": 3000
+  },
+  "aggregate": {
+    "total_events": 13882,
+    "live_events": 382,
+    "prematch_events": 13500,
+    "live_threshold_passes": 0,
+    "prematch_threshold_passes": 4,
+    "passed_reports": 0,
+    "failed_reports": 4
+  },
+  "nightly": {
+    "status": "fail",
+    "exit_code": 2,
+    "failing_slugs": [
+      "baltbet",
+      "betcity",
+      "winline",
+      "zenit"
+    ],
+    "live_gap_total": 199,
+    "prematch_gap_total": 0
+  },
+  "reports": [
+    {
+      "bookmaker_slug": "baltbet",
+      "total_events": 3333,
+      "live_events": 86,
+      "prematch_events": 3247,
+      "total_odds": 8993,
+      "valid_odds": 8993,
+      "events_with_odds": 3179,
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "invalid_odds": 0,
+      "odds_coverage_percent": 95.37953795379538,
+      "live_events_with_odds": 67,
+      "prematch_events_with_odds": 3112,
+      "live_odds_coverage_percent": 77.90697674418605,
+      "prematch_odds_coverage_percent": 95.84231598398522,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": false,
+      "quality_issue": "usable odds cover only 77.9% of LIVE events; minimum is 80.0%",
+      "live_kpi": {
+        "actual": 67,
+        "target": 150,
+        "missing": 83,
+        "passed": false
+      },
+      "prematch_kpi": {
+        "actual": 3112,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": false,
+      "prematch_threshold_met": true,
+      "passed": false,
+      "runtime_only": false,
+      "duration_ms": 32821,
+      "error": null
+    },
+    {
+      "bookmaker_slug": "betcity",
+      "total_events": 3606,
+      "live_events": 90,
+      "prematch_events": 3516,
+      "total_odds": 28745,
+      "valid_odds": 28745,
+      "events_with_odds": 3587,
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "invalid_odds": 0,
+      "odds_coverage_percent": 99.47310038824182,
+      "live_events_with_odds": 71,
+      "prematch_events_with_odds": 3516,
+      "live_odds_coverage_percent": 78.88888888888889,
+      "prematch_odds_coverage_percent": 100.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": false,
+      "quality_issue": "usable odds cover only 78.9% of LIVE events; minimum is 80.0%",
+      "live_kpi": {
+        "actual": 71,
+        "target": 140,
+        "missing": 69,
+        "passed": false
+      },
+      "prematch_kpi": {
+        "actual": 3516,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": false,
+      "prematch_threshold_met": true,
+      "passed": false,
+      "runtime_only": true,
+      "duration_ms": 6264,
+      "error": null
+    },
+    {
+      "bookmaker_slug": "winline",
+      "total_events": 2887,
+      "live_events": 96,
+      "prematch_events": 2791,
+      "total_odds": 71084,
+      "valid_odds": 71084,
+      "events_with_odds": 2870,
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "invalid_odds": 0,
+      "odds_coverage_percent": 99.41115344648424,
+      "live_events_with_odds": 87,
+      "prematch_events_with_odds": 2783,
+      "live_odds_coverage_percent": 90.625,
+      "prematch_odds_coverage_percent": 99.71336438552491,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 87,
+        "target": 100,
+        "missing": 13,
+        "passed": false
+      },
+      "prematch_kpi": {
+        "actual": 2783,
+        "target": 2500,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": false,
+      "prematch_threshold_met": true,
+      "passed": false,
+      "runtime_only": true,
+      "duration_ms": 18772,
+      "error": null
+    },
+    {
+      "bookmaker_slug": "zenit",
+      "total_events": 4056,
+      "live_events": 110,
+      "prematch_events": 3946,
+      "total_odds": 22468,
+      "valid_odds": 22468,
+      "events_with_odds": 4037,
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "invalid_odds": 0,
+      "odds_coverage_percent": 99.53155818540434,
+      "live_events_with_odds": 91,
+      "prematch_events_with_odds": 3946,
+      "live_odds_coverage_percent": 82.72727272727273,
+      "prematch_odds_coverage_percent": 100.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 91,
+        "target": 125,
+        "missing": 34,
+        "passed": false
+      },
+      "prematch_kpi": {
+        "actual": 3946,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": false,
+      "prematch_threshold_met": true,
+      "passed": false,
+      "runtime_only": true,
+      "duration_ms": 47415,
+      "error": null
+    }
+  ]
+}

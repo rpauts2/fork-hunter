@@ -1,0 +1,90 @@
+{
+  "generated_at": "2026-11-26T13:00:45.734525708Z",
+  "summary": {
+    "requested_slugs": [
+      "pari"
+    ],
+    "total_reports": 1,
+    "passed_reports": 1,
+    "failed_reports": 0,
+    "live_threshold": 150,
+    "prematch_threshold": 3000
+  },
+  "aggregate": {
+    "total_events": 3489,
+    "live_events": 153,
+    "prematch_events": 3336,
+    "live_threshold_passes": 1,
+    "prematch_threshold_passes": 1,
+    "passed_reports": 1,
+    "failed_reports": 0
+  },
+  "nightly": {
+    "status": "pass",
+    "exit_code": 0,
+    "failing_slugs": [],
+    "live_gap_total": 0,
+    "prematch_gap_total": 0
+  },
+  "reports": [
+    {
+      "bookmaker_slug": "pari",
+      "total_events": 3489,
+      "live_events": 153,
+      "prematch_events": 3336,
+      "total_odds": 91843,
+      "valid_odds": 91843,
+      "events_with_odds": 3487,
+      "events_without_odds_samples": [
+        {
+          "id": "pari-live-70230668",
+          "sport": "Cricket",
+          "league": "One-Day. Зимбабве. Чемпионат Про50",
+          "home_team": "Матабелленд Таскерс",
+          "away_team": "Саутерн Рокс",
+          "is_live": true
+        },
+        {
+          "id": "pari-live-70254219",
+          "sport": "Cricket",
+          "league": "T20. Кения. Кубок",
+          "home_team": "Рифт Кавальерс",
+          "away_team": "Кибо Маунтинирс",
+          "is_live": true
+        }
+      ],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 99.9426769848094,
+      "live_events_with_odds": 151,
+      "prematch_events_with_odds": 3336,
+      "live_odds_coverage_percent": 98.69281045751634,
+      "prematch_odds_coverage_percent": 100.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 151,
+        "target": 150,
+        "missing": 0,
+        "passed": true
+      },
+      "prematch_kpi": {
+        "actual": 3336,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": true,
+      "prematch_threshold_met": true,
+      "passed": true,
+      "runtime_only": false,
+      "duration_ms": 8242,
+      "error": null
+    }
+  ]
+}

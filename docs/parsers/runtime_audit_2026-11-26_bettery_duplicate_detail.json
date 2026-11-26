@@ -1,0 +1,123 @@
+{
+  "generated_at": "2026-11-26T12:36:30.024089142Z",
+  "summary": {
+    "requested_slugs": [
+      "bettery"
+    ],
+    "total_reports": 1,
+    "passed_reports": 0,
+    "failed_reports": 1,
+    "live_threshold": 150,
+    "prematch_threshold": 3000
+  },
+  "aggregate": {
+    "total_events": 3532,
+    "live_events": 183,
+    "prematch_events": 3349,
+    "live_threshold_passes": 1,
+    "prematch_threshold_passes": 1,
+    "passed_reports": 0,
+    "failed_reports": 1
+  },
+  "nightly": {
+    "status": "fail",
+    "exit_code": 2,
+    "failing_slugs": [
+      "bettery"
+    ],
+    "live_gap_total": 0,
+    "prematch_gap_total": 0
+  },
+  "reports": [
+    {
+      "bookmaker_slug": "bettery",
+      "total_events": 3532,
+      "live_events": 183,
+      "prematch_events": 3349,
+      "total_odds": 180869,
+      "valid_odds": 180865,
+      "events_with_odds": 3519,
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 4,
+      "duplicate_odd_id_samples": [
+        {
+          "id": "bettery-bettery-prematch-69681909-team1total-over-3p000000",
+          "event_id": "bettery-prematch-69681909",
+          "first_market": "Team1Total",
+          "duplicate_market": "Team1Total",
+          "first_selection": "Over",
+          "duplicate_selection": "Over",
+          "first_line": 3.0,
+          "duplicate_line": 3.0,
+          "first_odds": 2.3,
+          "duplicate_odds": 2.15
+        },
+        {
+          "id": "bettery-bettery-prematch-69681909-team1total-under-3p000000",
+          "event_id": "bettery-prematch-69681909",
+          "first_market": "Team1Total",
+          "duplicate_market": "Team1Total",
+          "first_selection": "Under",
+          "duplicate_selection": "Under",
+          "first_line": 3.0,
+          "duplicate_line": 3.0,
+          "first_odds": 1.58,
+          "duplicate_odds": 1.65
+        },
+        {
+          "id": "bettery-bettery-prematch-69681909-team1total-over-2p000000",
+          "event_id": "bettery-prematch-69681909",
+          "first_market": "Team1Total",
+          "duplicate_market": "Team1Total",
+          "first_selection": "Over",
+          "duplicate_selection": "Over",
+          "first_line": 2.0,
+          "duplicate_line": 2.0,
+          "first_odds": 1.35,
+          "duplicate_odds": 1.3
+        },
+        {
+          "id": "bettery-bettery-prematch-69681909-team1total-under-2p000000",
+          "event_id": "bettery-prematch-69681909",
+          "first_market": "Team1Total",
+          "duplicate_market": "Team1Total",
+          "first_selection": "Under",
+          "duplicate_selection": "Under",
+          "first_line": 2.0,
+          "duplicate_line": 2.0,
+          "first_odds": 2.95,
+          "duplicate_odds": 3.4
+        }
+      ],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 99.63193657984145,
+      "live_events_with_odds": 170,
+      "prematch_events_with_odds": 3349,
+      "live_odds_coverage_percent": 92.89617486338798,
+      "prematch_odds_coverage_percent": 100.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": false,
+      "quality_issue": "4 duplicate odd IDs detected",
+      "live_kpi": {
+        "actual": 170,
+        "target": 150,
+        "missing": 0,
+        "passed": true
+      },
+      "prematch_kpi": {
+        "actual": 3349,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": true,
+      "prematch_threshold_met": true,
+      "passed": false,
+      "runtime_only": false,
+      "duration_ms": 9398,
+      "error": null
+    }
+  ]
+}

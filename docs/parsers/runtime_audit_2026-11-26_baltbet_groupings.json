@@ -1,0 +1,73 @@
+{
+  "generated_at": "2026-11-26T06:15:45.467937858Z",
+  "summary": {
+    "requested_slugs": [
+      "baltbet"
+    ],
+    "total_reports": 1,
+    "passed_reports": 0,
+    "failed_reports": 1,
+    "live_threshold": 150,
+    "prematch_threshold": 3000
+  },
+  "aggregate": {
+    "total_events": 3345,
+    "live_events": 82,
+    "prematch_events": 3263,
+    "live_threshold_passes": 0,
+    "prematch_threshold_passes": 1,
+    "passed_reports": 0,
+    "failed_reports": 1
+  },
+  "nightly": {
+    "status": "fail",
+    "exit_code": 2,
+    "failing_slugs": [
+      "baltbet"
+    ],
+    "live_gap_total": 85,
+    "prematch_gap_total": 0
+  },
+  "reports": [
+    {
+      "bookmaker_slug": "baltbet",
+      "total_events": 3345,
+      "live_events": 82,
+      "prematch_events": 3263,
+      "total_odds": 9271,
+      "valid_odds": 9271,
+      "events_with_odds": 3198,
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "invalid_odds": 0,
+      "odds_coverage_percent": 95.60538116591928,
+      "live_events_with_odds": 65,
+      "prematch_events_with_odds": 3133,
+      "live_odds_coverage_percent": 79.26829268292683,
+      "prematch_odds_coverage_percent": 96.01593625498009,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": false,
+      "quality_issue": "usable odds cover only 79.3% of LIVE events; minimum is 80.0%",
+      "live_kpi": {
+        "actual": 65,
+        "target": 150,
+        "missing": 85,
+        "passed": false
+      },
+      "prematch_kpi": {
+        "actual": 3133,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": false,
+      "prematch_threshold_met": true,
+      "passed": false,
+      "runtime_only": false,
+      "duration_ms": 19100,
+      "error": null
+    }
+  ]
+}

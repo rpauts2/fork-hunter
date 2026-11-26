@@ -1,0 +1,115 @@
+{
+  "generated_at": "2026-11-26T03:53:26.841512055Z",
+  "summary": {
+    "requested_slugs": [
+      "olimp",
+      "zenit"
+    ],
+    "total_reports": 2,
+    "passed_reports": 0,
+    "failed_reports": 2,
+    "live_threshold": 150,
+    "prematch_threshold": 3000
+  },
+  "aggregate": {
+    "total_events": 5448,
+    "live_events": 160,
+    "prematch_events": 5288,
+    "live_threshold_passes": 0,
+    "prematch_threshold_passes": 1,
+    "passed_reports": 0,
+    "failed_reports": 2
+  },
+  "nightly": {
+    "status": "fail",
+    "exit_code": 2,
+    "failing_slugs": [
+      "olimp",
+      "zenit"
+    ],
+    "live_gap_total": 76,
+    "prematch_gap_total": 96
+  },
+  "reports": [
+    {
+      "bookmaker_slug": "olimp",
+      "total_events": 1431,
+      "live_events": 77,
+      "prematch_events": 1354,
+      "total_odds": 28217,
+      "valid_odds": 28217,
+      "events_with_odds": 1431,
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "invalid_odds": 0,
+      "odds_coverage_percent": 100.0,
+      "live_events_with_odds": 77,
+      "prematch_events_with_odds": 1354,
+      "live_odds_coverage_percent": 100.0,
+      "prematch_odds_coverage_percent": 100.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 77,
+        "target": 100,
+        "missing": 23,
+        "passed": false
+      },
+      "prematch_kpi": {
+        "actual": 1354,
+        "target": 1450,
+        "missing": 96,
+        "passed": false
+      },
+      "live_threshold_met": false,
+      "prematch_threshold_met": false,
+      "passed": false,
+      "runtime_only": false,
+      "duration_ms": 75161,
+      "error": null
+    },
+    {
+      "bookmaker_slug": "zenit",
+      "total_events": 4017,
+      "live_events": 83,
+      "prematch_events": 3934,
+      "total_odds": 22219,
+      "valid_odds": 22219,
+      "events_with_odds": 4005,
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "invalid_odds": 0,
+      "odds_coverage_percent": 99.70126960418223,
+      "live_events_with_odds": 72,
+      "prematch_events_with_odds": 3933,
+      "live_odds_coverage_percent": 86.74698795180723,
+      "prematch_odds_coverage_percent": 99.97458057956278,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 72,
+        "target": 125,
+        "missing": 53,
+        "passed": false
+      },
+      "prematch_kpi": {
+        "actual": 3933,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": false,
+      "prematch_threshold_met": true,
+      "passed": false,
+      "runtime_only": true,
+      "duration_ms": 39731,
+      "error": null
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "generated_at": "2026-11-26T06:30:27.226358561Z",
+  "summary": {
+    "requested_slugs": [
+      "zenit"
+    ],
+    "total_reports": 1,
+    "passed_reports": 0,
+    "failed_reports": 1,
+    "live_threshold": 150,
+    "prematch_threshold": 3000
+  },
+  "aggregate": {
+    "total_events": 4060,
+    "live_events": 104,
+    "prematch_events": 3956,
+    "live_threshold_passes": 0,
+    "prematch_threshold_passes": 1,
+    "passed_reports": 0,
+    "failed_reports": 1
+  },
+  "nightly": {
+    "status": "fail",
+    "exit_code": 2,
+    "failing_slugs": [
+      "zenit"
+    ],
+    "live_gap_total": 34,
+    "prematch_gap_total": 0
+  },
+  "reports": [
+    {
+      "bookmaker_slug": "zenit",
+      "total_events": 4060,
+      "live_events": 104,
+      "prematch_events": 3956,
+      "total_odds": 28363,
+      "valid_odds": 28363,
+      "events_with_odds": 4047,
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "invalid_odds": 0,
+      "odds_coverage_percent": 99.67980295566502,
+      "live_events_with_odds": 91,
+      "prematch_events_with_odds": 3956,
+      "live_odds_coverage_percent": 87.5,
+      "prematch_odds_coverage_percent": 100.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 91,
+        "target": 125,
+        "missing": 34,
+        "passed": false
+      },
+      "prematch_kpi": {
+        "actual": 3956,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": false,
+      "prematch_threshold_met": true,
+      "passed": false,
+      "runtime_only": true,
+      "duration_ms": 41345,
+      "error": null
+    }
+  ]
+}
