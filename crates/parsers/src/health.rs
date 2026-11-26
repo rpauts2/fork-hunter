@@ -95,6 +95,15 @@ impl HealthChecker {
 }
 
 fn assess_result(slug: &str, result: &ParserResult) -> (bool, Option<String>) {
+    if !result.bookmaker.eq_ignore_ascii_case(slug) {
+        return (
+            false,
+            Some(format!(
+                "parser result bookmaker mismatch: expected {slug}, received {}",
+                result.bookmaker
+            )),
+        );
+    }
     if result.events.is_empty() {
         return (false, Some("parser returned no events".to_string()));
     }
@@ -107,7 +116,16 @@ fn assess_result(slug: &str, result: &ParserResult) -> (bool, Option<String>) {
 
     let mut event_owners = std::collections::HashMap::new();
     let mut duplicate_event_ids = 0usize;
+    let mut invalid_event_ids = 0usize;
+    let mut wrong_event_owners = 0usize;
     for event in &result.events {
+        if event.id.trim().is_empty() {
+            invalid_event_ids += 1;
+            continue;
+        }
+        if !event.bookmaker_slug.eq_ignore_ascii_case(slug) {
+            wrong_event_owners += 1;
+        }
         if event_owners
             .insert(
                 event.id.as_str(),
@@ -118,11 +136,25 @@ fn assess_result(slug: &str, result: &ParserResult) -> (bool, Option<String>) {
             duplicate_event_ids += 1;
         }
     }
+    if invalid_event_ids > 0 {
+        return (
+            false,
+            Some(format!("events with empty IDs detected: {invalid_event_ids}")),
+        );
+    }
     if duplicate_event_ids > 0 {
         return (
             false,
             Some(format!(
                 "duplicate event IDs detected: {duplicate_event_ids}"
+            )),
+        );
+    }
+    if wrong_event_owners > 0 {
+        return (
+            false,
+            Some(format!(
+                "events owned by another bookmaker detected: {wrong_event_owners}"
             )),
         );
     }
@@ -409,6 +441,51 @@ mod tests {
             .as_deref()
             .unwrap()
             .contains("overall odds coverage"));
+    }
+
+    #[tokio::test]
+    async fn parser_result_for_another_bookmaker_is_degraded() {
+        let mut result = fixture_result(vec![valid_odd()]);
+        result.bookmaker = "other".into();
+
+        let health = check(result).await;
+        assert!(matches!(health.status, HealthStatus::Degraded));
+        assert!(health
+            .last_error
+            .as_deref()
+            .unwrap()
+            .contains("parser result bookmaker mismatch"));
+    }
+
+    #[tokio::test]
+    async fn events_with_empty_ids_are_degraded() {
+        let mut result = fixture_result(vec![valid_odd()]);
+        result.events[0].id.clear();
+
+        let health = check(result).await;
+        assert!(matches!(health.status, HealthStatus::Degraded));
+        assert!(health
+            .last_error
+            .as_deref()
+            .unwrap()
+            .contains("events with empty IDs"));
+    }
+
+    #[tokio::test]
+    async fn foreign_event_owner_is_degraded_even_without_linked_odds() {
+        let mut result = fixture_result(vec![valid_odd()]);
+        let mut foreign_event = result.events[0].clone();
+        foreign_event.id = "event-2".into();
+        foreign_event.bookmaker_slug = "other".into();
+        result.events.push(foreign_event);
+
+        let health = check(result).await;
+        assert!(matches!(health.status, HealthStatus::Degraded));
+        assert!(health
+            .last_error
+            .as_deref()
+            .unwrap()
+            .contains("events owned by another bookmaker"));
     }
 
     #[tokio::test]
