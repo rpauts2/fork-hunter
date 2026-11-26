@@ -223,6 +223,15 @@ fn assess_result(slug: &str, result: &ParserResult) -> (bool, Option<String>) {
         );
     }
 
+    if wrong_bookmaker_count > 0 {
+        return (
+            false,
+            Some(format!(
+                "odds from another bookmaker or event owner detected: {wrong_bookmaker_count}"
+            )),
+        );
+    }
+
     if valid_count == 0 {
         let reason = format!(
             "no usable odds: {} total, {} capture-timestamp outliers (bookmaker quote freshness is not available in the model), {} orphaned, {} from another bookmaker, {} invalid",
@@ -259,7 +268,7 @@ fn assess_result(slug: &str, result: &ParserResult) -> (bool, Option<String>) {
     };
     let overall_coverage = events_with_odds.len() as f64 / result.events.len() as f64;
     let stale_ratio = stale_count as f64 / result.odds.len() as f64;
-    let invalid_ratio = (invalid_count + wrong_bookmaker_count) as f64 / result.odds.len() as f64;
+    let invalid_ratio = invalid_count as f64 / result.odds.len() as f64;
     let orphan_ratio = orphan_count as f64 / result.odds.len() as f64;
 
     if overall_coverage < MIN_OVERALL_ODDS_COVERAGE {
@@ -560,5 +569,27 @@ mod tests {
         odd.bookmaker_slug = "other".into();
         let health = check(fixture_result(vec![odd])).await;
         assert!(matches!(health.status, HealthStatus::Degraded));
+    }
+
+    #[tokio::test]
+    async fn even_a_small_share_of_foreign_odds_is_rejected() {
+        let mut odds = Vec::new();
+        for index in 0..100 {
+            let mut odd = valid_odd();
+            odd.id = format!("odd-{index}");
+            odds.push(odd);
+        }
+        let mut foreign = valid_odd();
+        foreign.id = "foreign-odd".into();
+        foreign.bookmaker_slug = "other".into();
+        odds.push(foreign);
+
+        let health = check(fixture_result(odds)).await;
+        assert!(matches!(health.status, HealthStatus::Degraded));
+        assert!(health
+            .last_error
+            .as_deref()
+            .unwrap()
+            .contains("another bookmaker"));
     }
 }
