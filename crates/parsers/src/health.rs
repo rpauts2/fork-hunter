@@ -229,7 +229,7 @@ fn assess_result(slug: &str, result: &ParserResult) -> (bool, Option<String>) {
     };
     let overall_coverage = events_with_odds.len() as f64 / result.events.len() as f64;
     let stale_ratio = stale_count as f64 / result.odds.len() as f64;
-    let invalid_ratio = invalid_count as f64 / result.odds.len() as f64;
+    let invalid_ratio = (invalid_count + wrong_bookmaker_count) as f64 / result.odds.len() as f64;
     let orphan_ratio = orphan_count as f64 / result.odds.len() as f64;
 
     if overall_coverage < MIN_OVERALL_ODDS_COVERAGE {
@@ -292,15 +292,6 @@ fn assess_result(slug: &str, result: &ParserResult) -> (bool, Option<String>) {
             )),
         );
     }
-    if wrong_bookmaker_count > 0 {
-        return (
-            false,
-            Some(format!(
-                "odds from another bookmaker or event owner detected: {wrong_bookmaker_count}"
-            )),
-        );
-    }
-
     (true, None)
 }
 
