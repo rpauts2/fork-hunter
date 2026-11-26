@@ -560,7 +560,7 @@ mod tests {
             .last_error
             .as_deref()
             .unwrap()
-            .contains("no usable odds"));
+            .contains("events owned by another bookmaker"));
     }
 
     #[tokio::test]
