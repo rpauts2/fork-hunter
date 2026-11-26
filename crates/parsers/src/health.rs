@@ -7,6 +7,9 @@ use tracing::warn;
 
 const MAX_ODDS_AGE_SECS: i64 = 5 * 60;
 const MAX_FUTURE_SKEW_SECS: i64 = 30;
+const MIN_OVERALL_ODDS_COVERAGE: f64 = 0.90;
+const MIN_FEED_ODDS_COVERAGE: f64 = 0.80;
+const MAX_INVALID_ODDS_RATIO: f64 = 0.01;
 
 #[derive(Clone)]
 pub struct HealthChecker {
@@ -101,16 +104,28 @@ fn assess_result(slug: &str, result: &ParserResult) -> (bool, Option<String>) {
         );
     }
 
-    let event_owners = result
-        .events
-        .iter()
-        .map(|event| {
-            (
+    let mut event_owners = std::collections::HashMap::new();
+    let mut duplicate_event_ids = 0usize;
+    for event in &result.events {
+        if event_owners
+            .insert(
                 event.id.as_str(),
                 (event.bookmaker_slug.as_str(), event.is_live),
             )
-        })
-        .collect::<std::collections::HashMap<_, _>>();
+            .is_some()
+        {
+            duplicate_event_ids += 1;
+        }
+    }
+    if duplicate_event_ids > 0 {
+        return (
+            false,
+            Some(format!(
+                "duplicate event IDs detected: {duplicate_event_ids}"
+            )),
+        );
+    }
+
     let event_ids: HashSet<&str> = event_owners.keys().copied().collect();
     let now = Utc::now();
     let oldest_allowed = now - ChronoDuration::seconds(MAX_ODDS_AGE_SECS);
@@ -120,10 +135,18 @@ fn assess_result(slug: &str, result: &ParserResult) -> (bool, Option<String>) {
     let mut stale_count = 0usize;
     let mut orphan_count = 0usize;
     let mut wrong_bookmaker_count = 0usize;
+    let mut invalid_count = 0usize;
+    let mut duplicate_odd_ids = 0usize;
+    let mut seen_odd_ids = HashSet::new();
+    let mut events_with_odds = HashSet::new();
     let mut live_events_with_odds = HashSet::new();
     let mut prematch_events_with_odds = HashSet::new();
 
     for odd in &result.odds {
+        if !seen_odd_ids.insert(odd.id.as_str()) {
+            duplicate_odd_ids += 1;
+            continue;
+        }
         if !event_ids.contains(odd.event_id.as_str()) {
             orphan_count += 1;
             continue;
@@ -135,7 +158,13 @@ fn assess_result(slug: &str, result: &ParserResult) -> (bool, Option<String>) {
             wrong_bookmaker_count += 1;
             continue;
         }
-        if !odd.odds.is_finite() || odd.odds <= 1.0 {
+        if odd.id.trim().is_empty()
+            || odd.market.trim().is_empty()
+            || odd.selection.trim().is_empty()
+            || !odd.odds.is_finite()
+            || odd.odds <= 1.0
+        {
+            invalid_count += 1;
             continue;
         }
         if odd.timestamp < oldest_allowed || odd.timestamp > newest_allowed {
@@ -143,6 +172,7 @@ fn assess_result(slug: &str, result: &ParserResult) -> (bool, Option<String>) {
             continue;
         }
         valid_count += 1;
+        events_with_odds.insert(odd.event_id.as_str());
         if event_owners
             .get(odd.event_id.as_str())
             .is_some_and(|(_, is_live)| *is_live)
@@ -153,13 +183,23 @@ fn assess_result(slug: &str, result: &ParserResult) -> (bool, Option<String>) {
         }
     }
 
+    if duplicate_odd_ids > 0 {
+        return (
+            false,
+            Some(format!(
+                "duplicate odd IDs detected: {duplicate_odd_ids}"
+            )),
+        );
+    }
+
     if valid_count == 0 {
         let reason = format!(
-            "no usable odds: {} total, {} capture-timestamp outliers (bookmaker quote freshness is not available in the model), {} orphaned, {} from another bookmaker or malformed",
+            "no usable odds: {} total, {} capture-timestamp outliers (bookmaker quote freshness is not available in the model), {} orphaned, {} from another bookmaker, {} invalid",
             result.odds.len(),
             stale_count,
             orphan_count,
-            wrong_bookmaker_count
+            wrong_bookmaker_count,
+            invalid_count
         );
         return (false, Some(reason));
     }
@@ -186,42 +226,76 @@ fn assess_result(slug: &str, result: &ParserResult) -> (bool, Option<String>) {
     } else {
         prematch_events_with_odds.len() as f64 / prematch_event_ids.len() as f64
     };
+    let overall_coverage = events_with_odds.len() as f64 / result.events.len() as f64;
     let stale_ratio = stale_count as f64 / result.odds.len() as f64;
+    let invalid_ratio = invalid_count as f64 / result.odds.len() as f64;
     let orphan_ratio = orphan_count as f64 / result.odds.len() as f64;
 
-    if !live_event_ids.is_empty() && live_coverage < 0.05 {
+    if overall_coverage < MIN_OVERALL_ODDS_COVERAGE {
         return (
             false,
             Some(format!(
-                "LIVE odds coverage too low: {:.1}% of live events have usable odds",
-                live_coverage * 100.0
+                "overall odds coverage too low: {:.1}% (minimum {:.0}%)",
+                overall_coverage * 100.0,
+                MIN_OVERALL_ODDS_COVERAGE * 100.0
             )),
         );
     }
-    if !prematch_event_ids.is_empty() && prematch_coverage < 0.05 {
+    if !live_event_ids.is_empty() && live_coverage < MIN_FEED_ODDS_COVERAGE {
         return (
             false,
             Some(format!(
-                "PREMATCH odds coverage too low: {:.1}% of prematch events have usable odds",
-                prematch_coverage * 100.0
+                "LIVE odds coverage too low: {:.1}% (minimum {:.0}%)",
+                live_coverage * 100.0,
+                MIN_FEED_ODDS_COVERAGE * 100.0
             )),
         );
     }
-    if stale_ratio > 0.5 {
+    if !prematch_event_ids.is_empty() && prematch_coverage < MIN_FEED_ODDS_COVERAGE {
         return (
             false,
             Some(format!(
-                "more than half of returned odds have capture timestamps outside the local validation window ({:.1}%); bookmaker quote freshness is not measured",
+                "PREMATCH odds coverage too low: {:.1}% (minimum {:.0}%)",
+                prematch_coverage * 100.0,
+                MIN_FEED_ODDS_COVERAGE * 100.0
+            )),
+        );
+    }
+    if stale_ratio > MAX_INVALID_ODDS_RATIO {
+        return (
+            false,
+            Some(format!(
+                "capture-timestamp outliers exceed {:.0}% of odds ({:.1}%); bookmaker quote freshness is not measured",
+                MAX_INVALID_ODDS_RATIO * 100.0,
                 stale_ratio * 100.0
             )),
         );
     }
-    if orphan_ratio > 0.5 {
+    if invalid_ratio > MAX_INVALID_ODDS_RATIO {
         return (
             false,
             Some(format!(
-                "more than half of returned odds reference unknown events ({:.1}%)",
+                "invalid odds exceed {:.0}% of returned odds ({:.1}%)",
+                MAX_INVALID_ODDS_RATIO * 100.0,
+                invalid_ratio * 100.0
+            )),
+        );
+    }
+    if orphan_ratio > MAX_INVALID_ODDS_RATIO {
+        return (
+            false,
+            Some(format!(
+                "orphan odds exceed {:.0}% of returned odds ({:.1}%)",
+                MAX_INVALID_ODDS_RATIO * 100.0,
                 orphan_ratio * 100.0
+            )),
+        );
+    }
+    if wrong_bookmaker_count > 0 {
+        return (
+            false,
+            Some(format!(
+                "odds from another bookmaker or event owner detected: {wrong_bookmaker_count}"
             )),
         );
     }
@@ -329,6 +403,37 @@ mod tests {
         let health = check(fixture_result(vec![valid_odd()])).await;
         assert!(matches!(health.status, HealthStatus::Healthy));
         assert!(health.last_error.is_none());
+    }
+
+    #[tokio::test]
+    async fn low_event_odds_coverage_is_degraded() {
+        let mut result = fixture_result(vec![valid_odd()]);
+        let mut second_event = result.events[0].clone();
+        second_event.id = "event-2".into();
+        result.events.push(second_event);
+
+        let health = check(result).await;
+        assert!(matches!(health.status, HealthStatus::Degraded));
+        assert!(health.last_error.as_deref().unwrap().contains("overall odds coverage"));
+    }
+
+    #[tokio::test]
+    async fn duplicate_event_ids_are_degraded() {
+        let mut result = fixture_result(vec![valid_odd()]);
+        result.events.push(result.events[0].clone());
+
+        let health = check(result).await;
+        assert!(matches!(health.status, HealthStatus::Degraded));
+        assert!(health.last_error.as_deref().unwrap().contains("duplicate event IDs"));
+    }
+
+    #[tokio::test]
+    async fn duplicate_odd_ids_are_degraded() {
+        let odd = valid_odd();
+        let health = check(fixture_result(vec![odd.clone(), odd])).await;
+
+        assert!(matches!(health.status, HealthStatus::Degraded));
+        assert!(health.last_error.as_deref().unwrap().contains("duplicate odd IDs"));
     }
 
     #[tokio::test]
