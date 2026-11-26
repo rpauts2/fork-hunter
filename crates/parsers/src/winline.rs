@@ -26,12 +26,11 @@ use tracing::{debug, warn};
 
 /// Winline parser.
 ///
-/// The practical public runtime path is a headless SPA extraction flow modeled after the legacy
-/// Playwright parser from `scanner/parsers/winline_playwright.py`.
+/// Production collection uses the public `data_ng` WebSocket feed. The binary protocol decoder
+/// and its live/prematch state handling live in `winline_feed.rs`.
 ///
-/// Public HTTP endpoints in repository research still do not provide a confirmed event feed, so
-/// the Rust parser now prefers rendered DOM extraction and keeps lightweight HTML bootstrap
-/// probing only as a fallback when headless collection fails.
+/// The older headless DOM extraction helpers below are compiled only for tests. They remain as
+/// regression-test support and are not a production fallback.
 #[derive(Debug)]
 pub struct WinlineParser {
     _client: Arc<Client>,
