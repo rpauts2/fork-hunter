@@ -1,0 +1,278 @@
+{
+  "generated_at": "2026-11-26T17:36:10.428430826Z",
+  "summary": {
+    "requested_slugs": [
+      "marathon",
+      "bettery"
+    ],
+    "total_reports": 2,
+    "passed_reports": 2,
+    "failed_reports": 0,
+    "live_threshold": 150,
+    "prematch_threshold": 3000
+  },
+  "aggregate": {
+    "total_events": 7116,
+    "live_events": 390,
+    "prematch_events": 6726,
+    "live_threshold_passes": 2,
+    "prematch_threshold_passes": 2,
+    "passed_reports": 2,
+    "failed_reports": 0
+  },
+  "nightly": {
+    "status": "pass",
+    "exit_code": 0,
+    "failing_slugs": [],
+    "live_gap_total": 0,
+    "prematch_gap_total": 0
+  },
+  "reports": [
+    {
+      "bookmaker_slug": "bettery",
+      "total_events": 3558,
+      "live_events": 195,
+      "prematch_events": 3363,
+      "total_odds": 184387,
+      "valid_odds": 184387,
+      "events_with_odds": 3548,
+      "events_without_odds_samples": [
+        {
+          "id": "bettery-live-70250812",
+          "sport": "Football",
+          "league": "FC 24. ESportsBattle",
+          "home_team": "Аргентина (Kostolom89)",
+          "away_team": "Англия (Sheva)",
+          "is_live": true
+        },
+        {
+          "id": "bettery-live-70272963",
+          "sport": "Football",
+          "league": "FC 26. ESportsBattle",
+          "home_team": "Галатасарай (Joop)",
+          "away_team": "Трабзонспор (cosske)",
+          "is_live": true
+        },
+        {
+          "id": "bettery-live-70272965",
+          "sport": "Football",
+          "league": "FC 26. ESportsBattle",
+          "home_team": "Фенербахче (Shadow)",
+          "away_team": "Бешикташ (mixes)",
+          "is_live": true
+        },
+        {
+          "id": "bettery-live-70265600",
+          "sport": "Football",
+          "league": "FC 26. ESportsBattle",
+          "home_team": "Бавария (Firminho)",
+          "away_team": "Реал М (Lukapaja)",
+          "is_live": true
+        },
+        {
+          "id": "bettery-live-70265612",
+          "sport": "Football",
+          "league": "FC 26. ESportsBattle",
+          "home_team": "Ливерпуль (pikalicaaa)",
+          "away_team": "Атлетико М (Mani)",
+          "is_live": true
+        },
+        {
+          "id": "bettery-live-70279601",
+          "sport": "Esports",
+          "league": "Dota 2. BLAST Slam",
+          "home_team": "watson (Team Yandex)",
+          "away_team": "Yuma (GamerLegion)",
+          "is_live": true
+        },
+        {
+          "id": "bettery-live-70279605",
+          "sport": "Esports",
+          "league": "Dota 2. BLAST Slam",
+          "home_team": "CHIRA_JUNIOR (Team Yandex)",
+          "away_team": "RCY (GamerLegion)",
+          "is_live": true
+        },
+        {
+          "id": "bettery-live-70231687",
+          "sport": "Tennis",
+          "league": "World Tennis. Женщины. Флорианополис",
+          "home_team": "Егорова Д",
+          "away_team": "Лабрана Ф",
+          "is_live": true
+        },
+        {
+          "id": "bettery-live-70214153",
+          "sport": "Tennis",
+          "league": "World Tennis. Мужчины. Боливия",
+          "home_team": "Скрамин ду Лагу Ж-В",
+          "away_team": "Гальярдо Л",
+          "is_live": true
+        },
+        {
+          "id": "bettery-live-70282490",
+          "sport": "Cricket",
+          "league": "T20. Индия. Лига Ньюлендс",
+          "home_team": "XI Хайваан",
+          "away_team": "Гьярах Шайтан",
+          "is_live": true
+        }
+      ],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 99.71894322653176,
+      "live_events_with_odds": 185,
+      "prematch_events_with_odds": 3363,
+      "live_odds_coverage_percent": 94.87179487179486,
+      "prematch_odds_coverage_percent": 100.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 185,
+        "target": 150,
+        "missing": 0,
+        "passed": true
+      },
+      "prematch_kpi": {
+        "actual": 3363,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": true,
+      "prematch_threshold_met": true,
+      "passed": true,
+      "runtime_only": false,
+      "duration_ms": 18675,
+      "error": null
+    },
+    {
+      "bookmaker_slug": "marathon",
+      "total_events": 3558,
+      "live_events": 195,
+      "prematch_events": 3363,
+      "total_odds": 182679,
+      "valid_odds": 182679,
+      "events_with_odds": 3548,
+      "events_without_odds_samples": [
+        {
+          "id": "marathon-live-70250812",
+          "sport": "Football",
+          "league": "FC 24. ESportsBattle",
+          "home_team": "Аргентина (Kostolom89)",
+          "away_team": "Англия (Sheva)",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70272963",
+          "sport": "Football",
+          "league": "FC 26. ESportsBattle",
+          "home_team": "Галатасарай (Joop)",
+          "away_team": "Трабзонспор (cosske)",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70272965",
+          "sport": "Football",
+          "league": "FC 26. ESportsBattle",
+          "home_team": "Фенербахче (Shadow)",
+          "away_team": "Бешикташ (mixes)",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70265600",
+          "sport": "Football",
+          "league": "FC 26. ESportsBattle",
+          "home_team": "Бавария (Firminho)",
+          "away_team": "Реал М (Lukapaja)",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70265612",
+          "sport": "Football",
+          "league": "FC 26. ESportsBattle",
+          "home_team": "Ливерпуль (pikalicaaa)",
+          "away_team": "Атлетико М (Mani)",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70279601",
+          "sport": "Esports",
+          "league": "Dota 2. BLAST Slam",
+          "home_team": "watson (Team Yandex)",
+          "away_team": "Yuma (GamerLegion)",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70279605",
+          "sport": "Esports",
+          "league": "Dota 2. BLAST Slam",
+          "home_team": "CHIRA_JUNIOR (Team Yandex)",
+          "away_team": "RCY (GamerLegion)",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70231687",
+          "sport": "Tennis",
+          "league": "World Tennis. Женщины. Флорианополис",
+          "home_team": "Егорова Д",
+          "away_team": "Лабрана Ф",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70214153",
+          "sport": "Tennis",
+          "league": "World Tennis. Мужчины. Боливия",
+          "home_team": "Скрамин ду Лагу Ж-В",
+          "away_team": "Гальярдо Л",
+          "is_live": true
+        },
+        {
+          "id": "marathon-live-70282490",
+          "sport": "Cricket",
+          "league": "T20. Индия. Лига Ньюлендс",
+          "home_team": "XI Хайваан",
+          "away_team": "Гьярах Шайтан",
+          "is_live": true
+        }
+      ],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 99.71894322653176,
+      "live_events_with_odds": 185,
+      "prematch_events_with_odds": 3363,
+      "live_odds_coverage_percent": 94.87179487179486,
+      "prematch_odds_coverage_percent": 100.0,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 185,
+        "target": 150,
+        "missing": 0,
+        "passed": true
+      },
+      "prematch_kpi": {
+        "actual": 3363,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": true,
+      "prematch_threshold_met": true,
+      "passed": true,
+      "runtime_only": false,
+      "duration_ms": 11241,
+      "error": null
+    }
+  ]
+}

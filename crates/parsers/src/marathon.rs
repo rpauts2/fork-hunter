@@ -318,6 +318,32 @@ pub fn parse_api_response(
             std::io::Error::other("Marathon API response is missing the customFactors array")
         })?;
 
+    // Shared Line51 payloads can omit event.name entirely. Resolve the source
+    // sport and tournament from the bookmaker's own taxonomy instead of
+    // defaulting otherwise valid events to Sport::Other / an empty league.
+    let sports_by_id: HashMap<u64, &serde_json::Value> = json
+        .get("sports")
+        .and_then(serde_json::Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|node| {
+            node.get("id")
+                .and_then(parse_catalog_id)
+                .map(|id| (id, node))
+        })
+        .collect();
+    let tournament_infos_by_id: HashMap<u64, &serde_json::Value> = json
+        .get("tournamentInfos")
+        .and_then(serde_json::Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|info| {
+            info.get("id")
+                .and_then(parse_catalog_id)
+                .map(|id| (id, info))
+        })
+        .collect();
+
     // Child catalogue rows (halves, corners, cards, etc.) carry their own
     // factor IDs but intentionally omit team names. Attach their factors to
     // the parent match instead of dropping them or creating synthetic events.
@@ -431,8 +457,24 @@ pub fn parse_api_response(
                 .map(str::to_owned)
                 .or_else(|| value.as_u64().map(|id| id.to_string()))
         });
-        let sport = detect_sport(event_name);
-        let league = extract_league(event_name);
+        let source_sport_numeric_id = event_data.get("sportId").and_then(parse_catalog_id);
+        let (catalog_sport, catalog_league) = resolve_source_taxonomy(
+            source_sport_numeric_id,
+            &sports_by_id,
+            &tournament_infos_by_id,
+        );
+        let name_sport = detect_sport(event_name);
+        let sport = if name_sport != Sport::Other {
+            name_sport
+        } else {
+            catalog_sport
+        };
+        let name_league = extract_league(event_name);
+        let league = if event_name.contains(':') && !name_league.trim().is_empty() {
+            name_league
+        } else {
+            catalog_league.unwrap_or(name_league)
+        };
         let mut extra = HashMap::new();
         if let Some(source_sport_id) = &source_sport_id {
             extra.insert(
@@ -914,6 +956,74 @@ fn classify_and_add_odd(
     false
 }
 
+fn parse_catalog_id(value: &serde_json::Value) -> Option<u64> {
+    value
+        .as_u64()
+        .or_else(|| value.as_str().and_then(|text| text.trim().parse().ok()))
+}
+
+fn resolve_source_taxonomy(
+    source_sport_id: Option<u64>,
+    sports_by_id: &HashMap<u64, &serde_json::Value>,
+    tournament_infos_by_id: &HashMap<u64, &serde_json::Value>,
+) -> (Sport, Option<String>) {
+    let Some(mut node_id) = source_sport_id else {
+        return (Sport::Other, None);
+    };
+
+    let mut sport = Sport::Other;
+    let mut league = None;
+    let mut segment_name = None;
+    let mut visited = HashSet::new();
+
+    while visited.insert(node_id) {
+        let Some(node) = sports_by_id.get(&node_id).copied() else {
+            break;
+        };
+
+        if league.is_none() {
+            league = node
+                .get("tournamentInfoId")
+                .and_then(parse_catalog_id)
+                .and_then(|id| tournament_infos_by_id.get(&id).copied())
+                .and_then(|info| info.get("caption"))
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|caption| !caption.is_empty())
+                .map(str::to_owned);
+        }
+
+        let node_kind = node
+            .get("kind")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default();
+        if segment_name.is_none() && !node_kind.eq_ignore_ascii_case("sport") {
+            segment_name = node
+                .get("name")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|name| !name.is_empty())
+                .map(str::to_owned);
+        }
+
+        if node_kind.eq_ignore_ascii_case("sport") {
+            sport = node
+                .get("name")
+                .and_then(serde_json::Value::as_str)
+                .map(Sport::from_str)
+                .unwrap_or(Sport::Other);
+            break;
+        }
+
+        let Some(parent_id) = node.get("parentId").and_then(parse_catalog_id) else {
+            break;
+        };
+        node_id = parent_id;
+    }
+
+    (sport, league.or(segment_name))
+}
+
 fn detect_sport(event_name: &str) -> Sport {
     let sport_label = event_name
         .split_once(':')
@@ -1038,6 +1148,77 @@ mod parser_identity_tests {
     use crate::factors_catalog::FactorsCatalog;
     use shared::Sport;
     use std::sync::Arc;
+
+    #[test]
+    fn shared_platform_resolves_missing_event_name_from_source_taxonomy() {
+        let client = Arc::new(reqwest::Client::builder().build().expect("client"));
+        let factors = FactorsCatalog::new(client, "https://line51.tf39be-resources.com", 3000);
+        let payload = serde_json::json!({
+            "sports": [
+                {
+                    "id": 29086,
+                    "kind": "sport",
+                    "name": "Киберспорт"
+                },
+                {
+                    "id": 117354,
+                    "parentId": 29086,
+                    "kind": "segment",
+                    "name": "Dota 2. BLAST Slam. Bo3. Сравнение по киллам",
+                    "tournamentInfoId": 1425
+                },
+                {
+                    "id": 11634,
+                    "kind": "sport",
+                    "name": "Крикет"
+                },
+                {
+                    "id": 148686,
+                    "parentId": 11634,
+                    "kind": "segment",
+                    "name": "T20. Индия. Лига Ньюлендс"
+                }
+            ],
+            "tournamentInfos": [
+                {"id": 1425, "caption": "Dota 2. BLAST Slam"}
+            ],
+            "events": [
+                {
+                    "id": 70279601,
+                    "team1": "watson (Team Yandex)",
+                    "team2": "Yuma (GamerLegion)",
+                    "place": "live",
+                    "sportId": 117354,
+                    "name": ""
+                },
+                {
+                    "id": 70282490,
+                    "team1": "XI Хайваан",
+                    "team2": "Гьярах Шайтан",
+                    "place": "live",
+                    "sportId": 148686,
+                    "name": ""
+                }
+            ],
+            "customFactors": []
+        });
+
+        let parsed = parse_api_response(&payload, true, "marathon", &factors)
+            .expect("valid source-taxonomy fixture");
+        assert_eq!(parsed.len(), 2);
+        assert_eq!(parsed[0].0.sport, Sport::Esports);
+        assert_eq!(parsed[0].0.league, "Dota 2. BLAST Slam");
+        assert_eq!(parsed[1].0.sport, Sport::Cricket);
+        assert_eq!(parsed[1].0.league, "T20. Индия. Лига Ньюлендс");
+        assert_eq!(
+            parsed[0]
+                .0
+                .extra
+                .get("source_sport_id")
+                .and_then(serde_json::Value::as_str),
+            Some("117354")
+        );
+    }
 
     #[test]
     fn shared_platform_normalizes_lines_sport_and_competition_name() {
