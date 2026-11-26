@@ -139,7 +139,9 @@ fn assess_result(slug: &str, result: &ParserResult) -> (bool, Option<String>) {
     if invalid_event_ids > 0 {
         return (
             false,
-            Some(format!("events with empty IDs detected: {invalid_event_ids}")),
+            Some(format!(
+                "events with empty IDs detected: {invalid_event_ids}"
+            )),
         );
     }
     if duplicate_event_ids > 0 {
