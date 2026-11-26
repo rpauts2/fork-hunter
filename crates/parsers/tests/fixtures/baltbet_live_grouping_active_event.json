@@ -1,0 +1,480 @@
+{
+  "item": {
+    "i": 32126634,
+    "x": 3,
+    "a": 1,
+    "t": "",
+    "m": "BO3",
+    "s": {
+      "g": {
+        "f": 1,
+        "s": 0,
+        "w": 1
+      },
+      "t": [
+        {
+          "f": 23,
+          "s": 16,
+          "w": 1
+        },
+        {
+          "f": 26,
+          "s": 29,
+          "w": 0
+        }
+      ],
+      "i": 0,
+      "a": 0
+    },
+    "c": [
+      {
+        "o": 23399132639,
+        "t": 3679,
+        "s": 1,
+        "v": 1.04,
+        "x": ""
+      },
+      {
+        "o": 23399132640,
+        "t": 3681,
+        "s": 1,
+        "v": 9.3,
+        "x": ""
+      },
+      {
+        "o": 23399133065,
+        "t": 2069,
+        "s": 0,
+        "v": 1,
+        "x": "-1,5"
+      },
+      {
+        "o": 23399133066,
+        "t": 2070,
+        "s": 1,
+        "v": 1.36,
+        "x": ""
+      },
+      {
+        "o": 23399133067,
+        "t": 2071,
+        "s": 0,
+        "v": 1,
+        "x": "+1,5"
+      },
+      {
+        "o": 23399133068,
+        "t": 2072,
+        "s": 1,
+        "v": 3.05,
+        "x": ""
+      },
+      {
+        "o": 23399132636,
+        "t": 2073,
+        "s": 0,
+        "v": 1,
+        "x": "2,5"
+      },
+      {
+        "o": 23399132637,
+        "t": 2074,
+        "s": 1,
+        "v": 3.05,
+        "x": ""
+      },
+      {
+        "o": 23399132638,
+        "t": 2075,
+        "s": 1,
+        "v": 1.33,
+        "x": ""
+      },
+      {
+        "o": 23399132838,
+        "t": 2691,
+        "s": 0,
+        "v": 1,
+        "x": "2-я карта"
+      },
+      {
+        "o": 23399132839,
+        "t": 2692,
+        "s": 1,
+        "v": 1.36,
+        "x": ""
+      },
+      {
+        "o": 23399132840,
+        "t": 2693,
+        "s": 1,
+        "v": 3.05,
+        "x": ""
+      }
+    ]
+  },
+  "grouping": {
+    "id": 32126634,
+    "team1": "Team Yandex",
+    "team2": "GamerLegion",
+    "markets": [
+      {
+        "id": 17856,
+        "name": "Результат",
+        "kind": "Winner",
+        "isMain": true,
+        "outcomes": [
+          {
+            "oid": 23399132639,
+            "aid": 23399132639,
+            "ctid": 1,
+            "kind": "TEAM1",
+            "value": 1.04,
+            "params": [],
+            "tags": {}
+          },
+          {
+            "oid": 23399132640,
+            "aid": 23399132640,
+            "ctid": 3,
+            "kind": "TEAM2",
+            "value": 9.3,
+            "params": [],
+            "tags": {}
+          }
+        ],
+        "params": [
+          {
+            "ctid": 1,
+            "name": "1",
+            "outcomeKind": "TEAM1"
+          },
+          {
+            "ctid": 3,
+            "name": "2",
+            "outcomeKind": "TEAM2"
+          }
+        ]
+      },
+      {
+        "id": 17857,
+        "name": "Фора по картам",
+        "kind": "Handicap",
+        "isMain": true,
+        "outcomes": [
+          {
+            "oid": 23399133066,
+            "aid": 23399133066,
+            "ctid": 26,
+            "kind": "TEAM1",
+            "value": 1.36,
+            "params": [
+              {
+                "ctid": 25,
+                "name": "Ф1к",
+                "value": "-1,5",
+                "valueType": "UNKNOWN",
+                "kind": "UNKNOWN",
+                "sortOrder": 0
+              }
+            ],
+            "tags": {}
+          },
+          {
+            "oid": 23399133068,
+            "aid": 23399133068,
+            "ctid": 28,
+            "kind": "TEAM2",
+            "value": 3.05,
+            "params": [
+              {
+                "ctid": 27,
+                "name": "Ф2к",
+                "value": "+1,5",
+                "valueType": "UNKNOWN",
+                "kind": "UNKNOWN",
+                "sortOrder": 0
+              }
+            ],
+            "tags": {}
+          }
+        ],
+        "params": [
+          {
+            "ctid": 520,
+            "name": "",
+            "outcomeKind": "UNKNOWN"
+          },
+          {
+            "ctid": 521,
+            "name": "Ф1к",
+            "outcomeKind": "UNKNOWN"
+          },
+          {
+            "ctid": 522,
+            "name": "Кф",
+            "outcomeKind": "TEAM1"
+          },
+          {
+            "ctid": 523,
+            "name": "Ф2к",
+            "outcomeKind": "UNKNOWN"
+          },
+          {
+            "ctid": 524,
+            "name": "Кф",
+            "outcomeKind": "TEAM2"
+          },
+          {
+            "ctid": 25,
+            "name": "Ф1к",
+            "outcomeKind": "UNKNOWN"
+          },
+          {
+            "ctid": 26,
+            "name": "Кф",
+            "outcomeKind": "TEAM1"
+          },
+          {
+            "ctid": 27,
+            "name": "Ф2к",
+            "outcomeKind": "UNKNOWN"
+          },
+          {
+            "ctid": 28,
+            "name": "Кф",
+            "outcomeKind": "TEAM2"
+          }
+        ]
+      },
+      {
+        "id": 17858,
+        "name": "Тотал карт",
+        "kind": "Total",
+        "isMain": true,
+        "outcomes": [
+          {
+            "oid": 23399132637,
+            "aid": 23399132637,
+            "ctid": 1601,
+            "kind": "OVER",
+            "value": 3.05,
+            "params": [
+              {
+                "ctid": 1600,
+                "name": "Тотал карт",
+                "value": "2,5",
+                "valueType": "UNKNOWN",
+                "kind": "UNKNOWN",
+                "sortOrder": 0
+              }
+            ],
+            "tags": {}
+          },
+          {
+            "oid": 23399132638,
+            "aid": 23399132638,
+            "ctid": 1602,
+            "kind": "UNDER",
+            "value": 1.33,
+            "params": [
+              {
+                "ctid": 1600,
+                "name": "Тотал карт",
+                "value": "2,5",
+                "valueType": "UNKNOWN",
+                "kind": "UNKNOWN",
+                "sortOrder": 0
+              }
+            ],
+            "tags": {}
+          }
+        ],
+        "params": [
+          {
+            "ctid": 1600,
+            "name": "Тотал карт",
+            "outcomeKind": "UNKNOWN"
+          },
+          {
+            "ctid": 1601,
+            "name": "Бол",
+            "outcomeKind": "OVER"
+          },
+          {
+            "ctid": 1602,
+            "name": "Мен",
+            "outcomeKind": "UNDER"
+          }
+        ]
+      },
+      {
+        "id": 17859,
+        "name": "Результат карты",
+        "kind": "Winner",
+        "isMain": false,
+        "outcomes": [
+          {
+            "oid": 23399132839,
+            "aid": 23399132839,
+            "ctid": 1606,
+            "kind": "TEAM1",
+            "value": 1.36,
+            "params": [
+              {
+                "ctid": 1605,
+                "name": "По картам",
+                "value": "2-я карта",
+                "valueType": "UNKNOWN",
+                "kind": "ROUND",
+                "sortOrder": 2
+              }
+            ],
+            "tags": {}
+          },
+          {
+            "oid": 23399132840,
+            "aid": 23399132840,
+            "ctid": 1607,
+            "kind": "TEAM2",
+            "value": 3.05,
+            "params": [
+              {
+                "ctid": 1605,
+                "name": "По картам",
+                "value": "2-я карта",
+                "valueType": "UNKNOWN",
+                "kind": "ROUND",
+                "sortOrder": 2
+              }
+            ],
+            "tags": {}
+          }
+        ],
+        "params": [
+          {
+            "ctid": 1605,
+            "name": "По картам",
+            "outcomeKind": "UNKNOWN"
+          },
+          {
+            "ctid": 1606,
+            "name": "1",
+            "outcomeKind": "TEAM1"
+          },
+          {
+            "ctid": 1607,
+            "name": "2",
+            "outcomeKind": "TEAM2"
+          }
+        ]
+      },
+      {
+        "id": 17871,
+        "name": "Точный счет матча",
+        "kind": "ExactScore",
+        "isMain": false,
+        "outcomes": [
+          {
+            "oid": 23399132641,
+            "aid": 23399132641,
+            "ctid": 7,
+            "kind": "SCORE",
+            "value": 1.35,
+            "params": [
+              {
+                "ctid": 7,
+                "name": "Счет (Матч)",
+                "value": "2-0",
+                "valueType": "UNKNOWN",
+                "kind": "SCORE",
+                "sortOrder": 0
+              }
+            ],
+            "tags": {}
+          },
+          {
+            "oid": 23399132642,
+            "aid": 23399132642,
+            "ctid": 7,
+            "kind": "SCORE",
+            "value": 4.1,
+            "params": [
+              {
+                "ctid": 7,
+                "name": "Счет (Матч)",
+                "value": "2-1",
+                "valueType": "UNKNOWN",
+                "kind": "SCORE",
+                "sortOrder": 0
+              }
+            ],
+            "tags": {}
+          },
+          {
+            "oid": 23399132643,
+            "aid": 23399132643,
+            "ctid": 7,
+            "kind": "SCORE",
+            "value": 8.8,
+            "params": [
+              {
+                "ctid": 7,
+                "name": "Счет (Матч)",
+                "value": "1-2",
+                "valueType": "UNKNOWN",
+                "kind": "SCORE",
+                "sortOrder": 0
+              }
+            ],
+            "tags": {}
+          }
+        ],
+        "params": [
+          {
+            "ctid": 7,
+            "name": "Счет (Матч)",
+            "outcomeKind": "SCORE"
+          }
+        ]
+      }
+    ],
+    "isLive": true,
+    "isActive": true,
+    "isOver": false,
+    "startTime": 1795707060,
+    "comment": "BO3",
+    "currentTime": "",
+    "score": {
+      "general": {
+        "home": 1,
+        "away": 0
+      },
+      "detailed": [
+        {
+          "home": 23,
+          "away": 16
+        },
+        {
+          "home": 26,
+          "away": 29
+        }
+      ],
+      "detailedString": "(23:16,26:29)",
+      "innings": "None",
+      "advantage": "None",
+      "generalScoreString": "1 : 0"
+    },
+    "leagueTitle": "DOTA 2. Мир. BLAST Slam",
+    "eventPosition": "Плей-офф",
+    "sportId": 25,
+    "sportTitle": "Киберспорт",
+    "broadcastWrapper": {
+      "broadcast": {
+        "url": "https://player.kick.com/Blastdota?autoplay=true",
+        "type": "Youtube",
+        "displayMode": "Embed"
+      }
+    }
+  }
+}

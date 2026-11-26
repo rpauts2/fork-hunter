@@ -154,3 +154,10 @@ No third-party odds providers were added or evaluated as fallback sources. No CA
 - The four pre-parse blockers are unchanged: BetBoom (QRATOR HTTP 401), Liga Stavok (QRATOR blocks warm-up before API bootstrap), Melbet (regional HTTP 403) and Bet-M (regional HTTP 403). No challenge, CAPTCHA, authentication or regional restriction was bypassed.
 - Nightly strict status remains **fail / exit 2** because those four active feeds are unavailable to this development environment; this does not indicate a parsing regression in the 12 reachable feeds.
 - `bookmaker_quote_freshness_verified=false` remains in force: zero stale-ingestion flags do not prove that source-side bookmaker quote timestamps are fresh. Parser ingestion timestamps are not bookmaker quote-update timestamps.
+
+## Baltbet targeted live recheck — 2026-11-26 17:23 UTC
+
+- Snapshot: [runtime_audit_2026-11-26_1723_baltbet_targeted.json](runtime_audit_2026-11-26_1723_baltbet_targeted.json).
+- Result: **4,001 events** (208 live / 3,793 prematch), 20,840 valid odds, 96.5% overall odds coverage and 94.2% live odds coverage. Volume and structural-quality gates passed; duplicate event IDs, duplicate odds IDs, invalid odds and stale-ingestion flags were all zero.
+- A live-source fixture for an active Baltbet esports event was added at `crates/parsers/tests/fixtures/baltbet_live_grouping_active_event.json`. Its grouping contains 5 markets and 11 priced outcomes; the new regression test confirms all 11 are normalized into valid odds.
+- Several other sampled events returned `isActive=false` or empty market arrays when checked directly. A separate 209-event grouping-endpoint probe at concurrency 8 returned HTTP 200 for all 209 requests. The source changes market availability during live play; no reproducible extraction defect or persistent endpoint throttling was established, so the fetch algorithm was not changed speculatively.

@@ -2020,6 +2020,7 @@ impl BookmakerParser for BaltbetParser {
 #[cfg(test)]
 mod tests {
     use super::BaltbetParser;
+    use serde_json::Value;
     use shared::DiagnosticSeverity;
     use shared::OddsType;
     use shared::ParserReadinessStage;
@@ -2290,6 +2291,28 @@ mod tests {
                 && odd.odds_type == OddsType::Home
                 && (odd.odds - 1.87).abs() < f64::EPSILON
         }));
+    }
+
+    #[test]
+    fn parses_real_active_baltbet_live_grouping_fixture() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../tests/fixtures/baltbet_live_grouping_active_event.json"
+        ))
+        .expect("real Baltbet live grouping fixture is valid JSON");
+
+        let odds = BaltbetParser::extract_live_grouping_odds(
+            "baltbet-32126634",
+            &fixture["item"],
+            &fixture["grouping"],
+        );
+
+        assert_eq!(odds.len(), 11);
+        assert!(odds
+            .iter()
+            .all(|odd| odd.odds.is_finite() && odd.odds > 1.0));
+        assert!(odds
+            .iter()
+            .any(|odd| odd.market == "Moneyline" && odd.selection == "1"));
     }
 
     #[test]

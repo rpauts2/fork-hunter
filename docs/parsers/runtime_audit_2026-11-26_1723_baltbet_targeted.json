@@ -1,0 +1,154 @@
+{
+  "generated_at": "2026-11-26T17:23:01.300609743Z",
+  "summary": {
+    "requested_slugs": [
+      "baltbet"
+    ],
+    "total_reports": 1,
+    "passed_reports": 1,
+    "failed_reports": 0,
+    "live_threshold": 150,
+    "prematch_threshold": 3000
+  },
+  "aggregate": {
+    "total_events": 4001,
+    "live_events": 208,
+    "prematch_events": 3793,
+    "live_threshold_passes": 1,
+    "prematch_threshold_passes": 1,
+    "passed_reports": 1,
+    "failed_reports": 0
+  },
+  "nightly": {
+    "status": "pass",
+    "exit_code": 0,
+    "failing_slugs": [],
+    "live_gap_total": 0,
+    "prematch_gap_total": 0
+  },
+  "reports": [
+    {
+      "bookmaker_slug": "baltbet",
+      "total_events": 4001,
+      "live_events": 208,
+      "prematch_events": 3793,
+      "total_odds": 20840,
+      "valid_odds": 20840,
+      "events_with_odds": 3861,
+      "events_without_odds_samples": [
+        {
+          "id": "baltbet-32126420",
+          "sport": "Esports",
+          "league": "Counter-Strike. Европа. Fiesta",
+          "home_team": "FORZE Reload",
+          "away_team": "Morrow Esports",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32126634",
+          "sport": "Esports",
+          "league": "DOTA 2. Мир. BLAST Slam Плей-офф",
+          "home_team": "Team Yandex",
+          "away_team": "GamerLegion",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32126484",
+          "sport": "Esports",
+          "league": "DOTA 2. Мир. BLAST Slam. Дуэль игроков (Убийства)",
+          "home_team": "watson(Team Yandex)",
+          "away_team": "Yuma(GamerLegion)",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32126485",
+          "sport": "Esports",
+          "league": "DOTA 2. Мир. BLAST Slam. Дуэль игроков (Убийства)",
+          "home_team": "CHIRA_JUNIOR(Team Yandex)",
+          "away_team": "RCY(GamerLegion)",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32115057",
+          "sport": "Basketball",
+          "league": "Европа. Еврокубок. Женщины",
+          "home_team": "Чукурова Мерсин Енишехир(ж)",
+          "away_team": "Ферроль(ж)",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32127265",
+          "sport": "Other",
+          "league": "Unknown",
+          "home_team": "Юта Джаз(HunkY)",
+          "away_team": "Филадельфия Севенти Сиксерс(McLovin)",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32127367",
+          "sport": "Other",
+          "league": "Unknown",
+          "home_team": "Тихненко Дмитрий",
+          "away_team": "Буров Сергей",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32120342",
+          "sport": "Tennis",
+          "league": "World Tennis (женщины). Ортизеи. Пары 1/4 финала",
+          "home_team": "Пир Л. / Тома М.",
+          "away_team": "Арсено А. / Лакасс Р.",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32127418",
+          "sport": "Other",
+          "league": "Unknown",
+          "home_team": "Бавария(SMHAMILA)",
+          "away_team": "Манчестер Сити(CRUSADER)",
+          "is_live": true
+        },
+        {
+          "id": "baltbet-32127332",
+          "sport": "Other",
+          "league": "Unknown",
+          "home_team": "Washington Capitals(Sunder)",
+          "away_team": "Boston Bruins(Finn)",
+          "is_live": true
+        }
+      ],
+      "duplicate_event_ids": 0,
+      "duplicate_odd_ids": 0,
+      "duplicate_odd_id_samples": [],
+      "invalid_odds": 0,
+      "odds_coverage_percent": 96.50087478130467,
+      "live_events_with_odds": 196,
+      "prematch_events_with_odds": 3665,
+      "live_odds_coverage_percent": 94.23076923076923,
+      "prematch_odds_coverage_percent": 96.62536250988664,
+      "stale_odds": 0,
+      "quote_timestamp_basis": "parser_ingestion_timestamp_only",
+      "bookmaker_quote_freshness_verified": false,
+      "quality_passed": true,
+      "quality_issue": null,
+      "live_kpi": {
+        "actual": 196,
+        "target": 150,
+        "missing": 0,
+        "passed": true
+      },
+      "prematch_kpi": {
+        "actual": 3665,
+        "target": 3000,
+        "missing": 0,
+        "passed": true
+      },
+      "live_threshold_met": true,
+      "prematch_threshold_met": true,
+      "passed": true,
+      "runtime_only": false,
+      "duration_ms": 28369,
+      "error": null
+    }
+  ]
+}
