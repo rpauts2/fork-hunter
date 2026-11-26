@@ -187,9 +187,7 @@ fn assess_result(slug: &str, result: &ParserResult) -> (bool, Option<String>) {
     if duplicate_odd_ids > 0 {
         return (
             false,
-            Some(format!(
-                "duplicate odd IDs detected: {duplicate_odd_ids}"
-            )),
+            Some(format!("duplicate odd IDs detected: {duplicate_odd_ids}")),
         );
     }
 
@@ -406,7 +404,11 @@ mod tests {
 
         let health = check(result).await;
         assert!(matches!(health.status, HealthStatus::Degraded));
-        assert!(health.last_error.as_deref().unwrap().contains("overall odds coverage"));
+        assert!(health
+            .last_error
+            .as_deref()
+            .unwrap()
+            .contains("overall odds coverage"));
     }
 
     #[tokio::test]
@@ -416,7 +418,11 @@ mod tests {
 
         let health = check(result).await;
         assert!(matches!(health.status, HealthStatus::Degraded));
-        assert!(health.last_error.as_deref().unwrap().contains("duplicate event IDs"));
+        assert!(health
+            .last_error
+            .as_deref()
+            .unwrap()
+            .contains("duplicate event IDs"));
     }
 
     #[tokio::test]
@@ -425,7 +431,11 @@ mod tests {
         let health = check(fixture_result(vec![odd.clone(), odd])).await;
 
         assert!(matches!(health.status, HealthStatus::Degraded));
-        assert!(health.last_error.as_deref().unwrap().contains("duplicate odd IDs"));
+        assert!(health
+            .last_error
+            .as_deref()
+            .unwrap()
+            .contains("duplicate odd IDs"));
     }
 
     #[tokio::test]
