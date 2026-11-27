@@ -256,8 +256,7 @@ impl BetMParser {
             || normalized.contains("сайт недоступен в вашем регионе")
             || normalized.contains("недоступен в вашем регионе")
             || normalized.contains("недоступен в вашей стране")
-            || normalized.contains("букмекерская контора")
-            || normalized.contains("официальный сайт")
+            || normalized.contains("доступ к сайту ограничен")
     }
 
     fn is_plausible_team(value: &str) -> bool {
@@ -781,18 +780,21 @@ mod tests {
     }
 
     #[test]
-    fn treats_marketing_and_404_pages_as_unavailable() {
+    fn treats_only_explicit_unavailable_markers_as_blocked() {
         assert!(BetMParser::is_unavailable_page_text(
             "404 Not Found\nHome\nBet-M"
-        ));
-        assert!(BetMParser::is_unavailable_page_text(
-            "Bet-M букмекерская контора\nОфициальный сайт"
         ));
         assert!(BetMParser::is_unavailable_page_text(
             "Сайт недоступен в вашем регионе"
         ));
         assert!(BetMParser::is_unavailable_page_text(
             "Данный сайт недоступен в вашей стране"
+        ));
+        assert!(BetMParser::is_unavailable_page_text(
+            "Доступ к сайту ограничен"
+        ));
+        assert!(!BetMParser::is_unavailable_page_text(
+            "Бет-М — букмекерская контора. Официальный сайт. Линия и Live."
         ));
         assert!(!BetMParser::is_unavailable_page_text(
             "Лига чемпионов\nСпартак Москва\nЗенит"
