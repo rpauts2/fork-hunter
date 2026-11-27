@@ -210,7 +210,7 @@ impl FonbetParser {
             ) {
                 let sport_id = event_data
                     .get("sportId")
-                    .and_then(|v| v.as_u64())
+                    .and_then(parse_u64_value)
                     .unwrap_or(0);
                 let start_time = event_data.get("startTime").and_then(|v| v.as_i64());
                 let event_name = event_data
@@ -300,7 +300,7 @@ impl FonbetParser {
                                     let line =
                                         factor.get("p").and_then(parse_f64_value).map(|p| p / 100.0);
 
-                                                                        if let Some(catalog) = factor_catalog {
+                                    if let Some(catalog) = factor_catalog {
                                         let source_sport_id = sport_id.to_string();
                                         if catalog.contains_factor_id(fid) {
                                             if let Some(definition) = catalog
@@ -325,13 +325,13 @@ impl FonbetParser {
                                                     all_odds[idx].1.push(odd);
                                                 }
                                             }
-                                            // Do not fall back to numeric guesses when the
-                                            // source catalog knows this ID but cannot resolve it.
+                                            // Known but ambiguous/unsupported IDs must not
+                                            // fall back to a guess based on the numeric ID.
                                             continue;
                                         }
                                     }
 
-                                    let (market, selection, odds_type) =
+let (market, selection, odds_type) =
                                         Self::factor_to_market(fid);
                                     let odd = crate::marathon::make_market_odd(
                                         "fonbet",
