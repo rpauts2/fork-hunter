@@ -434,14 +434,21 @@ impl ParserFactory {
     }
 
     pub fn get_all(&self) -> Vec<Arc<dyn BookmakerParser + Send + Sync>> {
-        self.parsers.values().cloned().collect()
+        // Aliases may point to the same parser instance (for example, "_24bet"
+        // and "bet24"). Enumerate each bookmaker once so scans do not fetch and
+        // publish the same feed twice.
+        let mut seen = std::collections::HashSet::new();
+        self.parsers
+            .values()
+            .filter(|parser| seen.insert(parser.slug().to_string()))
+            .cloned()
+            .collect()
     }
 
     pub fn get_enabled(&self) -> Vec<Arc<dyn BookmakerParser + Send + Sync>> {
-        self.parsers
-            .values()
-            .filter(|p| p.is_enabled())
-            .cloned()
+        self.get_all()
+            .into_iter()
+            .filter(|parser| parser.is_enabled())
             .collect()
     }
 
@@ -592,6 +599,30 @@ mod tests {
     use super::ParserFactory;
     use shared::{DiagnosticSeverity, HealthStatus, ParserReadinessStage};
     use std::sync::Arc;
+
+    #[test]
+    fn aliases_do_not_duplicate_parser_execution() {
+        let client = Arc::new(reqwest::Client::builder().build().expect("client"));
+        let factory = ParserFactory::new(client);
+
+        let legacy_alias = factory.get("_24bet").expect("legacy 24bet alias");
+        let canonical = factory.get("bet24").expect("canonical 24bet slug");
+        assert!(Arc::ptr_eq(&legacy_alias, &canonical));
+
+        let all_24bet = factory
+            .get_all()
+            .into_iter()
+            .filter(|parser| parser.slug() == "_24bet")
+            .count();
+        let enabled_24bet = factory
+            .get_enabled()
+            .into_iter()
+            .filter(|parser| parser.slug() == "_24bet")
+            .count();
+
+        assert_eq!(all_24bet, 1, "24bet aliases must not duplicate full scans");
+        assert_eq!(enabled_24bet, 1, "24bet aliases must not duplicate enabled scans");
+    }
 
     #[test]
     fn all_implemented_russian_bookmakers_are_registered() {
