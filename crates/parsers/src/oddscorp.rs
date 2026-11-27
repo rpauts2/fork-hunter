@@ -366,7 +366,7 @@ impl OddsCorpMarket {
 
     pub fn line(&self) -> Option<f64> {
         let meta = self.parsed_meta();
-        ["line", "total", "handicap", "param", "P", "p"]
+        ["line", "total", "handicap", "param"]
             .iter()
             .find_map(|key| numeric_value(meta.get(*key)?))
     }
@@ -531,6 +531,18 @@ mod tests {
         assert_eq!(market.decimal_odds(), None);
         assert!(market.is_blocked());
         assert_eq!(market.line(), Some(2.5));
+    }
+
+    #[test]
+    fn does_not_treat_provider_market_ids_as_total_or_handicap_lines() {
+        let market: OddsCorpMarket = serde_json::from_value(json!({
+            "bet": "TOTAL__OVER",
+            "cf": "1.85",
+            "meta": {"market_name": "Тотал", "outcome_name": "Больше", "P": "31703982"}
+        }))
+        .expect("market");
+
+        assert_eq!(market.line(), None);
     }
 
     #[test]
