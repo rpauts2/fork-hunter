@@ -551,19 +551,19 @@ mod parser_fixture_tests {
         let catalog = catalog_with_sport_scoped_totals();
         let payload = serde_json::json!({
             "events": [{
-                "id": 12345,
+                "id": "12345",
                 "team1": "Home FC",
                 "team2": "Away FC",
                 "place": "line",
-                "sportId": 1,
+                "sportId": "1",
                 "startTime": 1795618800_i64,
                 "name": "Football: Premier League"
             }],
             "customFactors": [{
-                "e": 12345,
+                "e": "12345",
                 "factors": [
-                    {"f": 1696, "v": 1.85, "p": 150},
-                    {"f": 1697, "v": 1.95, "p": 150}
+                    {"f": "1696", "v": "1.85", "p": "150"},
+                    {"f": "1697", "v": "1.95", "p": "150"}
                 ]
             }]
         });
