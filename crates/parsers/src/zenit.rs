@@ -453,15 +453,26 @@ impl ZenitParser {
         index: usize,
         prefer_previous: bool,
     ) -> Option<f64> {
+        // In the bookmaker wire format, a line marker is a separate row
+        // containing "h" but no factor code "o". Adjacent priced outcomes
+        // also contain "h"; reading those as a line silently corrupts totals
+        // and handicap values.
+        let line_marker_value = |value: &serde_json::Value| {
+            value
+                .get("o")
+                .is_none()
+                .then(|| value.get("h"))
+                .flatten()
+                .and_then(Self::parse_numeric_value)
+                .filter(|number| number.is_finite())
+        };
         let previous = index
             .checked_sub(1)
             .and_then(|prev| bets.get(prev))
-            .and_then(|value| value.get("h"))
-            .and_then(Self::parse_numeric_value);
+            .and_then(line_marker_value);
         let next = bets
             .get(index + 1)
-            .and_then(|value| value.get("h"))
-            .and_then(Self::parse_numeric_value);
+            .and_then(line_marker_value);
 
         if prefer_previous {
             previous.or(next)
@@ -1470,6 +1481,19 @@ impl ZenitParser {
                         continue;
                     };
 
+                    if matches!(market, "Handicap" | "Total") && line.is_none() {
+                        let factor = factor_code.as_deref().unwrap_or("<missing>");
+                        let column = if header.trim().is_empty() {
+                            "<empty>"
+                        } else {
+                            header.trim()
+                        };
+                        let key =
+                            format!("factor={factor};header={column};reason=missing_line");
+                        *parsed.unmapped_factor_counts.entry(key).or_insert(0) += 1;
+                        continue;
+                    }
+
                     let line_key = line
                         .map(|value| format!("{value:.6}").replace('-', "m").replace('.', "p"))
                         .unwrap_or_else(|| "no-line".to_string());
@@ -1901,6 +1925,93 @@ mod tests {
                 .get("factor=42;header=Корнеры"),
             Some(&1)
         );
+    }
+
+    #[test]
+    fn adjacent_line_value_ignores_neighboring_priced_outcomes() {
+        let bets = vec![
+            json!({"o": "7", "h": "1.90", "id": "handicap-home"}),
+            json!({"o": "8", "h": "1.85", "id": "handicap-away"}),
+            json!({"o": "9", "h": "1.80", "id": "total-under"}),
+            json!({"o": "10", "h": "1.95", "id": "total-over"})
+        ];
+
+        assert_eq!(ZenitParser::adjacent_line_value(&bets, 0, true), None);
+        assert_eq!(ZenitParser::adjacent_line_value(&bets, 1, true), None);
+        assert_eq!(ZenitParser::adjacent_line_value(&bets, 2, false), None);
+        assert_eq!(ZenitParser::adjacent_line_value(&bets, 3, true), None);
+    }
+
+    #[test]
+    fn adjacent_line_value_reads_only_separate_line_marker_rows() {
+        let bets = vec![
+            json!({"h": "-2.5"}),
+            json!({"o": "7", "h": "1.90", "id": "handicap-home"}),
+            json!({"h": "2.5"}),
+            json!({"o": "8", "h": "1.85", "id": "handicap-away"}),
+            json!({"o": "9", "h": "1.80", "id": "total-under"}),
+            json!({"h": "22.5"}),
+            json!({"o": "10", "h": "1.95", "id": "total-over"})
+        ];
+
+        assert_eq!(
+            ZenitParser::adjacent_line_value(&bets, 1, true),
+            Some(-2.5)
+        );
+        assert_eq!(
+            ZenitParser::adjacent_line_value(&bets, 3, true),
+            Some(2.5)
+        );
+        assert_eq!(
+            ZenitParser::adjacent_line_value(&bets, 4, false),
+            Some(22.5)
+        );
+        assert_eq!(
+            ZenitParser::adjacent_line_value(&bets, 6, true),
+            Some(22.5)
+        );
+    }
+
+    #[test]
+    fn factor_lines_without_separate_line_markers_are_quarantined() {
+        let payload = json!({
+            "games": {
+                "55": {
+                    "sid": 1,
+                    "c1_id": "101",
+                    "c2_id": "202",
+                    "f_l": [
+                        {"o": "7", "h": "1.90", "id": "handicap-home"},
+                        {"o": "8", "h": "1.85", "id": "handicap-away"},
+                        {"o": "9", "h": "1.80", "id": "total-under"},
+                        {"o": "10", "h": "1.95", "id": "total-over"}
+                    ],
+                    "hd": [
+                        {"n": "1"}, {"n": "2"}, {"n": "М"}, {"n": "Б"}
+                    ]
+                }
+            },
+            "dict": {
+                "cmd": {"101": "Home", "202": "Away"},
+                "sport": {"1": "Футбол"}
+            }
+        });
+
+        let parsed = ZenitParser::parse_response(&payload, Some(1), false);
+        assert_eq!(parsed.schema_error, None);
+        assert_eq!(parsed.events.len(), 1);
+        assert!(
+            parsed.odds.is_empty(),
+            "handicap and total prices without confirmed lines must not be actionable"
+        );
+        for (factor, header) in [("7", "1"), ("8", "2"), ("9", "М"), ("10", "Б")] {
+            assert_eq!(
+                parsed.unmapped_factor_counts.get(&format!(
+                    "factor={factor};header={header};reason=missing_line"
+                )),
+                Some(&1)
+            );
+        }
     }
 
     #[test]
