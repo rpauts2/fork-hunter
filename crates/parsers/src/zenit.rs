@@ -1948,7 +1948,7 @@ mod tests {
             json!({"o": "8", "h": "1.85", "id": "handicap-away"}),
             json!({"o": "9", "h": "1.80", "id": "total-under"}),
             json!({"h": "22.5"}),
-            json!({"o": "10", "h": "1.95", "id": "total-over"})
+            json!({"o": "10", "h": "1.95", "id": "total-over"}),
         ];
 
         assert_eq!(ZenitParser::adjacent_line_value(&bets, 1, true), Some(-2.5));
