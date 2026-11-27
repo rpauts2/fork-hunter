@@ -1111,7 +1111,7 @@ fn id_component(value: &str) -> String {
 /// market/selection/line (e.g. duplicated parameter rows). Those are one
 /// actionable quote key, not separate opportunities. Keep the best price for
 /// the bettor and preserve a stable output order.
-fn deduplicate_same_market_quotes(odds: Vec<Odd>) -> (Vec<Odd>, usize) {
+pub(crate) fn deduplicate_same_market_quotes(odds: Vec<Odd>) -> (Vec<Odd>, usize) {
     let mut positions: HashMap<String, usize> = HashMap::with_capacity(odds.len());
     let mut unique: Vec<Odd> = Vec::with_capacity(odds.len());
     let mut duplicates = 0usize;
@@ -1129,6 +1129,19 @@ fn deduplicate_same_market_quotes(odds: Vec<Odd>) -> (Vec<Odd>, usize) {
     }
 
     (unique, duplicates)
+}
+
+pub(crate) fn make_market_odd(
+    slug: &str,
+    event: &Event,
+    market: &str,
+    selection: &str,
+    odds: f64,
+    line: Option<f64>,
+    odds_type: OddsType,
+    timestamp: chrono::DateTime<Utc>,
+) -> Odd {
+    make_odd(slug, event, market, selection, odds, line, odds_type, timestamp)
 }
 
 fn make_odd(
