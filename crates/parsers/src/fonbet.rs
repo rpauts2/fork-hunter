@@ -340,10 +340,16 @@ impl FonbetParser {
 
 let (market, selection, odds_type) =
                                         Self::factor_to_market(fid);
-                                    // Unknown factor IDs are retained in diagnostics, not
-                                    // emitted as cross-book comparable markets. A numeric
-                                    // ID alone does not establish market semantics.
+                                    // A numeric ID alone does not establish market semantics. Keep
+                                    // unknown factors out of cross-book comparison and expose
+                                    // them in debug logs for direct-source investigation.
                                     if market.starts_with("factor_") {
+                                        debug!(
+                                            bookmaker = "fonbet",
+                                            event_id,
+                                            factor_id = fid,
+                                            "Quarantined unmapped direct-source factor"
+                                        );
                                         continue;
                                     }
                                     let odd = crate::marathon::make_market_odd(
