@@ -1896,7 +1896,10 @@ mod tests {
                 "Tm": {"kf": 1.80, "lv": 2.5},
                 "Tb": {"kf": 2.00, "lv": 2.5}
             }
-        }).as_object().cloned().expect("team-total block");
+        })
+        .as_object()
+        .cloned()
+        .expect("team-total block");
         BetcityParser::extract_market_blocks(
             &team_total,
             "Индивидуальный тотал команды 1",
@@ -1921,7 +1924,10 @@ mod tests {
                 "Kf_F1": {"kf": 1.91, "ps": 103},
                 "Kf_F2": {"kf": 1.91, "ps": 104}
             }
-        }).as_object().cloned().expect("team-handicap block");
+        })
+        .as_object()
+        .cloned()
+        .expect("team-handicap block");
         BetcityParser::extract_market_blocks(
             &team_handicap,
             "Фора команды 1",
@@ -1950,9 +1956,9 @@ mod tests {
                 "scoped market was collapsed: {market}"
             );
         }
-        assert!(!odds.iter().any(|odd| {
-            odd.market == "Total" || odd.market == "Handicap"
-        }));
+        assert!(!odds
+            .iter()
+            .any(|odd| { odd.market == "Total" || odd.market == "Handicap" }));
     }
 
     #[test]
@@ -2066,9 +2072,9 @@ mod tests {
                 "N": {"kf": 2.0}
             }
         })
-            .as_object()
-            .cloned()
-            .expect("BTTS block");
+        .as_object()
+        .cloned()
+        .expect("BTTS block");
         let double_chance = serde_json::json!({
             "market": {
                 "1X": {"kf": 1.2},
@@ -2076,9 +2082,9 @@ mod tests {
                 "X2": {"kf": 1.4}
             }
         })
-            .as_object()
-            .cloned()
-            .expect("double-chance block");
+        .as_object()
+        .cloned()
+        .expect("double-chance block");
         let handicap = serde_json::json!({
             "market": {
                 "F1": -0.5,
@@ -2087,9 +2093,9 @@ mod tests {
                 "Kf_F2": {"kf": 1.9, "ps": 102}
             }
         })
-            .as_object()
-            .cloned()
-            .expect("handicap block");
+        .as_object()
+        .cloned()
+        .expect("handicap block");
         let mut odds = Vec::new();
         let mut seen = std::collections::HashSet::new();
         let now = Utc::now();
