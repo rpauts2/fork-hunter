@@ -1,22 +1,24 @@
 # Fork Hunter Pro — Russian bookmaker parser inventory
 
-Audit date: 2026-11-26 (full 16-operator post-factor-mapping sweep, 14:05 UTC)
-Regulatory scope: all 20 operators and official domains in the latest FNS list located during this audit (FNS PDF: https://www.nalog.gov.ru/html/sites/www.new.nalog.ru/files/related_activities/adjustable/activities_organization/interactive_bids/interact_011225.pdf). Runtime readiness is measured against the 16-operator active target set cross-checked against 1Cupis partner/rates pages; four FNS-listed operators are paused/dormant or have no confirmed online betting line.
+Audit date: 2026-11-27 (latest direct-feed market-depth sample: 04:23 UTC).
+Regulatory scope: all 20 operators in the FNS list linked below. The active runtime target set contains 16 operators; Tennisi, Poolbet, Golden Bet and ABET are tracked separately because their interactive betting status or public line is paused/unverified.
 
-This document distinguishes **parser code exists**, **real feed verified**, **environment/provider blocked**, and **no usable public line found**. A registry entry or passing fixture test is not proof of a working live feed. The latest full 16-operator post-hardening sweep is archived in [runtime_audit_2026-11-26_full_16_after_factor_mapping_fix.json](runtime_audit_2026-11-26_full_16_after_factor_mapping_fix.json) (2026-11-26 14:05 UTC). The synchronized 12-provider reachable-feed report is archived in [runtime_audit_2026-11-26_reachable_after_factor_mapping_fix.json](runtime_audit_2026-11-26_reachable_after_factor_mapping_fix.json) (2026-11-26 14:01 UTC). The previous 12:50 Moscow-time report and earlier reports are historical; this child-market aggregation sweep supersedes them for the current feed state. A targeted Olimp repeat is archived in [runtime_audit_2026-11-26_olimp_repeat.json](runtime_audit_2026-11-26_olimp_repeat.json). The quote-time schema findings are documented in [SOURCE_QUOTE_TIMESTAMP_AUDIT_2026-11-26.md](SOURCE_QUOTE_TIMESTAMP_AUDIT_2026-11-26.md).
+**Integration policy: direct bookmaker sources only.** Functional ingestion may use only an operator-published API/feed, the operator's own public website endpoints where access is permitted, or a feed/session explicitly authorized by that operator. Third-party odds aggregators (including API-SPORT, ODDSCORP, Odds-API.io and OpticOdds) are excluded from the architecture: no adapters, fallbacks, ingestion or production dependencies. No CAPTCHA, QRATOR, Cloudflare, authentication or regional restriction is bypassed.
+
+A parser being registered, compiling or passing fixture tests is not proof of a working live feed. This inventory distinguishes parser implementation, fixture/CI validation, live source reachability, structural data quality, volume and source-side quote freshness.
 
 ## Market depth audit — 2026-11-27 04:23 UTC
 
 - Runtime artifact: [runtime_market_depth_summary_2026-11-27.json](runtime_market_depth_summary_2026-11-27.json).
-- Runtime diagnostics now report a distribution of odds by raw market label, rather than only total odds and event coverage.
-- The 12 reachable feeds returned 173k+ valid odds in this sample, but market taxonomy is uneven: Baltbet 317 raw labels, Bettery 253, Marathon 251, Bet24/Fonbet/PARI 126 each, Winline 84, Betcity 47, Leon 6, Olimp 6, SportBet 5, Zenit 4.
-- Fonbet, PARI and Bet24 expose large clusters of unresolved technical labels such as factor_1696, factor_1697, factor_1727, factor_1728, factor_1730 and factor_1731. These odds are structurally valid but are not safe to compare across books until the factor IDs are mapped to market/selection/line semantics.
-- The raw-label count is not a normalized market count: labels can include period/segment suffixes, and books use different naming conventions. The next parser task is to normalize known market families and explicitly quarantine unknown factor IDs rather than treating them as comparable markets.
-- Low distinct-label counts at Leon, Olimp, SportBet and Zenit require source-vs-parser comparison before concluding that the operator offers only those markets.
+- The synchronized sample contains **38,979 events** (690 live / 38,289 prematch) and **844,206 valid odds** across the 12 reachable direct feeds. Four blocked active feeds returned no events in this environment.
+- Raw distinct market-label counts: Baltbet 317, Bettery 253, Marathon 251, Bet24/Fonbet/PARI 126 each, Winline 84, Betcity 47, Leon 6, Olimp 6, SportBet 5, Zenit 4.
+- These are raw labels, not canonical market totals. Parser names, market variants and segment/period suffixes differ, so a low count must be compared with the bookmaker's own rendered market catalogue before treating it as missing data.
+- Bet24, Fonbet and PARI still expose sizeable clusters of technical `factor_####` labels. Unknown/ambiguous factor IDs must remain quarantined until the direct bookmaker catalogue proves their market, selection, period/team scope and line semantics. They are not safe to compare as arbitrary markets.
+- The latest audit's off-peak event-volume gates failed. The runtime sample is useful for market-depth analysis, but it does not establish peak-hour completeness or bookmaker-side quote freshness.
 
 ## Feed access research — 2026-11-27
 
-Detailed provider and operator findings are recorded in [RUSSIAN_BK_FEED_ACCESS_RESEARCH_2026-11-27.md](RUSSIAN_BK_FEED_ACCESS_RESEARCH_2026-11-27.md). Key change: API-SPORT documents BetBoom and MelBet odds; ODDSCORP currently states 43 connected bookmakers, lists BetBoom, Liga Stavok, MelBet and Tennisi, and offers a free two-week trial on request; this is a candidate feed, not yet a runtime-verified source. Tennisi is paused, Poolbet launch is announced for 2026-12-01, and Golden Bet / ABET have no verified public feed. No third-party provider is production-enabled without a trial, source-health evidence and written data-use terms.
+Detailed first-party access findings are recorded in [RUSSIAN_BK_FEED_ACCESS_RESEARCH_2026-11-27.md](RUSSIAN_BK_FEED_ACCESS_RESEARCH_2026-11-27.md). Current status: 12 active bookmaker feeds were reachable in the development environment; BetBoom, Liga Stavok, Melbet and Bet-M were blocked before parsing by QRATOR or regional HTTP 403 responses. Tennisi is paused, Poolbet's announced launch date is 2026-12-01, and Golden Bet / ABET have no verified public interactive line. These environment-specific blocks do not prove global operator unavailability.
 
 ## Runtime validation — 2026-11-27 04:06 UTC (off-peak snapshot)
 
@@ -71,7 +73,7 @@ The full FNS list is not the same as the active betting market. The active runti
 3. Leon parser migrated to the current public API (`leon.bet`): fetches dynamic `ctag`, requests `inplay` and `prematch`, uses `homeAway` for participant ordering, maps sport family, preserves market lines, excludes closed/invalid runners and namespaces event IDs by feed mode.
 4. Marathon runtime snapshots deduplicate repeated events and odds and discard orphan odds. Regression test covers repeated events and orphan odds.
 5. Zenit runtime diagnostics now expose live parsed-event/odds linkage counts; latest probe confirms live coverage recovered to 90.1% with no duplicate IDs.
-6. Runtime volume gates are provider-aware for Winline, SportBet, Leon and Olimp. Quality rules (freshness, event ownership, odds validity, duplicate IDs and live/prematch coverage) are unchanged.
+6. Runtime volume gates are bookmaker-specific for Winline, SportBet, Leon and Olimp. Quality rules (freshness, event ownership, odds validity, duplicate IDs and live/prematch coverage) are unchanged.
 7. The browser runtime in the development box was missing Chrome shared libraries. Chromium and its missing libraries were installed locally in the temporary development environment so browser-based probes could run; this does not change repository dependencies.
 8. Olimp now uses direct transport only; HTTP 401/403/429 are surfaced without proxy rotation or retries. Readiness metadata records the dated 2026-11-26 11:04 UTC direct-transport sample as historical evidence, not a live availability guarantee.
 11. Shared line51 factor parsing now collapses duplicate source factor IDs that resolve to the same bookmaker/event/market/selection/line key, retaining the best available price and logging the number of collapsed source rows. This prevents duplicate odds from leaking downstream.
@@ -120,7 +122,7 @@ Additional parser corrections in this work session:
 4. **Zenit:** sport classification now reads the current dictionary mapping; double-chance factors 4/5/6 (1X/12/X2) are parsed with strict header matching.
 5. **Olimp:** sport classification follows source names and current fallback IDs. The confirmed all-sports live and line/top endpoints replace a stale 40-ID sweep and invalid /line/line/all probes; runtime acquisition fell from about 76 seconds to roughly 6–9 seconds without material catalogue loss.
 6. **Fonbet and PARI:** recognizable source sport labels now take precedence over legacy numeric IDs, with IDs retained only as fallback.
-7. **Line51 providers:** authoritative place field partitioning remains in place for Fonbet, PARI, Marathon, Bettery and 24bet.
+7. **Line51 bookmaker integrations:** authoritative place field partitioning remains in place for Fonbet, PARI, Marathon, Bettery and 24bet.
 
 ## Validation after current corrections
 
