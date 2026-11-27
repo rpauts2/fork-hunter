@@ -1001,7 +1001,8 @@ impl BetcityParser {
             {
                 let total_line = block_obj
                     .get("Tot")
-                    .and_then(|value| value.as_f64())
+                    .and_then(Self::extract_numeric_value)
+                    .filter(|line| line.is_finite())
                     .or_else(|| block_obj.get("Tm").and_then(Self::extract_line))
                     .or_else(|| block_obj.get("Tb").and_then(Self::extract_line));
                 let market = if Self::is_period_market_name(&market_name_lower) {
@@ -1275,8 +1276,8 @@ impl BetcityParser {
     ) {
         let Some(price) = outcome
             .and_then(|value| value.get("kf"))
-            .and_then(|value| value.as_f64())
-            .filter(|value| *value > 1.01 && *value < 100.0)
+            .and_then(Self::extract_numeric_value)
+            .filter(|value| value.is_finite() && *value > 1.01 && *value < 100.0)
         else {
             return;
         };
@@ -1919,6 +1920,38 @@ mod tests {
                 && odd.selection == "T1"
                 && odd.odds_type == OddsType::Custom
                 && odd.line == Some(7.0)
+        }));
+    }
+
+    #[test]
+    fn parses_string_coefficients_and_decimal_comma_totals() {
+        let block = serde_json::json!({
+            "Tot": "2,5",
+            "Tm": {"kf": " 1,95 ", "lv": "2,5"},
+            "Tb": {"kf": " 2,05 ", "lv": "2,5"}
+        });
+        let blocks = serde_json::json!({"Total": block})
+            .as_object()
+            .cloned()
+            .expect("blocks object");
+        let mut odds = Vec::new();
+        let mut seen = std::collections::HashSet::new();
+
+        BetcityParser::extract_market_blocks(
+            &blocks,
+            "",
+            "betcity-pre-555",
+            Utc::now(),
+            &mut seen,
+            &mut odds,
+        );
+
+        assert_eq!(odds.len(), 2);
+        assert!(odds.iter().any(|odd| {
+            odd.selection == "Under" && odd.odds == 1.95 && odd.line == Some(2.5)
+        }));
+        assert!(odds.iter().any(|odd| {
+            odd.selection == "Over" && odd.odds == 2.05 && odd.line == Some(2.5)
         }));
     }
 
