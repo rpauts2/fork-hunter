@@ -5,6 +5,15 @@ Regulatory scope: all 20 operators and official domains in the latest FNS list l
 
 This document distinguishes **parser code exists**, **real feed verified**, **environment/provider blocked**, and **no usable public line found**. A registry entry or passing fixture test is not proof of a working live feed. The latest full 16-operator post-hardening sweep is archived in [runtime_audit_2026-11-26_full_16_after_factor_mapping_fix.json](runtime_audit_2026-11-26_full_16_after_factor_mapping_fix.json) (2026-11-26 14:05 UTC). The synchronized 12-provider reachable-feed report is archived in [runtime_audit_2026-11-26_reachable_after_factor_mapping_fix.json](runtime_audit_2026-11-26_reachable_after_factor_mapping_fix.json) (2026-11-26 14:01 UTC). The previous 12:50 Moscow-time report and earlier reports are historical; this child-market aggregation sweep supersedes them for the current feed state. A targeted Olimp repeat is archived in [runtime_audit_2026-11-26_olimp_repeat.json](runtime_audit_2026-11-26_olimp_repeat.json). The quote-time schema findings are documented in [SOURCE_QUOTE_TIMESTAMP_AUDIT_2026-11-26.md](SOURCE_QUOTE_TIMESTAMP_AUDIT_2026-11-26.md).
 
+## Runtime validation — 2026-11-27 04:06 UTC (off-peak snapshot)
+
+- Snapshot: [runtime_audit_2026-11-27_full_16.json](runtime_audit_2026-11-27_full_16.json).
+- **Structural data quality: 12/12 reachable active feeds passed.** The four feeds blocked before parsing are BetBoom (QRATOR HTTP 401), Liga Stavok (QRATOR warm-up challenge), Melbet (regional HTTP 403) and Bet-M (regional HTTP 403).
+- Reachable feed output: **38,829 events** (703 live / 38,126 prematch), **843,631 valid odds**, and 38,697 events with at least one usable quote.
+- Structural checks: **0 duplicate event IDs, 0 duplicate odds IDs, 0 invalid odds and 0 stale ingestion timestamps**. Overall odds coverage was 98.1–100%; live coverage 84.7–100%; prematch coverage 98.3–100%.
+- The nightly KPI exit was **2 / fail** because the 04:06 UTC sample did not reach the configured event-volume thresholds: 0/12 live volume targets and 11/12 prematch targets passed. This is a volume shortfall in a low-activity time window, not a structural parser-quality failure. Recheck during peak hours before changing parser extraction.
+- bookmaker_quote_freshness_verified=false remains in force. The sample timestamps are ingestion times and do not prove when the bookmaker last updated a specific price.
+
 ## Readiness definitions
 
 - **Full runtime gate passed** — real feed returns both live and prematch events, valid odds linked to the correct events, no duplicate IDs, ingestion timestamps are current, and the current event-volume gates pass. This does not by itself prove bookmaker-side quote freshness.

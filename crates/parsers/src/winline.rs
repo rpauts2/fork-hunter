@@ -26,11 +26,11 @@ use tracing::{debug, warn};
 
 /// Winline parser.
 ///
-/// Production collection uses the public `data_ng` WebSocket feed. The binary protocol decoder
-/// and its live/prematch state handling live in `winline_feed.rs`.
+/// Production collection uses Winline's public binary `data_ng` WebSocket feed.
+/// The protocol decoder and live/prematch state are implemented in `winline_feed.rs`.
 ///
-/// The older headless DOM extraction helpers below are compiled only for tests. They remain as
-/// regression-test support and are not a production fallback.
+/// The older headless SPA extraction code below is compiled only for regression tests; it is
+/// not a production fallback and must not be used to bypass Winline's access controls.
 #[derive(Debug)]
 pub struct WinlineParser {
     _client: Arc<Client>,
