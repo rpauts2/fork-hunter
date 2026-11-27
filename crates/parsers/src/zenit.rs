@@ -33,6 +33,8 @@ struct ParsedPage {
     odds: Vec<Odd>,
     raw_game_ids: Vec<String>,
     discovered_game_ids: Vec<String>,
+    /// Games whose first-party response advertises separately loaded markets.
+    additional_market_game_ids: Vec<String>,
     /// Valid-priced source rows whose factor ID/header pair is not understood.
     /// These are intentionally not emitted as odds; report them so new markets
     /// can be mapped from real bookmaker payloads rather than guessed.
@@ -546,6 +548,144 @@ impl ZenitParser {
             operation,
         )
         .await
+    }
+
+    /// Fetch the bookmaker's own event-specific expanded market payload.
+    /// The official frontend calls this endpoint only after expanding the
+    /// additional-market counter for the corresponding match.
+    async fn fetch_ross_details(
+        &self,
+        is_live: bool,
+        game_ids: &[String],
+    ) -> Result<HashMap<String, serde_json::Value>, Box<dyn std::error::Error + Send + Sync>> {
+        if game_ids.is_empty() {
+            return Ok(HashMap::new());
+        }
+
+        let games = game_ids.join("-");
+        let frontversion = Self::frontversion();
+        let endpoint = if is_live {
+            format!(
+                "https://zenit.win/ajax/live/ross/data/{}/",
+                Self::imprinthash()
+            )
+        } else {
+            "https://zenit.win/ajax/line/ross/data/".to_string()
+        };
+        let referer = if is_live {
+            "https://zenit.win/live/football"
+        } else {
+            "https://zenit.win/line/football"
+        };
+
+        let operation = || async {
+            let response = self
+                .client
+                .get(&endpoint)
+                .timeout(Duration::from_secs(Self::REQUEST_TIMEOUT_SECS))
+                .header("User-Agent", Self::USER_AGENT)
+                .header("Accept", "application/json, text/plain, */*")
+                .header("Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7")
+                .header("Accept-Encoding", "gzip, deflate, br")
+                .header("Referer", referer)
+                .header("X-Requested-With", "XMLHttpRequest")
+                .header("imprinthash", Self::imprinthash())
+                .header("frontversion", &frontversion)
+                .query(&[
+                    ("onlyview", "0"),
+                    ("gid", games.as_str()),
+                    ("lang_id", "1"),
+                    ("client_v", frontversion.as_str()),
+                    ("show_from_main", "0"),
+                ])
+                .send()
+                .await
+                .map_err(|error| {
+                    error!(
+                        error = %error,
+                        is_live,
+                        game_count = game_ids.len(),
+                        "Zenit additional-market HTTP request failed"
+                    );
+                    Box::new(error) as Box<dyn std::error::Error + Send + Sync>
+                })?;
+
+            let status = response.status();
+            if !status.is_success() {
+                let body = response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "<failed to read body>".to_string())
+                    .chars()
+                    .take(500)
+                    .collect::<String>();
+                return Err(std::io::Error::other(format!(
+                    "Zenit additional-market API returned HTTP {status}: {body}"
+                ))
+                .into());
+            }
+
+            let payload: serde_json::Value = response.json().await?;
+            if payload.get("errorCode").is_some() {
+                let message = payload
+                    .get("msg")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or("unknown");
+                return Err(std::io::Error::other(format!(
+                    "Zenit additional-market API application error: {message}"
+                ))
+                .into());
+            }
+
+            let table_by_game = payload
+                .get("t_b")
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| {
+                    std::io::Error::other(
+                        "Zenit additional-market response is missing the t_b object",
+                    )
+                })?;
+
+            Ok(table_by_game
+                .iter()
+                .map(|(game_id, data)| (game_id.clone(), data.clone()))
+                .collect::<HashMap<_, _>>())
+        };
+
+        self.retry_with_backoff(
+            &format!("fetch_ross_details(live={is_live}, games={})", game_ids.len()),
+            operation,
+        )
+        .await
+    }
+
+    fn attach_ross_payloads(
+        events: &mut [Event],
+        payloads: HashMap<String, serde_json::Value>,
+    ) -> usize {
+        let mut payloads = payloads;
+        let mut attached = 0usize;
+
+        for event in events {
+            let Some(source_game_id) = event.id.rsplit('-').next() else {
+                continue;
+            };
+            let Some(payload) = payloads.remove(source_game_id) else {
+                continue;
+            };
+
+            // Preserve the bookmaker's original market tables, filters,
+            // first-line rows and "other" bets as raw data. They remain
+            // non-actionable until their market/selection/period semantics
+            // are normalized and tested against other bookmakers.
+            event.extra.insert(
+                "zenit_additional_markets".to_string(),
+                payload,
+            );
+            attached += 1;
+        }
+
+        attached
     }
 
     async fn fetch_live_page(
