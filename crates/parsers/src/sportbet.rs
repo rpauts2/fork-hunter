@@ -470,22 +470,40 @@ impl SportbetParser {
         } else if normalized.contains("двойн") || normalized.contains("double chance") {
             "DoubleChance"
         } else if normalized.contains("индивидуальн")
+            || normalized.contains("инд. тотал")
+            || normalized.contains("инд тотал")
             || normalized.contains("командный тотал")
             || normalized.contains("team total")
+            || normalized.contains("team 1 total")
+            || normalized.contains("team1 total")
+            || normalized.contains("team 2 total")
+            || normalized.contains("team2 total")
             || normalized.contains("тотал команды")
+            || normalized.contains("тотал хозяев")
+            || normalized.contains("тотал гостей")
         {
             if normalized.contains("команды 1")
                 || normalized.contains("команды №1")
                 || normalized.contains("1-й команды")
+                || normalized.contains("индивидуальный тотал 1")
+                || normalized.contains("инд. тотал 1")
+                || normalized.contains("инд тотал 1")
+                || normalized.contains("тотал хозяев")
                 || normalized.contains("team 1 total")
                 || normalized.contains("team1 total")
+                || normalized.contains("home team total")
             {
                 "Team1Total"
             } else if normalized.contains("команды 2")
                 || normalized.contains("команды №2")
                 || normalized.contains("2-й команды")
+                || normalized.contains("индивидуальный тотал 2")
+                || normalized.contains("инд. тотал 2")
+                || normalized.contains("инд тотал 2")
+                || normalized.contains("тотал гостей")
                 || normalized.contains("team 2 total")
                 || normalized.contains("team2 total")
+                || normalized.contains("away team total")
             {
                 "Team2Total"
             } else {
@@ -738,6 +756,22 @@ mod tests {
         assert_eq!(
             SportbetParser::normalize_market("Индивидуальный тотал команды 2 во втором тайме"),
             "2H_Team2Total"
+        );
+        assert_eq!(
+            SportbetParser::normalize_market("Индивидуальный тотал 1"),
+            "Team1Total"
+        );
+        assert_eq!(
+            SportbetParser::normalize_market("Инд. тотал 2"),
+            "Team2Total"
+        );
+        assert_eq!(
+            SportbetParser::normalize_market("Team 1 Total"),
+            "Team1Total"
+        );
+        assert_eq!(
+            SportbetParser::normalize_market("Away Team Total"),
+            "Team2Total"
         );
     }
 
