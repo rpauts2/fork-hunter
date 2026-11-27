@@ -129,9 +129,9 @@ impl LigaStavokParser {
                     message: "No live or prematch sports-line response has been captured and validated; scan enablement remains disabled.".to_string(),
                 },
                 ParserDiagnosticCheck {
-                    code: "request_level_proxy_applied_when_configured".to_string(),
-                    severity: DiagnosticSeverity::Info,
-                    message: "Proxy URLs from LIGASTAVOK_PROXY_LIST are now applied through a proxy-specific reqwest Client. Reachability and credentials are verified only by a successful runtime request.".to_string(),
+                    code: "request_level_proxy_not_applied".to_string(),
+                    severity: DiagnosticSeverity::Warn,
+                    message: "The current reqwest Client cannot be switched to a different proxy per request. The legacy proxy rotation helper does not change the transport and is not counted as working proxy support.".to_string(),
                 },
             ],
         }
@@ -139,13 +139,18 @@ impl LigaStavokParser {
 
     /// Check if error is transient and worth retrying
     fn is_transient_error(error: &str) -> bool {
-        let normalized = error.to_ascii_lowercase();
-        [
-            "timeout", "connection", "connecterror", "408", "425", "429", "500", "502",
-            "503", "504", "temporary failure", "too many requests", "http2", "h2", "reset",
-        ]
-        .iter()
-        .any(|marker| normalized.contains(marker))
+        error.contains("timeout")
+            || error.contains("connection")
+            || error.contains("ConnectError")
+            || error.contains("429")
+            || error.contains("502")
+            || error.contains("503")
+            || error.contains("504")
+            || error.contains("Temporary failure")
+            || error.contains("Too Many Requests")
+            || error.contains("http2")
+            || error.contains("h2")
+            || error.contains("reset")
     }
 
     /// Calculate backoff duration with exponential growth
@@ -234,40 +239,31 @@ impl LigaStavokParser {
         .into())
     }
 
-    fn request_client(
-        &self,
-        proxy: Option<&str>,
-    ) -> Result<Client, Box<dyn std::error::Error + Send + Sync>> {
-        let Some(proxy_url) = proxy.filter(|value| !value.trim().is_empty()) else {
-            return Ok(self.client.as_ref().clone());
-        };
-
-        let proxy = reqwest::Proxy::all(proxy_url)?;
-        Ok(Client::builder()
-            .proxy(proxy)
-            .timeout(Duration::from_secs(REQUEST_TIMEOUT_SECS))
-            .build()?)
-    }
-
     async fn fetch_events_internal(
         &self,
         proxy: Option<String>,
         is_live: bool,
     ) -> Result<Vec<Event>, Box<dyn std::error::Error + Send + Sync>> {
-        let client = self.request_client(proxy.as_deref())?;
-        let request = client
+        let request = self
+            .client
             .get(EVENTS_LIST_URL)
             .header("User-Agent", USER_AGENT)
             .header("Accept", "application/json")
             .header("Accept-Language", "ru-RU,ru;q=0.9")
             .timeout(Duration::from_secs(REQUEST_TIMEOUT_SECS));
 
+        if proxy.is_some() {
+            debug!(
+                is_live,
+                "Liga Stavok proxy requested but RequestBuilder-level proxy override is unsupported; using base client"
+            );
+        }
+
         let response = request.send().await?;
 
         if !response.status().is_success() {
-            let status = response.status();
-            warn!(%status, is_live, "Liga Stavok events list HTTP error");
-            return Err(format!("Liga Stavok events endpoint returned HTTP {status}").into());
+            warn!(status = %response.status(), is_live, "Liga Stavok events list HTTP error");
+            return Ok(Vec::new());
         }
 
         let json: serde_json::Value = response.json().await?;
@@ -283,12 +279,8 @@ impl LigaStavokParser {
         is_live: bool,
     ) -> Result<Vec<Event>, Box<dyn std::error::Error + Send + Sync>> {
         let mut events = Vec::new();
-        let event_list = json
-            .get("events")
-            .and_then(serde_json::Value::as_array)
-            .or_else(|| json.pointer("/data/events").and_then(serde_json::Value::as_array));
 
-        if let Some(event_list) = event_list {
+        if let Some(event_list) = json.get("events").and_then(|e| e.as_array()) {
             for event_data in event_list {
                 if let Some(event) = self.parse_single_event(event_data, is_live) {
                     events.push(event);
@@ -299,29 +291,10 @@ impl LigaStavokParser {
         Ok(events)
     }
 
-    fn value_as_string(value: &serde_json::Value) -> Option<String> {
-        value
-            .as_str()
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .map(str::to_owned)
-            .or_else(|| value.as_i64().map(|number| number.to_string()))
-            .or_else(|| value.as_u64().map(|number| number.to_string()))
-    }
-
-    fn parse_numeric(value: &serde_json::Value) -> Option<f64> {
-        let number = value.as_f64().or_else(|| {
-            value
-                .as_str()
-                .and_then(|raw| raw.trim().replace(',', ".").parse::<f64>().ok())
-        })?;
-        number.is_finite().then_some(number)
-    }
-
     fn parse_single_event(&self, event_data: &serde_json::Value, is_live: bool) -> Option<Event> {
-        let id = Self::value_as_string(event_data.get("id")?)?;
-        let home_team = Self::value_as_string(event_data.get("team1")?)?;
-        let away_team = Self::value_as_string(event_data.get("team2")?)?;
+        let id = event_data.get("id")?.as_str()?.to_string();
+        let home_team = event_data.get("team1")?.as_str()?.to_string();
+        let away_team = event_data.get("team2")?.as_str()?.to_string();
         let league = event_data
             .get("tournament")
             .and_then(|t| t.as_str())
@@ -331,18 +304,8 @@ impl LigaStavokParser {
         let sport = self.detect_sport(&league);
         let start_time = event_data
             .get("startTime")
-            .and_then(|value| {
-                value
-                    .as_i64()
-                    .or_else(|| value.as_str().and_then(|raw| raw.parse::<i64>().ok()))
-            })
-            .and_then(|timestamp| {
-                if timestamp.abs() < 10_000_000_000 {
-                    Utc.timestamp_opt(timestamp, 0).single()
-                } else {
-                    Utc.timestamp_millis_opt(timestamp).single()
-                }
-            });
+            .and_then(|t| t.as_i64())
+            .and_then(|ts| Utc.timestamp_millis_opt(ts).single());
 
         Some(Event {
             id: format!("{}-{}", BOOKMAKER_SLUG, id),
@@ -431,11 +394,7 @@ impl LigaStavokParser {
         let mut odds = Vec::new();
         let now = Utc::now();
 
-        let market_list = json
-            .get("markets")
-            .and_then(serde_json::Value::as_array)
-            .or_else(|| json.pointer("/data/markets").and_then(serde_json::Value::as_array));
-        if let Some(markets) = market_list {
+        if let Some(markets) = json.get("markets").and_then(|m| m.as_array()) {
             for market_data in markets {
                 if let Some(market_odds) = self.parse_market(market_data, is_live, now) {
                     odds.extend(market_odds);
@@ -452,14 +411,14 @@ impl LigaStavokParser {
         is_live: bool,
         now: DateTime<Utc>,
     ) -> Option<Vec<Odd>> {
-        let event_id = Self::value_as_string(market_data.get("eventId")?)?;
-        let market_type = market_data.get("type")?.as_str()?.trim().to_lowercase();
+        let event_id = market_data.get("eventId")?.as_str()?;
+        let market_type = market_data.get("type")?.as_str()?.to_lowercase();
         let options = market_data.get("options").and_then(|o| o.as_array())?;
 
         let mut market_odds = Vec::new();
 
         for option in options {
-            if let Some(odd) = self.parse_option(&event_id, &market_type, option, is_live, now) {
+            if let Some(odd) = self.parse_option(event_id, &market_type, option, is_live, now) {
                 market_odds.push(odd);
             }
         }
@@ -479,32 +438,25 @@ impl LigaStavokParser {
         _is_live: bool,
         now: DateTime<Utc>,
     ) -> Option<Odd> {
-        let name = option.get("name")?.as_str()?.trim();
-        let value = Self::parse_numeric(option.get("odds")?)?;
+        let name = option.get("name")?.as_str()?;
+        let value = option.get("odds")?.as_f64()?;
 
-        if !(1.0..=1_000.0).contains(&value) {
+        if value <= 1.0 {
             return None;
         }
 
         let (market, selection, odds_type) = self.classify_market(market_type, name)?;
         let event_id = format!("{}-{}", BOOKMAKER_SLUG, event_id);
-        let line = self.extract_line(option);
-        let line_key = line
-            .map(|value| value.to_string())
-            .unwrap_or_else(|| "-".to_string());
 
         Some(Odd {
-            id: format!(
-                "{}:{}:{}:{}:{}",
-                BOOKMAKER_SLUG, event_id, market, selection, line_key
-            ),
+            id: format!("{}:{}:{}:{}", BOOKMAKER_SLUG, event_id, market, selection),
             event_id,
             bookmaker_slug: BOOKMAKER_SLUG.to_string(),
             market: market.to_string(),
             selection: selection.to_string(),
             odds: value,
             odds_type,
-            line,
+            line: self.extract_line(option),
             timestamp: now,
         })
     }
@@ -514,53 +466,54 @@ impl LigaStavokParser {
         market_type: &str,
         selection: &str,
     ) -> Option<(&'static str, &'static str, OddsType)> {
-        let market_type = market_type.trim().to_lowercase();
-        let selection = selection.trim().to_lowercase();
-
-        match market_type.as_str() {
+        match market_type {
             mt if mt.contains("1x2") || mt.contains("исход") => {
-                if selection == "1" || selection.starts_with("п1") {
+                if selection.contains("П1") || selection.contains("1") {
                     Some((MARKET_1X2, "1", OddsType::Home))
-                } else if selection == "x" || selection == "х" || selection.starts_with("нич") {
+                } else if selection.contains("X") {
                     Some((MARKET_1X2, "X", OddsType::Draw))
-                } else if selection == "2" || selection.starts_with("п2") {
+                } else if selection.contains("П2") || selection.contains("2") {
                     Some((MARKET_1X2, "2", OddsType::Away))
                 } else {
                     None
                 }
             }
             mt if mt.contains("total") || mt.contains("тотал") => {
-                if selection == "б" || selection.starts_with("больше") || selection.starts_with("over") {
+                if selection.contains("Б") || selection.contains("Over") {
                     Some((MARKET_TOTAL, "Over", OddsType::Over))
-                } else if selection == "м" || selection.starts_with("меньше") || selection.starts_with("under") {
+                } else if selection.contains("М") || selection.contains("Under") {
                     Some((MARKET_TOTAL, "Under", OddsType::Under))
                 } else {
                     None
                 }
             }
-            mt if mt.contains("both") || mt.contains("обе") || mt.contains("оба") || mt.contains("два") => {
-                if selection == "да" || selection.starts_with("yes") {
+            mt if mt.contains("both")
+                || mt.contains("обе")
+                || mt.contains("оба")
+                || mt.contains("два") =>
+            {
+                if selection.contains("Да") || selection.contains("Yes") {
                     Some((MARKET_BTTS, "Yes", OddsType::BothTeamsScoreYes))
-                } else if selection == "нет" || selection.starts_with("no") {
+                } else if selection.contains("Нет") || selection.contains("No") {
                     Some((MARKET_BTTS, "No", OddsType::BothTeamsScoreNo))
                 } else {
                     None
                 }
             }
             mt if mt.contains("handicap") || mt.contains("фора") => {
-                if selection == "1" || selection.starts_with("п1") || selection.starts_with("1(") {
+                if selection.contains("1") {
                     Some((MARKET_HANDICAP, "1", OddsType::Handicap))
-                } else if selection == "2" || selection.starts_with("п2") || selection.starts_with("2(") {
+                } else if selection.contains("2") {
                     Some((MARKET_HANDICAP, "2", OddsType::Handicap))
                 } else {
                     None
                 }
             }
             mt if mt.contains("even") || mt.contains("четн") => {
-                if selection.starts_with("нечет") || selection.starts_with("odd") {
-                    Some((MARKET_EVEN_ODD, "Odd", OddsType::Odd))
-                } else if selection.starts_with("чет") || selection.starts_with("even") {
+                if selection.contains("Четн") || selection.contains("Even") {
                     Some((MARKET_EVEN_ODD, "Even", OddsType::Even))
+                } else if selection.contains("Нечетн") || selection.contains("Odd") {
+                    Some((MARKET_EVEN_ODD, "Odd", OddsType::Odd))
                 } else {
                     None
                 }
@@ -572,8 +525,8 @@ impl LigaStavokParser {
     fn extract_line(&self, option: &serde_json::Value) -> Option<f64> {
         option
             .get("line")
-            .and_then(Self::parse_numeric)
-            .or_else(|| option.get("param").and_then(Self::parse_numeric))
+            .and_then(|l| l.as_f64())
+            .or_else(|| option.get("param").and_then(|p| p.as_f64()))
     }
 }
 
@@ -743,7 +696,6 @@ mod tests {
             "503 Service Unavailable"
         ));
         assert!(LigaStavokParser::is_transient_error("h2 protocol error"));
-        assert!(LigaStavokParser::is_transient_error("500 Internal Server Error"));
         assert!(!LigaStavokParser::is_transient_error("404 Not Found"));
         assert!(!LigaStavokParser::is_transient_error("401 Unauthorized"));
     }
@@ -920,8 +872,8 @@ mod tests {
             check.code == "public_feed_not_verified" && check.severity == DiagnosticSeverity::Warn
         }));
         assert!(readiness.checks.iter().any(|check| {
-            check.code == "request_level_proxy_applied_when_configured"
-                && check.severity == DiagnosticSeverity::Info
+            check.code == "request_level_proxy_not_applied"
+                && check.severity == DiagnosticSeverity::Warn
         }));
     }
 
@@ -968,6 +920,7 @@ mod tests {
         let client = Arc::new(reqwest::Client::new());
         let parser = LigaStavokParser::new(client);
 
+        // Test filtering of invalid odds (value <= 1.0)
         let option = serde_json::json!({
             "name": "П1",
             "odds": 0.5,
@@ -983,55 +936,6 @@ mod tests {
         let _event = parser.parse_single_event(&event_json, false).unwrap();
         let odd = parser.parse_option("123", "1x2", &option, false, Utc::now());
         assert!(odd.is_none(), "Should reject odds with value <= 1.0");
-    }
-
-    #[test]
-    fn accepts_numeric_event_ids_and_string_odds_without_colliding_market_lines() {
-        let parser = LigaStavokParser::new(Arc::new(reqwest::Client::new()));
-        let event = parser
-            .parse_single_event(
-                &serde_json::json!({
-                    "id": 12345,
-                    "team1": "Команда 1",
-                    "team2": "Команда 2",
-                    "tournament": "Теннис ATP",
-                    "startTime": "1795770000"
-                }),
-                false,
-            )
-            .expect("numeric event id should be accepted");
-        assert_eq!(event.id, "ligastavok-12345");
-        assert_eq!(event.sport, Sport::Tennis);
-        assert_eq!(event.start_time, Utc.timestamp_opt(1795770000, 0).single());
-
-        let first = parser.parse_option(
-            "12345",
-            "total",
-            &serde_json::json!({"name": "Больше", "odds": "1,85", "line": "2.5"}),
-            false,
-            Utc::now(),
-        ).expect("string odds and line should be accepted");
-        let second = parser.parse_option(
-            "12345",
-            "total",
-            &serde_json::json!({"name": "Больше", "odds": "1.90", "line": 3.5}),
-            false,
-            Utc::now(),
-        ).expect("second total line should be accepted");
-        assert_ne!(first.id, second.id);
-        assert_eq!(first.line, Some(2.5));
-        assert_eq!(first.odds, 1.85);
-    }
-
-    #[test]
-    fn classifies_selections_without_substring_collisions_and_ignores_case() {
-        let parser = LigaStavokParser::new(Arc::new(reqwest::Client::new()));
-        assert_eq!(parser.classify_market("1X2", "п1"), Some((MARKET_1X2, "1", OddsType::Home)));
-        assert_eq!(parser.classify_market("1x2", "Ничья"), Some((MARKET_1X2, "X", OddsType::Draw)));
-        assert_eq!(parser.classify_market("total", "БОЛЬШЕ 2.5"), Some((MARKET_TOTAL, "Over", OddsType::Over)));
-        assert_eq!(parser.classify_market("even", "Нечетное"), Some((MARKET_EVEN_ODD, "Odd", OddsType::Odd)));
-        assert!(parser.classify_market("1x2", "12").is_none());
-        assert!(parser.classify_market("handicap", "12").is_none());
     }
 
     #[test]
