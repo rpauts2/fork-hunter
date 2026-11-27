@@ -1037,6 +1037,15 @@ impl FeedState {
     ) {
         let event_is_known = self.events.contains_key(event_key);
         let (market_name, line) = Self::normalize_market(&market, koef, 0);
+        if Self::has_unresolved_team_scope(&market, &market_name) {
+            warn!(
+                event_id = event_key,
+                market = %market_name,
+                source_type = market.source_type,
+                "Winline individual total skipped because team side is unknown"
+            );
+            return;
+        }
         if Self::market_requires_line(&market, &market_name) && line.is_none() {
             warn!(
                 event_id = event_key,
@@ -1198,7 +1207,8 @@ impl FeedState {
             || lower.contains("итм")
             || lower.contains("ит 1")
             || lower.contains("ит 2");
-        let is_double_chance = lower.contains("двойн") || lower.contains("double chance");
+        let is_double_chance =
+            lower.contains("двойн") || lower.contains("double chance") || lower.contains("doublechance");
         let is_btts = lower.contains("обе забьют")
             || lower.contains("обе команды забьют")
             || lower.contains("both teams score")
@@ -1209,7 +1219,27 @@ impl FeedState {
             || lower.contains("четность")
             || lower.contains("чётность");
 
-        let mut category = if lower.contains("исход 1x2") || market.source_type == 2 {
+        let unsupported_segment_scope = period_prefix.is_none()
+            && [
+                "сета",
+                "сет",
+                "set",
+                "карты",
+                "карта",
+                "map",
+                "раунда",
+                "раунд",
+                "round",
+                "четверти",
+                "четверть",
+                "quarter",
+            ]
+            .iter()
+            .any(|marker| lower.contains(marker));
+
+        let mut category = if unsupported_segment_scope {
+            format!("Custom:{}", raw)
+        } else if lower.contains("исход 1x2") || market.source_type == 2 {
             "1X2".to_string()
         } else if lower.contains("исход 12") || market.source_type == 1 {
             "MatchWinner12".to_string()
@@ -1270,8 +1300,38 @@ impl FeedState {
         (category, line)
     }
 
+    fn has_unresolved_team_scope(market: &MarketDefinition, category: &str) -> bool {
+        let lower = market.name.to_lowercase().replace('ё', "е");
+        let is_individual_total = lower.contains("индивидуальн")
+            || lower.contains("инд. тотал")
+            || lower.contains("инд тотал")
+            || lower.contains("итб")
+            || lower.contains("итм")
+            || lower.contains("ит 1")
+            || lower.contains("ит 2");
+        if !is_individual_total {
+            return false;
+        }
+
+        let base = category
+            .strip_prefix("1H_")
+            .or_else(|| category.strip_prefix("2H_"))
+            .unwrap_or(category)
+            .split(":period-")
+            .next()
+            .unwrap_or(category);
+        !matches!(base, "Team1Total" | "Team2Total")
+    }
+
     fn market_requires_line(market: &MarketDefinition, category: &str) -> bool {
-        if matches!(market.source_type, 3 | 4 | 6 | 7 | 61 | 71) {
+        let lower = market.name.to_lowercase();
+        if matches!(market.source_type, 3 | 4 | 6 | 7 | 61 | 71)
+            || lower.contains("тотал")
+            || lower.contains("total")
+            || lower.contains("фора")
+            || lower.contains("гандикап")
+            || lower.contains("handicap")
+        {
             return true;
         }
 
@@ -1474,6 +1534,44 @@ mod tests {
             FeedState::normalize_market(&market("Total second half", 4), "2.5", 0);
         assert_eq!(first_half, "1H_Total");
         assert_eq!(second_half, "2H_Total");
+    }
+
+    #[test]
+    fn quarantines_unscoped_individual_totals_and_preserves_unsupported_segments() {
+        let market = |name: &str| MarketDefinition {
+            source_type: 4,
+            name: name.to_string(),
+            outcomes: vec!["Больше".into(), "Меньше".into()],
+        };
+        let (unscoped, _) = FeedState::normalize_market(
+            &market("Индивидуальный тотал"),
+            "2.5",
+            0,
+        );
+        assert!(FeedState::has_unresolved_team_scope(
+            &market("Индивидуальный тотал"),
+            &unscoped
+        ));
+
+        let (set_total, _) =
+            FeedState::normalize_market(&market("Тотал первого сета"), "2.5", 0);
+        let (map_total, _) =
+            FeedState::normalize_market(&market("Map total"), "2.5", 0);
+        assert_eq!(set_total, "Custom:Тотал первого сета");
+        assert_eq!(map_total, "Custom:Map total");
+
+        let mut state = FeedState::default();
+        state.add_market_odds(
+            "prematch",
+            4,
+            "winline-prematch-44",
+            market("Индивидуальный тотал"),
+            "2.5",
+            0,
+            vec![1.8, 2.0],
+        );
+        assert!(state.odds.is_empty());
+        assert!(state.pending_odds.is_empty());
     }
 
     #[test]
