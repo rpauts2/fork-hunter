@@ -472,8 +472,25 @@ impl SportbetParser {
         } else if normalized.contains("индивидуальн")
             || normalized.contains("командный тотал")
             || normalized.contains("team total")
+            || normalized.contains("тотал команды")
         {
-            "IndividualTotal"
+            if normalized.contains("команды 1")
+                || normalized.contains("команды №1")
+                || normalized.contains("1-й команды")
+                || normalized.contains("team 1 total")
+                || normalized.contains("team1 total")
+            {
+                "Team1Total"
+            } else if normalized.contains("команды 2")
+                || normalized.contains("команды №2")
+                || normalized.contains("2-й команды")
+                || normalized.contains("team 2 total")
+                || normalized.contains("team2 total")
+            {
+                "Team2Total"
+            } else {
+                "IndividualTotal"
+            }
         } else if normalized.contains("исход") || normalized.contains("match result") {
             "1X2"
         } else if normalized.contains("победител") || normalized.contains("winner") {
@@ -709,6 +726,18 @@ mod tests {
         assert_eq!(
             SportbetParser::normalize_market("Чётность"),
             "EvenOdd"
+        );
+        assert_eq!(
+            SportbetParser::normalize_market("Индивидуальный тотал команды 1"),
+            "Team1Total"
+        );
+        assert_eq!(
+            SportbetParser::normalize_market("Индивидуальный тотал команды 2"),
+            "Team2Total"
+        );
+        assert_eq!(
+            SportbetParser::normalize_market("Индивидуальный тотал команды 2 во втором тайме"),
+            "2H_Team2Total"
         );
     }
 
