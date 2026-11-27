@@ -1028,59 +1028,183 @@ impl BaltbetParser {
     }
 
     fn normalize_grouping_market_name(name: &str, kind: &str, has_draw: bool) -> String {
-        let normalized_name = name.to_lowercase();
-        match kind.to_ascii_lowercase().as_str() {
-            "winner" if normalized_name.contains("карт") || normalized_name.contains("map") => {
-                "MapWinner".to_string()
-            }
-            "winner"
-                if normalized_name.contains("четверт") || normalized_name.contains("quarter") =>
-            {
-                "QuarterWinner".to_string()
-            }
-            "winner" if normalized_name.contains("парт") || normalized_name.contains("сет") => {
-                "SetWinner".to_string()
-            }
-            "winner" if normalized_name.contains("период") || normalized_name.contains("тайм") => {
-                "PeriodWinner".to_string()
-            }
+        let normalized_name = name.to_lowercase().replace('ё', "е");
+        let kind = kind.to_ascii_lowercase();
+
+        let period_prefix = if [
+            "1-й тайм",
+            "1-го тайма",
+            "1-м тайме",
+            "1 тайм",
+            "первый тайм",
+            "первого тайма",
+            "первом тайме",
+            "first half",
+            "first_half",
+            "first-half",
+            "firsthalf",
+            "1st half",
+            "1st_half",
+            "1st-half",
+            "1h",
+            "1 h",
+        ]
+        .iter()
+        .any(|marker| normalized_name.contains(marker))
+        {
+            Some("1H_")
+        } else if [
+            "2-й тайм",
+            "2-го тайма",
+            "2-м тайме",
+            "2 тайм",
+            "второй тайм",
+            "второго тайма",
+            "втором тайме",
+            "second half",
+            "second_half",
+            "second-half",
+            "secondhalf",
+            "2nd half",
+            "2nd_half",
+            "2nd-half",
+            "2h",
+            "2 h",
+        ]
+        .iter()
+        .any(|marker| normalized_name.contains(marker))
+        {
+            Some("2H_")
+        } else {
+            None
+        };
+
+        // A generic "period" label without an explicit period number must
+        // not collapse several different segments into one market.
+        let unsupported_period_scope = period_prefix.is_none()
+            && [
+                "период",
+                "period",
+                "четверт",
+                "quarter",
+                "сет",
+                "парт",
+                "round",
+                "раунд",
+            ]
+            .iter()
+            .any(|marker| normalized_name.contains(marker));
+
+        let team_scope = if [
+            "команды 1",
+            "команда 1",
+            "команды №1",
+            "первой команды",
+            "1-й команды",
+            "хозяев",
+            "home team",
+            "team 1",
+            "team1",
+            "1к",
+            "1 к",
+            "ит1",
+            "ит 1",
+            "итб1",
+            "итм1",
+            "итб 1",
+            "итм 1",
+        ]
+        .iter()
+        .any(|marker| normalized_name.contains(marker))
+        {
+            Some("Team1")
+        } else if [
+            "команды 2",
+            "команда 2",
+            "команды №2",
+            "второй команды",
+            "2-й команды",
+            "гостей",
+            "away team",
+            "team 2",
+            "team2",
+            "2к",
+            "2 к",
+            "ит2",
+            "ит 2",
+            "итб2",
+            "итм2",
+            "итб 2",
+            "итм 2",
+        ]
+        .iter()
+        .any(|marker| normalized_name.contains(marker))
+        {
+            Some("Team2")
+        } else {
+            None
+        };
+
+        let scoped = |market: &str| match period_prefix {
+            Some(prefix) => format!("{prefix}{market}"),
+            None => market.to_string(),
+        };
+
+        // Keep explicitly named map markets distinct; their selected map
+        // is additionally retained by grouping_outcome_context().
+        if normalized_name.contains("карт") || normalized_name.contains("map") {
+            return match kind.as_str() {
+                "winner" => "MapWinner".to_string(),
+                "handicap" => "MapHandicap".to_string(),
+                "total" => "MapTotal".to_string(),
+                _ => format!("Custom:{}", name.trim()),
+            };
+        }
+
+        if unsupported_period_scope {
+            return format!("Custom:{}", name.trim());
+        }
+
+        match kind.as_str() {
+            "winner" if period_prefix.is_some() && has_draw => scoped("1X2"),
+            "winner" if period_prefix.is_some() => scoped("Winner"),
             "winner" if has_draw => "1X2".to_string(),
             "winner" => "Moneyline".to_string(),
-            "handicap" if normalized_name.contains("карт") || normalized_name.contains("map") => {
-                "MapHandicap".to_string()
-            }
-            "handicap"
-                if normalized_name.contains("раунд") || normalized_name.contains("round") =>
-            {
-                "RoundHandicap".to_string()
-            }
-            "handicap" => "Handicap".to_string(),
-            "total"
-                if normalized_name.contains("индивидуаль")
-                    || normalized_name.contains("инд. тотал") =>
-            {
-                "IndividualTotal".to_string()
-            }
-            "total" if normalized_name.contains("карт") || normalized_name.contains("map") => {
-                "MapTotal".to_string()
-            }
-            "total" if normalized_name.contains("раунд") || normalized_name.contains("round") => {
-                "RoundTotal".to_string()
+            "handicap" => {
+                let market = match team_scope {
+                    Some(team) => format!("{team}Handicap"),
+                    None => "Handicap".to_string(),
+                };
+                scoped(&market)
             }
             "total"
-                if normalized_name.contains("четверт") || normalized_name.contains("quarter") =>
+                if normalized_name.contains("индивидуальн")
+                    || normalized_name.contains("инд. тотал")
+                    || normalized_name.contains("инд тотал")
+                    || normalized_name.contains("итб")
+                    || normalized_name.contains("итм")
+                    || normalized_name.contains("ит 1")
+                    || normalized_name.contains("ит 2") =>
             {
-                "QuarterTotal".to_string()
+                match team_scope {
+                    Some(team) => scoped(&format!("{team}Total")),
+                    None => format!("Custom:{}", name.trim()),
+                }
             }
-            "total" if normalized_name.contains("парт") || normalized_name.contains("сет") => {
-                "SetTotal".to_string()
+            "total" => {
+                let market = match team_scope {
+                    Some(team) => format!("{team}Total"),
+                    None => "Total".to_string(),
+                };
+                scoped(&market)
             }
-            "total" => "Total".to_string(),
             "yesno"
                 if normalized_name.contains("обе забьют")
-                    || normalized_name.contains("both teams score") =>
+                    || normalized_name.contains("обе команды забьют")
+                    || normalized_name.contains("both teams score")
+                    || normalized_name.contains("btts") =>
             {
-                "BothTeamsScore".to_string()
+                scoped("BothTeamsScore")
             }
             _ if name.trim().is_empty() => format!("Custom:{}", kind),
             _ => format!("Custom:{}", name.trim()),
@@ -2122,6 +2246,60 @@ mod tests {
         assert!(odds
             .iter()
             .any(|odd| odd.selection == "1" && odd.odds == 1.85));
+    }
+
+    #[test]
+    fn grouping_market_normalization_preserves_period_and_team_scope() {
+        let normalize = BaltbetParser::normalize_grouping_market_name;
+        assert_eq!(normalize("Тотал", "total", false), "Total");
+        assert_eq!(
+            normalize("Тотал первого тайма", "total", false),
+            "1H_Total"
+        );
+        assert_eq!(
+            normalize("Тотал второго тайма", "total", false),
+            "2H_Total"
+        );
+        assert_eq!(
+            normalize("Победитель первого тайма", "winner", false),
+            "1H_Winner"
+        );
+        assert_eq!(
+            normalize("Исход второго тайма", "winner", true),
+            "2H_1X2"
+        );
+        assert_eq!(
+            normalize("Фора первого тайма", "handicap", false),
+            "1H_Handicap"
+        );
+        assert_eq!(
+            normalize("Обе команды забьют в первом тайме", "yesno", false),
+            "1H_BothTeamsScore"
+        );
+        assert_eq!(
+            normalize("Индивидуальный тотал хозяев", "total", false),
+            "Team1Total"
+        );
+        assert_eq!(
+            normalize("Индивидуальный тотал гостей", "total", false),
+            "Team2Total"
+        );
+        assert_eq!(
+            normalize("Индивидуальный тотал 1К", "total", false),
+            "Team1Total"
+        );
+        assert_eq!(
+            normalize("Индивидуальный тотал 2К", "total", false),
+            "Team2Total"
+        );
+        assert_eq!(
+            normalize("Индивидуальный тотал", "total", false),
+            "Custom:Индивидуальный тотал"
+        );
+        assert_eq!(
+            normalize("Тотал первого периода", "total", false),
+            "Custom:Тотал первого периода"
+        );
     }
 
     #[test]
