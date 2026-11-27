@@ -594,6 +594,72 @@ mod parser_fixture_tests {
     }
 
     #[test]
+    fn ambiguous_sport_scoped_factor_id_is_quarantined_before_legacy_fallback() {
+        let catalog = FactorsCatalog::new(
+            Arc::new(reqwest::Client::new()),
+            "https://example.invalid",
+            2300,
+        );
+        catalog.parse_catalog(&serde_json::json!({
+            "configs": [
+                {
+                    "sports": ["1"],
+                    "markets": [{
+                        "caption": "Исходы",
+                        "tag": "result",
+                        "marketEventKindsSets": [{"factorSets": [{"columns": [
+                            {"caption": "1", "columnType": 1, "factors": ["921"]}
+                        ]}]}]
+                    }]
+                },
+                {
+                    "sports": ["2"],
+                    "markets": [{
+                        "caption": "Победы",
+                        "tag": "to_win",
+                        "marketEventKindsSets": [{"factorSets": [{"columns": [
+                            {"caption": "1", "columnType": 1, "factors": ["921"]}
+                        ]}]}]
+                    }]
+                }
+            ]
+        }));
+
+        assert!(catalog.contains_factor_id(921));
+        assert!(catalog.get_factor_for_sport(921, Some("3")).is_none());
+
+        let payload = serde_json::json!({
+            "events": [{
+                "id": 12345,
+                "team1": "Home FC",
+                "team2": "Away FC",
+                "place": "line",
+                "sportId": 3,
+                "startTime": 1795618800_i64,
+                "name": "Unknown Sport: Competition"
+            }],
+            "customFactors": [{
+                "e": 12345,
+                "factors": [{"f": 921, "v": 2.10}]
+            }]
+        });
+
+        let (events, odds) = PariParser::parse_api_response_with_catalog(
+            &payload,
+            false,
+            Some(&catalog),
+        )
+        .expect("ambiguous factor should not fail the event feed");
+
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].id, "pari-pre-12345");
+        assert!(
+            odds.is_empty(),
+            "a catalog-known but sport-ambiguous factor must not use numeric fallback"
+        );
+    }
+
+    #[test]
     fn factor_mapping_uses_semantic_btts_and_even_odd_types() {
         assert_eq!(
             PariParser::factor_to_market(926),
