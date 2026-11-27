@@ -293,8 +293,11 @@ const HEADLESS_EXTRACT_JS: &str = r#"(() => {
     const seen = new Set();
     const pushEvent = (event) => {
         if (!isValidName(event.home) || !isValidName(event.away)) return;
-        if (!event.odds || event.odds.length < 2) return;
-        const key = [event.eventId || '', event.home, event.away, event.href || ''].join('|');
+        if (!event.marketName || !event.odds || event.odds.length < 2) return;
+        if (event.marketName === '1X2' && event.odds.length !== 3) return;
+        if (event.marketName === 'Total' && (event.odds.length !== 2 || event.totalLine === null)) return;
+        if (event.marketName === 'Winner' && event.odds.length !== 2) return;
+        const key = [event.eventId || '', event.home, event.away, event.href || '', event.marketName].join('|');
         if (seen.has(key)) return;
         seen.add(key);
         results.push(event);
@@ -409,14 +412,34 @@ const HEADLESS_EXTRACT_JS: &str = r#"(() => {
             /\d+['’]/.test(cardText)
         );
     };
+    const detectMarketName = (market) => {
+        const source = normalizeText(market.name || market.text || '').toLowerCase().replace(/ё/g, 'е');
+        if (/(?:индивидуальн|инд\.?\s*тотал|командн|команды\s*[12]|team\s*[12]|corners?|корнер|угловых|points?|очков|sets?|сетов|maps?|карт)/i.test(source)) {
+            return '';
+        }
+        if (/(?:исход|1x2|match result)/i.test(source)) return '1X2';
+        if (/(?:^|\\b)(?:тотал|total)(?:\\b|$)/i.test(source)) return 'Total';
+        if (/(?:победител|winner)/i.test(source) && !/(?:карты|раунда|сета|round|set|map)/i.test(source)) {
+            return 'Winner';
+        }
+        return '';
+    };
     const pickOdds = (markets) => {
-        const selected = markets.find((market) => market.buttons.length >= 3) || markets[0];
+        const candidates = markets.map((market) => ({
+            ...market,
+            marketName: detectMarketName(market),
+        }));
+        const selected =
+            candidates.find((market) => market.marketName === '1X2' && market.buttons.length === 3) ||
+            candidates.find((market) => market.marketName === 'Total' && market.buttons.length === 2) ||
+            candidates.find((market) => market.marketName === 'Winner' && market.buttons.length === 2);
         if (!selected) return null;
-        const odds = selected.buttons.slice(0, selected.buttons.length >= 3 ? 3 : 2);
-        if (odds.length < 2) return null;
+        const totalLine = selected.marketName === 'Total' ? parseLine(selected.middle) : null;
+        if (selected.marketName === 'Total' && totalLine === null) return null;
         return {
-            odds,
-            totalLine: odds.length === 2 ? parseLine(selected.middle || selected.text) : null,
+            marketName: selected.marketName,
+            odds: selected.buttons,
+            totalLine,
         };
     };
     const tournamentName = (card) => textFrom(
@@ -446,6 +469,7 @@ const HEADLESS_EXTRACT_JS: &str = r#"(() => {
                 tournament: tournamentName(card) || textFrom(card.querySelector('[class*="tournament"]')),
                 eventId,
                 href,
+                marketName: marketSelection.marketName,
                 odds: marketSelection.odds,
                 totalLine: marketSelection.totalLine,
                 sourceUrl: window.location.href,
@@ -477,6 +501,7 @@ const HEADLESS_EXTRACT_JS: &str = r#"(() => {
                 tournament: tournamentName(card),
                 eventId,
                 href,
+                marketName: marketSelection.marketName,
                 odds: marketSelection.odds,
                 totalLine: marketSelection.totalLine,
                 sourceUrl: window.location.href,
@@ -506,6 +531,7 @@ const HEADLESS_EXTRACT_JS: &str = r#"(() => {
                 tournament: tournamentName(card),
                 eventId,
                 href,
+                marketName: marketSelection.marketName,
                 odds: marketSelection.odds,
                 totalLine: marketSelection.totalLine,
                 sourceUrl: window.location.href,
@@ -534,6 +560,7 @@ const HEADLESS_EXTRACT_JS: &str = r#"(() => {
                 tournament: tournamentName(card) || textFrom(card.querySelector('.main-event__tournament')),
                 eventId: hrefMatch ? hrefMatch[1] : '',
                 href,
+                marketName: marketSelection.marketName,
                 odds: marketSelection.odds,
                 totalLine: marketSelection.totalLine,
                 sourceUrl: window.location.href,
@@ -565,6 +592,7 @@ const HEADLESS_EXTRACT_JS: &str = r#"(() => {
                 tournament: tournamentName(card),
                 eventId,
                 href,
+                marketName: marketSelection.marketName,
                 odds: marketSelection.odds,
                 totalLine: marketSelection.totalLine,
                 sourceUrl: window.location.href,
@@ -596,6 +624,7 @@ const HEADLESS_EXTRACT_JS: &str = r#"(() => {
                 tournament: tournamentName(card) || textFrom(card.querySelector('.main-event__tournament, [class*="tournament"], [class*="league"]')),
                 eventId,
                 href,
+                marketName: marketSelection.marketName,
                 odds: marketSelection.odds,
                 totalLine: marketSelection.totalLine,
                 sourceUrl: window.location.href,
@@ -635,6 +664,7 @@ const HEADLESS_EXTRACT_JS: &str = r#"(() => {
                 tournament: tournamentName(card) || textFrom(card.querySelector('.main-event__tournament, [class*="tournament"], [class*="league"], [class*="championship"]')),
                 eventId,
                 href,
+                marketName: marketSelection.marketName,
                 odds: marketSelection.odds,
                 totalLine: marketSelection.totalLine,
                 sourceUrl: window.location.href,
@@ -1000,14 +1030,32 @@ impl WinlineParser {
             return None;
         }
 
+        let market_name = match item
+            .get("marketName")
+            .or_else(|| item.get("market"))
+            .and_then(|value| value.as_str())
+            .map(str::trim)
+            .map(str::to_lowercase)?
+            .as_str()
+        {
+            "1x2" | "исход" | "match result" => "1X2",
+            "total" | "тотал" => "Total",
+            "winner" | "победитель" | "победитель матча" => "Winner",
+            _ => return None,
+        };
+
         let odds_values = item
             .get("odds")
             .and_then(|value| value.as_array())?
             .iter()
             .filter_map(parse_odds_value)
             .collect::<Vec<_>>();
-        if odds_values.len() < 2 {
-            return None;
+        let total_line = item.get("totalLine").and_then(parse_line_value);
+        match market_name {
+            "1X2" if odds_values.len() == 3 => {}
+            "Total" if odds_values.len() == 2 && total_line.is_some() => {}
+            "Winner" if odds_values.len() == 2 => {}
+            _ => return None,
         }
 
         let raw_id = item
@@ -1071,46 +1119,32 @@ impl WinlineParser {
 
         let now = Utc::now();
         let mut odds = Vec::new();
-        if odds_values.len() >= 3 {
-            let selections = [
-                ("1", OddsType::Home, odds_values[0]),
-                ("X", OddsType::Draw, odds_values[1]),
-                ("2", OddsType::Away, odds_values[2]),
-            ];
-            for (selection, odds_type, value) in selections {
-                odds.push(Odd {
-                    id: format!("{}-{}", event_id, selection),
-                    event_id: event_id.clone(),
-                    bookmaker_slug: "winline".to_string(),
-                    market: "1X2".into(),
-                    selection: selection.into(),
-                    odds: value,
-                    odds_type,
-                    line: None,
-                    timestamp: now,
-                });
-            }
-        } else {
-            let line = item.get("totalLine").and_then(parse_line_value);
+        let market = market_name;
+        let selections: Vec<(&str, OddsType, f64, Option<f64>)> = match market_name {
+            "1X2" => vec![
+                ("1", OddsType::Home, odds_values[0], None),
+                ("X", OddsType::Draw, odds_values[1], None),
+                ("2", OddsType::Away, odds_values[2], None),
+            ],
+            "Total" => vec![
+                ("Over", OddsType::Over, odds_values[0], total_line),
+                ("Under", OddsType::Under, odds_values[1], total_line),
+            ],
+            "Winner" => vec![
+                ("1", OddsType::Home, odds_values[0], None),
+                ("2", OddsType::Away, odds_values[1], None),
+            ],
+            _ => return None,
+        };
+        for (selection, odds_type, value, line) in selections {
             odds.push(Odd {
-                id: format!("{}-over", event_id),
+                id: format!("{}-{}-{}", event_id, market, selection),
                 event_id: event_id.clone(),
                 bookmaker_slug: "winline".to_string(),
-                market: "Total".into(),
-                selection: "Over".into(),
-                odds: odds_values[0],
-                odds_type: OddsType::Over,
-                line,
-                timestamp: now,
-            });
-            odds.push(Odd {
-                id: format!("{}-under", event_id),
-                event_id: event_id.clone(),
-                bookmaker_slug: "winline".to_string(),
-                market: "Total".into(),
-                selection: "Under".into(),
-                odds: odds_values[1],
-                odds_type: OddsType::Under,
+                market: market.to_string(),
+                selection: selection.to_string(),
+                odds: value,
+                odds_type,
                 line,
                 timestamp: now,
             });
@@ -3418,6 +3452,7 @@ mod tests {
             "tournament": "Premier League",
             "eventId": "12345",
             "href": "/stavki/event/12345",
+            "marketName": "1X2",
             "odds": [2.15, 3.4, 3.05]
         });
 
@@ -3448,6 +3483,7 @@ mod tests {
             "home": "Djokovic",
             "away": "Medvedev",
             "tournament": "ATP Test",
+            "marketName": "Total",
             "odds": [1.87, 1.93],
             "totalLine": "22.5"
         });
@@ -3466,6 +3502,84 @@ mod tests {
         assert_eq!(odds[0].market, "Total");
         assert_eq!(odds[0].line, Some(22.5));
         assert_eq!(odds[1].selection, "Under");
+    }
+
+    #[test]
+    fn parses_headless_two_way_winner_without_misclassifying_it_as_total() {
+        let payload = serde_json::json!({
+            "home": "Player One",
+            "away": "Player Two",
+            "sportName": "теннис",
+            "marketName": "Winner",
+            "odds": [1.75, 2.10]
+        });
+        let (event, odds) = WinlineParser::parse_headless_item(
+            &payload,
+            Sport::Tennis,
+            false,
+            "https://winline.ru/tennis",
+        )
+        .expect("explicit winner market should parse");
+
+        assert_eq!(event.sport, Sport::Tennis);
+        assert_eq!(odds.len(), 2);
+        assert!(odds.iter().all(|odd| odd.market == "Winner" && odd.line.is_none()));
+        assert_eq!(odds[0].selection, "1");
+        assert_eq!(odds[1].selection, "2");
+    }
+
+    #[test]
+    fn rejects_headless_unknown_or_ambiguous_two_way_markets() {
+        for payload in [
+            serde_json::json!({
+                "home": "Home",
+                "away": "Away",
+                "marketName": "BTTS",
+                "odds": [1.8, 2.0]
+            }),
+            serde_json::json!({
+                "home": "Home",
+                "away": "Away",
+                "marketName": "DoubleChance",
+                "odds": [1.2, 1.5]
+            }),
+            serde_json::json!({
+                "home": "Home",
+                "away": "Away",
+                "marketName": "Total",
+                "odds": [1.8, 2.0]
+            }),
+            serde_json::json!({
+                "home": "Home",
+                "away": "Away",
+                "odds": [1.8, 2.0],
+                "totalLine": "2.5"
+            })
+        ] {
+            assert!(
+                WinlineParser::parse_headless_item(
+                    &payload,
+                    Sport::Football,
+                    false,
+                    BASE_URL
+                )
+                .is_none(),
+                "ambiguous headless odds must not be emitted: {payload}"
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_headless_three_way_payload_without_explicit_result_market() {
+        let payload = serde_json::json!({
+            "home": "Home",
+            "away": "Away",
+            "odds": [2.15, 3.4, 3.05]
+        });
+        assert!(
+            WinlineParser::parse_headless_item(&payload, Sport::Football, false, BASE_URL)
+                .is_none()
+        );
     }
 
     #[test]
@@ -3543,6 +3657,7 @@ mod tests {
             "league": "KHL",
             "eventId": "15553043",
             "href": "/stavki/event/15553043",
+            "marketName": "1X2",
             "odds": [2.35, 4.5, 1.55],
             "isLive": true,
             "sportName": "хоккей"
@@ -3563,6 +3678,7 @@ mod tests {
             "home": "Rubin",
             "away": "Lokomotiv",
             "eventId": "42",
+            "marketName": "1X2",
             "odds": [2.1, 3.2, 3.4],
             "isLive": "1"
         });
@@ -3580,6 +3696,7 @@ mod tests {
             "home": "Rubin",
             "away": "Lokomotiv",
             "eventId": "43",
+            "marketName": "1X2",
             "odds": [2.1, 3.2, 3.4],
             "live": 0
         });
