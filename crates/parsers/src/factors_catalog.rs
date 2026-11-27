@@ -691,6 +691,15 @@ impl FactorsCatalog {
         *self.market_index.write() = market_index;
     }
 
+    /// Whether the direct source catalog contains this ID, even when its
+    /// sport-scoped definitions conflict and therefore cannot be resolved safely.
+    pub fn contains_factor_id(&self, factor_id: u64) -> bool {
+        if self.cache.read().contains_key(&factor_id) {
+            return true;
+        }
+        self.sport_cache.read().contains_key(&factor_id)
+    }
+
     /// Получить определение фактора по ID
     pub fn get_factor(&self, factor_id: u64) -> Option<FactorDefinition> {
         self.cache.read().get(&factor_id).cloned()
