@@ -16,6 +16,32 @@ The repository already contains a direct-source catalog implementation in `crate
 
 These are first-party bookmaker/platform endpoints already present in the parser source. No aggregator is involved. The catalog endpoint's availability and schema for each exact host/scope still need runtime verification.
 
+## Implementation progress — 2026-11-27
+
+The first direct-catalog integration pass is now committed:
+
+| Parser | First-party catalog base URL | Scope | Status |
+|---|---|---:|---|
+| Fonbet | `https://line-lb61-w.bk6bba-resources.com` | 1600 | Catalog load and sport-scoped resolution wired into live/prematch parsing |
+| PARI | `https://line-lb51-w.pb06e2-resources.ru` | 2300 | Catalog load and sport-scoped resolution wired into live/prematch parsing |
+| 24bet | `https://line51.tf39be-resources.com` | 3000 | Catalog load and sport-scoped resolution wired into live/prematch parsing |
+
+Implementation details:
+- Each parser uses the existing `FactorsCatalog` cache and its bookmaker's own line-platform host; no external provider or aggregator is used.
+- Source `sportId` is passed into `get_factor_for_sport` so sport-scoped factor IDs can be resolved safely.
+- If an ID exists in the catalog but its meaning is ambiguous for the current sport, it is quarantined. The parser does not fall back to a numeric guess.
+- If the catalog does not contain an ID, the existing legacy factor mapping remains available; genuinely unknown IDs remain `factor_<id>`.
+- Odds IDs are now generated from semantic market, selection and line keys, and duplicate direct-source quotes retain the best price.
+- Event IDs, factor event references, sport IDs and line values accept numeric JSON strings as well as numeric JSON values.
+- Regression fixtures exercise catalog-defined mapping and ambiguous-ID quarantine for all three parsers. The fixtures are synthetic; they verify use of catalog semantics, not the real-world meaning of a particular factor ID.
+
+## Validation status
+
+- The source edits and regression tests are committed to `work/core-engine-refactor`.
+- A local `cargo test` could not be run in this session because the repository could not be cloned into the build environment (GitHub DNS/network access was unavailable).
+- GitHub commit status lookup returned no status checks for the latest parser test commit. Do not interpret that as a passing CI run.
+- Before claiming live factor coverage improved, capture real `sportBasicFactors`/`tables` payloads from each direct bookmaker host and compare the catalog-derived mapping with their actual `customFactors` rows.
+
 ## Recommended implementation sequence
 
 1. Add a `FactorsCatalog` instance to each parser using its own direct host and scope-market value.
