@@ -3561,7 +3561,7 @@ mod tests {
                     &payload,
                     Sport::Football,
                     false,
-                    BASE_URL
+                    "https://winline.ru"
                 )
                 .is_none(),
                 "ambiguous headless odds must not be emitted: {payload}"
@@ -3577,7 +3577,12 @@ mod tests {
             "odds": [2.15, 3.4, 3.05]
         });
         assert!(
-            WinlineParser::parse_headless_item(&payload, Sport::Football, false, BASE_URL)
+            WinlineParser::parse_headless_item(
+                &payload,
+                Sport::Football,
+                false,
+                "https://winline.ru",
+            )
                 .is_none()
         );
     }
