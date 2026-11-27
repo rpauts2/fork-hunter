@@ -578,7 +578,7 @@ impl FactorsCatalog {
         } else if combined.contains("тотал") || combined.contains("total") {
             format!("{period_prefix}total")
         } else if combined.contains("двойн") || combined.contains("double_chance") {
-            "double_chance".to_string()
+            format!("{period_prefix}double_chance")
         } else if combined.contains("обе забьют") || combined.contains("both_to_score") {
             format!("{period_prefix}both_teams_score")
         } else if combined.contains("чёт")
@@ -593,8 +593,6 @@ impl FactorsCatalog {
             format!("{period_prefix}to_win")
         } else if combined.contains("исход") || combined.contains("result") {
             format!("{period_prefix}1x2")
-        } else if combined.contains("двойн") || combined.contains("double_chance") {
-            format!("{period_prefix}double_chance")
         } else if combined.contains("кто выше") || combined.contains("head_to_head") {
             "head_to_head".to_string()
         } else if combined.contains("проход") || combined.contains("to_qualify") {
