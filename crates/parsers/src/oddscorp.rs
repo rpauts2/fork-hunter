@@ -417,7 +417,7 @@ mod tests {
             "bet": "WIN__P1",
             "cf": "1.85",
             "blocked": "0",
-            "meta": "{\\"group_name\\":\\"Основные\\",\\"market_name\\":\\"Исходы\\",\\"outcome_name\\":\\"1\\",\\"factor_id\\":921}",
+            "meta": {"group_name": "Основные", "market_name": "Исходы", "outcome_name": "1", "factor_id": 921},
             "updated_at": "1795770000",
             "updated_at_ms": "1795770000123"
         }))
