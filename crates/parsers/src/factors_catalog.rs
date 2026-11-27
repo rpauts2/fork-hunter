@@ -660,6 +660,23 @@ impl FactorsCatalog {
                     caption.trim().to_string()
                 }
             }
+            "double_chance" => {
+                // Russian feeds commonly use Cyrillic Х where Latin X is
+                // expected. Normalize both alphabets and verbose captions.
+                let compact = value
+                    .replace('х', "x")
+                    .replace(' ', "")
+                    .replace('-', "");
+                if compact == "1x" || compact.contains("1илиx") || compact.contains("1илиничья") {
+                    "1X".to_string()
+                } else if compact == "x2" || compact.contains("xили2") || compact.contains("ничьяили2") {
+                    "X2".to_string()
+                } else if compact == "12" || compact.contains("1или2") {
+                    "12".to_string()
+                } else {
+                    caption.trim().to_string()
+                }
+            }
             _ => caption.trim().to_string(),
         }
     }
@@ -1148,6 +1165,26 @@ mod tests {
         assert_eq!(
             FactorsCatalog::normalize_selection("first_half_1x2", "Х"),
             "x"
+        );
+    }
+
+    #[test]
+    fn double_chance_selection_normalizes_cyrillic_and_verbose_labels() {
+        assert_eq!(
+            FactorsCatalog::normalize_selection("double_chance", "1Х"),
+            "1X"
+        );
+        assert_eq!(
+            FactorsCatalog::normalize_selection("double_chance", "Х2"),
+            "X2"
+        );
+        assert_eq!(
+            FactorsCatalog::normalize_selection("double_chance", "1 или 2"),
+            "12"
+        );
+        assert_eq!(
+            FactorsCatalog::normalize_selection("first_half_double_chance", "1Х"),
+            "1X"
         );
     }
 
