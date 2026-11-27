@@ -204,7 +204,7 @@ impl FonbetParser {
                 continue;
             }
             if let (Some(id), Some(team1), Some(team2)) = (
-                event_data.get("id").and_then(|v| v.as_u64()),
+                event_data.get("id").and_then(parse_u64_value),
                 event_data.get("team1").and_then(|v| v.as_str()),
                 event_data.get("team2").and_then(|v| v.as_str()),
             ) {
@@ -248,7 +248,7 @@ impl FonbetParser {
         if let Some(custom_factors) = json.get("customFactors").and_then(|f| f.as_array()) {
             for cf in custom_factors {
                 if let (Some(event_id), Some(factors)) = (
-                    cf.get("e").and_then(|v| v.as_u64()),
+                    cf.get("e").and_then(parse_u64_value),
                     cf.get("factors").and_then(|f| f.as_array()),
                 ) {
                     if let Some((sport_id, team1, team2, start_time, event_name)) =
@@ -298,7 +298,7 @@ impl FonbetParser {
                                     }
 
                                     let line =
-                                        factor.get("p").and_then(|v| v.as_f64()).map(|p| p / 100.0);
+                                        factor.get("p").and_then(parse_f64_value).map(|p| p / 100.0);
 
                                                                         if let Some(catalog) = factor_catalog {
                                         let source_sport_id = sport_id.to_string();
