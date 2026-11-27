@@ -351,7 +351,7 @@ pub fn parse_api_response(
         .iter()
         .filter(|event| event_place_matches_feed(event, is_live))
         .filter_map(|event| {
-            let id = event.get("id").and_then(serde_json::Value::as_u64)?;
+            let id = event.get("id").and_then(parse_catalog_id)?;
             let team1 = event.get("team1").and_then(serde_json::Value::as_str)?;
             let team2 = event.get("team2").and_then(serde_json::Value::as_str)?;
             (!team1.trim().is_empty() && !team2.trim().is_empty()).then_some(id)
@@ -361,7 +361,7 @@ pub fn parse_api_response(
         .iter()
         .filter(|event| event_place_matches_feed(event, is_live))
         .filter_map(|event| {
-            let child_id = event.get("id").and_then(serde_json::Value::as_u64)?;
+            let child_id = event.get("id").and_then(parse_catalog_id)?;
             let has_own_participants = event
                 .get("team1")
                 .and_then(serde_json::Value::as_str)
@@ -373,7 +373,7 @@ pub fn parse_api_response(
             if has_own_participants {
                 return None;
             }
-            let parent_id = event.get("parentId").and_then(serde_json::Value::as_u64)?;
+            let parent_id = event.get("parentId").and_then(parse_catalog_id)?;
             if !valid_parent_ids.contains(&parent_id) {
                 return None;
             }
@@ -386,7 +386,7 @@ pub fn parse_api_response(
                 .or_else(|| {
                     event
                         .get("kind")
-                        .and_then(serde_json::Value::as_u64)
+                        .and_then(parse_catalog_id)
                         .map(|kind| format!("market_{kind}"))
                 })?;
             Some((child_id, (parent_id, context)))
@@ -398,7 +398,7 @@ pub fn parse_api_response(
     let mut factor_map: HashMap<u64, Vec<(u64, f64, Option<f64>, Option<String>)>> = HashMap::new();
     for factor_entry in custom_factors {
         if let (Some(event_id), Some(factors_arr)) = (
-            factor_entry.get("e").and_then(|e| e.as_u64()),
+            factor_entry.get("e").and_then(parse_catalog_id),
             factor_entry.get("factors").and_then(|f| f.as_array()),
         ) {
             let (canonical_event_id, market_context) = child_to_parent
@@ -407,15 +407,15 @@ pub fn parse_api_response(
                 .unwrap_or((event_id, None));
             for f in factors_arr {
                 if let (Some(fid), Some(fval)) = (
-                    f.get("f").and_then(|x| x.as_u64()),
-                    f.get("v").and_then(|x| x.as_f64()),
+                    f.get("f").and_then(parse_catalog_id),
+                    f.get("v").and_then(parse_catalog_float),
                 ) {
                     // Shared-platform payload expresses line values in hundredths:
                     // p=150 represents 1.5, p=-75 represents -0.75.
                     let line = f
                         .get("p")
-                        .and_then(|value| value.as_f64())
-                        .or_else(|| f.get("pt").and_then(|value| value.as_f64()))
+                        .and_then(parse_catalog_float)
+                        .or_else(|| f.get("pt").and_then(parse_catalog_float))
                         .map(|value| value / 100.0);
                     factor_map.entry(canonical_event_id).or_default().push((
                         fid,
@@ -436,7 +436,7 @@ pub fn parse_api_response(
         }
 
         let (Some(event_id), Some(team1), Some(team2)) = (
-            event_data.get("id").and_then(|i| i.as_u64()),
+            event_data.get("id").and_then(parse_catalog_id),
             event_data.get("team1").and_then(|t| t.as_str()),
             event_data.get("team2").and_then(|t| t.as_str()),
         ) else {
@@ -990,6 +990,15 @@ fn parse_catalog_id(value: &serde_json::Value) -> Option<u64> {
         .or_else(|| value.as_str().and_then(|text| text.trim().parse().ok()))
 }
 
+fn parse_catalog_float(value: &serde_json::Value) -> Option<f64> {
+    let parsed = value.as_f64().or_else(|| {
+        value
+            .as_str()
+            .and_then(|text| text.trim().replace(',', ".").parse::<f64>().ok())
+    })?;
+    parsed.is_finite().then_some(parsed)
+}
+
 fn resolve_source_taxonomy(
     source_sport_id: Option<u64>,
     sports_by_id: &HashMap<u64, &serde_json::Value>,
@@ -1312,6 +1321,47 @@ mod parser_identity_tests {
         assert_eq!(detect_sport("Unknown sport: event"), Sport::Other);
         assert_eq!(extract_league("Football: Premier League"), "Premier League");
         assert_eq!(extract_league("Standalone Cup"), "Standalone Cup");
+    }
+
+    #[test]
+    fn shared_platform_accepts_string_factor_ids_prices_and_line_values() {
+        let client = Arc::new(reqwest::Client::builder().build().expect("client"));
+        let factors = FactorsCatalog::new(client, "https://line51.tf39be-resources.com", 3000);
+        let payload = serde_json::json!({
+            "events": [{
+                "id": "12345",
+                "team1": "Home FC",
+                "team2": "Away FC",
+                "place": "line",
+                "sportId": "1",
+                "name": "Football: Premier League"
+            }],
+            "customFactors": [{
+                "e": "12345",
+                "factors": [
+                    {"f": "924", "v": " 1,80 ", "p": "150"},
+                    {"f": "925", "v": "2,00", "pt": "250"}
+                ]
+            }]
+        });
+
+        let parsed = parse_api_response(&payload, false, "marathon", &factors)
+            .expect("numeric-string factor payload should parse");
+        assert_eq!(parsed.len(), 1);
+        assert_eq!(parsed[0].0.id, "marathon-prematch-12345");
+        assert_eq!(parsed[0].1.len(), 2);
+        assert!(parsed[0].1.iter().any(|odd| {
+            odd.market == "Total"
+                && odd.selection == "Over"
+                && odd.odds == 1.8
+                && odd.line == Some(1.5)
+        }));
+        assert!(parsed[0].1.iter().any(|odd| {
+            odd.market == "Total"
+                && odd.selection == "Under"
+                && odd.odds == 2.0
+                && odd.line == Some(2.5)
+        }));
     }
 
     #[test]
