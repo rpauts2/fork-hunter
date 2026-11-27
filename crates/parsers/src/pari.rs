@@ -225,7 +225,7 @@ impl PariParser {
             ) {
                 let sport_id = event_data
                     .get("sportId")
-                    .and_then(|v| v.as_u64())
+                    .and_then(parse_u64_value)
                     .unwrap_or(0);
                 let start_time = event_data.get("startTime").and_then(|v| v.as_i64());
                 let event_name = event_data
@@ -318,7 +318,7 @@ impl PariParser {
                                     let line =
                                         factor.get("p").and_then(parse_f64_value).map(|p| p / 100.0);
 
-                                                                        if let Some(catalog) = factor_catalog {
+                                    if let Some(catalog) = factor_catalog {
                                         let source_sport_id = source_sport_id.to_string();
                                         if catalog.contains_factor_id(fid) {
                                             if let Some(definition) = catalog
@@ -347,7 +347,7 @@ impl PariParser {
                                         }
                                     }
 
-                                    let (market, selection, odds_type) =
+let (market, selection, odds_type) =
                                         Self::factor_to_market(fid);
                                     let odd = crate::marathon::make_market_odd(
                                         "pari",
