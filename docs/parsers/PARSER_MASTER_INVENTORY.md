@@ -41,13 +41,13 @@ The full FNS list is not the same as the active betting market. The active runti
 
 | # | Operator | Slug | Rust parser | Corrected 2026-11-26 runtime result |
 |---:|---|---|---|---|
-| 1 | SportBet | sportbet | Yes | Post-hardening full sweep passed. 46 live / 46 with odds, 1,757 prematch / 1,757 with odds, 31,103 valid odds; 100.0% coverage. |
+| 1 | SportBet | sportbet | Yes | Direct `events.table` parser iterates every active market/outcome in the response; no market-family whitelist found. Market IDs now preserve numeric and string source IDs to prevent collisions. The 2026-11-27 sample had 5 raw market labels; whether the endpoint itself is a main-markets-only view still requires source-vs-frontend validation. |
 | 2 | Marathon | marathon | Yes | Post-hardening full sweep passed. 177 live / 164 with odds, 3,269 prematch / 3,269 with odds, 180,314 valid odds; coverage 99.6% overall, 92.7% live, 100.0% prematch. |
 | 3 | Baltbet | baltbet | Yes | Post-hardening full sweep passed after grouping fallback fix. 192 live / 179 with odds, 3,639 prematch / 3,513 with odds, 18,259 valid odds; coverage 96.4% overall, 93.2% live, 96.5% prematch. |
 | 4 | BetBoom | `betboom` | Yes | Blocked from this environment. Official host returns HTTP 401 / QRATOR; browser bootstrap returns no usable feed. |
-| 5 | Olimp | olimp | Yes | Post-hardening full sweep passed. 167 live / 167 with odds, 1,500 prematch / 1,500 with odds, 32,557 valid odds; 100.0% coverage. |
-| 6 | Zenit | zenit | Yes | Post-hardening full sweep passed. 192 live / 178 with odds, 4,400 prematch / 4,400 with odds, 33,072 valid odds; coverage 99.7% overall, 92.7% live, 100.0% prematch. |
-| 7 | Leon | leon | Yes | Post-hardening full sweep passed. 198 live / 198 with odds, 2,916 prematch / 2,916 with odds, 8,437 valid odds; 100.0% coverage. |
+| 5 | Olimp | olimp | Yes | Direct `/api/v4/0/{live,line/top}/sports-with-competitions-with-events` parser consumes all `event.outcomes` with a valid decimal probability and non-empty `groupName`; no market-family whitelist found. The 2026-11-27 sample exposed 6 raw group labels; confirm whether the source endpoint includes expanded event markets. |
+| 6 | Zenit | zenit | Yes | Direct HTTP parser still maps only source factor codes 1–10 (1X2, double chance, handicap, totals). Valid-priced unrecognized factor/header pairs are now counted and logged instead of disappearing silently. Official line UI exposes an additional-market (`Доп`) count per match; retrieval parameters for these extra markets remain unverified. |
+| 7 | Leon | leon | Yes | Direct `leon.bet/api-2/betline/events/{inplay,prematch}` parser iterates every returned open market and runner; no market-family whitelist found. The 2026-11-27 sample exposed 6 raw market names; confirm whether the response contains the complete expanded market set. |
 | 8 | Liga Stavok | `ligastavok` | Yes | Blocked from this environment by QRATOR before session/API bootstrap. No validated authorized bootstrap available. |
 | 9 | Tennisi | `tennisi` | Yes | Inactive / paused. Interactive betting suspended from 2026-09-01; current site serves a maintenance page. Not included in the 16 active-feed runtime sweep. |
 | 10 | Winline | winline | Yes | Post-hardening full sweep passed. 182 live / 167 with odds, 2,914 prematch / 2,908 with odds, 82,185 valid odds; coverage 99.3% overall, 91.8% live, 99.8% prematch. |
