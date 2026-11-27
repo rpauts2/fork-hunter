@@ -19,6 +19,12 @@ fn parse_u64_value(value: &serde_json::Value) -> Option<u64> {
         .or_else(|| value.as_str().and_then(|text| text.trim().parse().ok()))
 }
 
+fn parse_i64_value(value: &serde_json::Value) -> Option<i64> {
+    value
+        .as_i64()
+        .or_else(|| value.as_str().and_then(|text| text.trim().parse::<i64>().ok()))
+}
+
 fn parse_f64_value(value: &serde_json::Value) -> Option<f64> {
     value.as_f64().or_else(|| {
         value
@@ -227,7 +233,7 @@ impl PariParser {
                     .get("sportId")
                     .and_then(parse_u64_value)
                     .unwrap_or(0);
-                let start_time = event_data.get("startTime").and_then(|v| v.as_i64());
+                let start_time = event_data.get("startTime").and_then(parse_i64_value);
                 let event_name = event_data
                     .get("name")
                     .and_then(|value| value.as_str())
@@ -556,7 +562,7 @@ mod parser_fixture_tests {
                 "team2": "Away FC",
                 "place": "line",
                 "sportId": "1",
-                "startTime": 1795618800_i64,
+                "startTime": "1795618800",
                 "name": "Football: Premier League"
             }],
             "customFactors": [{
@@ -577,6 +583,7 @@ mod parser_fixture_tests {
 
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].id, "pari-pre-12345");
+        assert_eq!(events[0].start_time.unwrap().timestamp(), 1795618800);
         assert_eq!(odds.len(), 2);
         assert!(odds.iter().any(|odd| {
             odd.market == "Total"
