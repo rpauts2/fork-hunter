@@ -360,11 +360,12 @@ impl SportbetParser {
     }
 
     fn parse_f64_value(value: &serde_json::Value) -> Option<f64> {
-        value.as_f64().or_else(|| {
+        let parsed = value.as_f64().or_else(|| {
             value
                 .as_str()
-                .and_then(|text| text.trim().replace(',', ".").parse().ok())
-        })
+                .and_then(|text| text.trim().replace(',', ".").parse::<f64>().ok())
+        })?;
+        parsed.is_finite().then_some(parsed)
     }
 
     fn parse_i64_value(value: &serde_json::Value) -> Option<i64> {
@@ -775,6 +776,9 @@ mod tests {
         assert!(odds.iter().any(|odd| odd.id.contains("market-market-total-")));
         let ids = odds.iter().map(|odd| &odd.id).collect::<std::collections::HashSet<_>>();
         assert_eq!(ids.len(), odds.len());
+        assert_eq!(SportbetParser::parse_f64_value(&serde_json::json!(" 2,05 ")), Some(2.05));
+        assert!(SportbetParser::parse_f64_value(&serde_json::json!("NaN")).is_none());
+        assert!(SportbetParser::parse_f64_value(&serde_json::json!("Infinity")).is_none());
     }
 
     #[test]
