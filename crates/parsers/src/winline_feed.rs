@@ -1058,6 +1058,9 @@ impl FeedState {
                 continue;
             }
             let (selection, odds_type) = Self::normalize_selection(source_selection, &market_name);
+            if selection.is_empty() {
+                continue;
+            }
             let id = format!("{event_key}-line-{line_id}-outcome-{index}");
             let odd = Odd {
                 id: id.clone(),
@@ -1460,8 +1463,10 @@ mod tests {
         };
         let (_, total_line) = FeedState::normalize_market(&total, "", 0);
         let (_, handicap_line) = FeedState::normalize_market(&handicap, "", 0);
-        assert!(!FeedState::market_requires_line(&total, "Total") || total_line.is_some());
-        assert!(!FeedState::market_requires_line(&handicap, "Handicap") || handicap_line.is_some());
+        assert!(FeedState::market_requires_line(&total, "Total"));
+        assert!(FeedState::market_requires_line(&handicap, "Handicap"));
+        assert!(total_line.is_none());
+        assert!(handicap_line.is_none());
 
         let mut state = FeedState::default();
         state.add_market_odds(
@@ -1474,6 +1479,25 @@ mod tests {
             vec![1.8, 2.0],
         );
         assert!(state.odds.is_empty());
+        assert!(state.pending_odds.is_empty());
+
+        let mut state = FeedState::default();
+        let handicap = MarketDefinition {
+            source_type: 3,
+            name: "Фора".into(),
+            outcomes: vec!["1".into(), "2".into()],
+        };
+        state.add_market_odds(
+            "prematch",
+            2,
+            "winline-prematch-42",
+            handicap,
+            "",
+            0,
+            vec![1.9, 1.9],
+        );
+        assert!(state.odds.is_empty());
+        assert!(state.pending_odds.is_empty());
     }
 
     #[test]
