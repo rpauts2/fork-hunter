@@ -342,7 +342,12 @@ impl FactorsCatalog {
                 .map(|sports| {
                     sports
                         .iter()
-                        .filter_map(|value| value.as_str().map(str::to_owned))
+                        .filter_map(|value| {
+                            value
+                                .as_str()
+                                .map(str::to_owned)
+                                .or_else(|| value.as_u64().map(|id| id.to_string()))
+                        })
                         .collect::<Vec<_>>()
                         .join(",")
                 })
@@ -732,7 +737,10 @@ impl FactorsCatalog {
                     || compact.contains("2илиничья")
                 {
                     "X2".to_string()
-                } else if compact == "12" || compact.contains("1или2") || compact.contains("2или1") {
+                } else if compact == "12"
+                    || compact.contains("1или2")
+                    || compact.contains("2или1")
+                {
                     "12".to_string()
                 } else {
                     caption.trim().to_string()
@@ -835,18 +843,26 @@ impl FactorsCatalog {
     ) -> Option<FactorDefinition> {
         let sport_cache = self.sport_cache.read();
         if let Some(definitions) = sport_cache.get(&factor_id) {
-            let first = definitions.first()?;
             if let Some(source_sport_id) = source_sport_id {
-                if let Some(definition) = definitions.iter().find(|definition| {
+                let mut matching = definitions.iter().filter(|definition| {
                     definition
                         .sport
                         .split(',')
-                        .any(|sport| sport == source_sport_id)
-                }) {
-                    return Some(definition.clone());
+                        .any(|sport| sport.trim() == source_sport_id.trim())
+                });
+                if let Some(first_match) = matching.next() {
+                    // A factor can be reused inside one sport as well. A sport
+                    // match is not enough if the same ID maps to conflicting
+                    // market/selection semantics in that sport.
+                    let is_unambiguous = matching.all(|definition| {
+                        definition.market_type == first_match.market_type
+                            && definition.selection_name == first_match.selection_name
+                    });
+                    return is_unambiguous.then(|| first_match.clone());
                 }
             }
 
+            let first = definitions.first()?;
             // Some event sport IDs are child/tournament IDs that are not
             // present in the public factor catalogue. A fallback is safe only
             // when every sport-scoped definition agrees on market and outcome;
@@ -1111,6 +1127,63 @@ mod tests {
     }
 
     #[test]
+    fn reused_factor_id_with_conflicting_definitions_in_same_sport_is_rejected() {
+        let catalog = catalog();
+        catalog.parse_catalog(&serde_json::json!({
+            "configs": [{
+                "sports": ["1"],
+                "markets": [
+                    {
+                        "caption": "Исходы",
+                        "tag": "result",
+                        "marketEventKindsSets": [{"factorSets": [{"columns": [
+                            {"caption": "1", "columnType": 1, "factors": ["921"]}
+                        ]}]}]
+                    },
+                    {
+                        "caption": "Форы",
+                        "tag": "handicaps",
+                        "marketEventKindsSets": [{"factorSets": [{"columns": [
+                            {"caption": "ФОРА 1", "columnType": 1, "factors": ["921"]}
+                        ]}]}]
+                    }
+                ]
+            }]
+        }));
+
+        assert!(
+            catalog.get_factor_for_sport(921, Some("1")).is_none(),
+            "a matching sport must not hide conflicting definitions for the same factor ID"
+        );
+        assert!(catalog.contains_factor_id(921));
+    }
+
+    #[test]
+    fn sport_catalog_accepts_numeric_sport_ids() {
+        let catalog = catalog();
+        catalog.parse_catalog(&serde_json::json!({
+            "configs": [{
+                "sports": [1],
+                "markets": [{
+                    "caption": "Исходы",
+                    "tag": "result",
+                    "marketEventKindsSets": [{"factorSets": [{"columns": [
+                        {"caption": "1", "columnType": 1, "factors": ["921"]}
+                    ]}]}]
+                }]
+            }]
+        }));
+
+        assert_eq!(
+            catalog
+                .get_factor_for_sport(921, Some("1"))
+                .unwrap()
+                .market_type,
+            "1x2"
+        );
+    }
+
+    #[test]
     fn reused_factor_id_without_sport_is_rejected_when_definitions_are_ambiguous() {
         let catalog = catalog();
         catalog.parse_catalog(&serde_json::json!({
@@ -1255,8 +1328,14 @@ mod tests {
 
     #[test]
     fn selection_normalization_accepts_common_bookmaker_short_labels() {
-        assert_eq!(FactorsCatalog::normalize_selection("total", "ТБ 2,5"), "over");
-        assert_eq!(FactorsCatalog::normalize_selection("total", "ТМ 2.5"), "under");
+        assert_eq!(
+            FactorsCatalog::normalize_selection("total", "ТБ 2,5"),
+            "over"
+        );
+        assert_eq!(
+            FactorsCatalog::normalize_selection("total", "ТМ 2.5"),
+            "under"
+        );
         assert_eq!(
             FactorsCatalog::normalize_selection("handicap", "Ф1 (+1.5)"),
             "1"
