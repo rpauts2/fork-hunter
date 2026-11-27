@@ -1,65 +1,65 @@
 # Russian bookmaker feed access research — 2026-11-27
 
-## Objective and safety boundary
+## Integration rule
 
-Identify a working, supportable source for all 20 FNS-listed Russian bookmaker targets. Preferred order:
-1. Operator-published API or written authorized feed.
-2. Licensed commercial odds-data provider with explicit bookmaker-level coverage and rights to redistribute/use the data.
-3. Public operator feed only where its use is permitted and does not require bypassing access controls.
+Fork Hunter connects to Russian bookmakers directly. For every bookmaker, the only acceptable source is:
 
-No CAPTCHA, QRATOR, Cloudflare, authentication, geo-restriction, or account-control bypasses are part of this plan. Do not reuse credentials from public code or third parties.
+1. An API/feed published by that bookmaker.
+2. The bookmaker's own public website endpoints, where access is permitted.
+3. A session or feed explicitly authorized by that bookmaker or supplied by the user for their own account.
 
-## Findings
+**Third-party odds aggregators are excluded from the architecture.** API-SPORT, ODDSCORP, Odds-API.io, OpticOdds and similar services must not be used as live sources, fallback feeds, parser adapters, or cross-book quote providers. Earlier catalogue research is retained below only as an audit trail; it is not an integration proposal. Do not spend engineering time creating aggregator adapters.
 
-| Operator | Current finding | Candidate route | Status / next gate |
-|---|---|---|---|
-| Tennisi | Betting suspended from 2026-09-01; withdrawals reportedly remained available through 2026-09-30. | ODDSCORP still lists Tennisi, but the catalogue appears older than the suspension and is not proof of live quotes. | Keep disabled. Recheck after operator announces resumption; require live sample before reactivation. |
-| Poolbet | Planned opening moved to 2026-12-01; not operating as of this research date. | No verified odds provider or current line. | Keep disabled. Recheck after 2026-12-01; confirm the operator/domain and legality before integration. |
-| Golden Bet | No operational public line or documented feed found; official domain returned HTTP 403 from this environment. | No confirmed provider listing. | Keep disabled; request operator confirmation only if an active product is demonstrated. |
-| ABET / Alfabet | Official abet.ru page identifies ООО «Панорама» and the Alfabet brand, lists sports and licence information, but does not document a public event/odds feed. | No confirmed provider listing. | Keep disabled until a live line or authorized feed is verified. |
-| BetBoom | Direct environment access blocked by QRATOR. | API-SPORT documents BetBoom odds; ODDSCORP lists BetBoom. | Strongest provider candidates. Need trial/API key, actual RU coverage, update cadence and redistribution terms. |
-| Liga Stavok | Direct environment access blocked by QRATOR. | ODDSCORP lists Liga Stavok in its commercial odds feed catalogue. | Candidate. Need bookmaker-specific live/prematch sample, freshness and terms. |
-| MelBet | Direct environment access returns regional HTTP 403. | API-SPORT documents MelBet odds; ODDSCORP and Odds-API.io list MelBet. | Strongest provider candidates. Need region-specific coverage, actual source timestamps and terms. |
-| Bet-M | Direct site is an active JavaScript sports line with prematch and live sections; direct access from the development environment remains restricted. | No confirmed bookmaker-specific feed in the provider catalogues reviewed. | Continue direct public-feed diagnostics only where access is permitted; otherwise request a licensed feed from provider/operator. |
+No CAPTCHA, QRATOR, Cloudflare, authentication, geo-restriction, or account-control bypasses are part of this plan. Do not reuse credentials from public code or third parties. A 401/403 or anti-bot challenge means the current access path is blocked; it is not permission to evade the control.
 
-## Provider evaluation
+## Direct-bookmaker findings
 
-### API-SPORT.ru
-- Public developer documentation exposes REST + WebSocket for seven sports.
-- Documented bookmaker keys include betboom, melbet, pari, marathon, and pinnacle.
-- Odds require the with_bk_odds option; the documented model has updatedAt / updatedAtByStage, market state, stage, and optional per-price dateUpdateMs.
-- updatedAt means last board retrieval from the source, not necessarily last price change. For BetBoom, the docs say per-outcome update timestamps are not provided and the board timestamp is used; MelBet may provide dateUpdateMs, with nulls on some prematch prices.
-- Authentication requires an API key in the Authorization header. /v2/account/usage exposes plan and remaining daily quota without consuming quota.
-- This is a documented commercial/third-party data source, not an official BetBoom or MelBet API. No API key or pricing/redistribution terms were available in the project environment, so no live feed can yet be asserted.
+| Operator | Direct-source finding | Current state / next gate |
+|---|---|---|
+| Tennisi | Operator suspended acceptance of bets from 2026-09-01. The site/app were reported to remain available for withdrawals only through 2026-09-30. | Keep parser disabled. Recheck only after an official resumption notice and a directly verified live line. |
+| Poolbet | Planned opening was announced for 2026-12-01; no operating public odds line was verified by this audit date. | No parser yet. Recheck after the announced launch and verify the official site, operating line, and feed behavior before implementation. |
+| Golden Bet | No operating public line or documented direct odds endpoint was verified; the official domain returned HTTP 403 from this environment. | Keep disabled. Do not infer that the bookmaker is globally unavailable from this environment-specific response. |
+| ABET / Alfabet | The official abet.ru page identifies ООО «Панорама», the Alfabet brand, sports and licence information, but does not document a public event/odds feed. | Keep disabled until the operator publishes or authorizes a direct feed. |
+| BetBoom | The official sports site is protected by QRATOR in this environment (HTTP 401). The Rust parser contains direct-site bootstrap/interception scaffolding, but no live feed was recovered in this audit. | Keep disabled. Continue only through a permitted public route or bookmaker-authorized session/feed. No challenge bypass. |
+| Liga Stavok | Direct API routes observed in the parser include the bookmaker-owned `lds-api-sites.ligastavok.ru/rest/events/v8/eventsList`, `/rest/events/v2/filter`, and `/rest/events/v8/tournamentTree`. The current environment is blocked by QRATOR before a stable session/bootstrap can be verified. | Keep disabled. Validate the official browser/session bootstrap only with a permitted public path or user-authorized session. No challenge bypass. |
+| MelBet | The official Russian sportsbook is documented as offering prematch and live betting, but direct requests from this environment return a regional HTTP 403. No authorized direct feed was available for runtime verification. | Keep disabled until the official RU endpoint works from a permitted environment or the operator supplies an authorized feed. Do not evade regional restrictions. |
+| Bet-M | The official site presents a sports line with prematch and live sections. Direct access from the development environment remains restricted; the parser probes the bookmaker's own routes. | Continue direct-source diagnostics only where access is permitted. Keep production scanning disabled until a real public/authorized feed passes runtime validation. |
 
-### ODDSCORP
-- The current ODDSCORP API page states 43 connected bookmakers and explicitly lists BetBoom, Liga Stavok, MelBet and Tennisi among available operators.
-- It advertises HTTP API and WebSocket odds updates, a public live demo, and a two-week trial on request via Telegram @oddscorp; the page says a manager issues trial access within 24 hours.
-- The pricing page separates live/prematch and HTTP/WebSocket by bookmaker. Visible price figures include 450 for live HTTP, 300 for prematch HTTP, and 675 for a combined HTTP option per bookmaker, but the page does not make the currency/unit explicit in the readable content. Confirm the payable amount in writing.
-- The provider advertises approximately 0.4-second average updates and claims 99% of data is under one second. These are vendor claims, not independently verified measurements.
-- No trial key, payload, or written usage rights are available in the repository. This is now the clearest trial path for BetBoom and Liga Stavok, and a second candidate for MelBet. Do not enable production until the trial proves the Russian bookmaker variant, event/market depth, source timestamps, and permitted use.
+## Other direct parser targets
 
-### Odds-API.io
-- Its current catalogue lists MelBet and provides live/prematch odds via REST/WebSocket.
-- Its public bookmaker list did not show BetBoom, Liga Stavok, Tennisi, Poolbet, Golden Bet, ABET or the Russian Bet-M operator in the inspected results.
-- OpticOdds also exposes a separate sportsbook identifier named betM, but the public coverage material describes a multi-region international catalogue and does not establish that this is the Russian ООО «БЕТ-М». Do not treat it as a confirmed Bet-M feed without written confirmation.
-- It is an independent commercial aggregator, not an official operator API. Treat MelBet as a potential fallback only after a trial verifies the Russian market variant, market depth, quote timestamps and redistribution rights.
+The latest runtime audit distinguishes source availability from parser quality:
 
-## Implementation decision
+- Twelve direct feeds were reachable in the 2026-11-27 sample: Baltbet, Bet24, Betcity, Bettery, Fonbet, Leon, Marathon, Olimp, PARI, SportBet, Winline and Zenit.
+- Four active targets could not be validated from this environment: BetBoom (QRATOR HTTP 401), Liga Stavok (QRATOR bootstrap challenge), MelBet (regional HTTP 403) and Bet-M (regional HTTP 403).
+- The reachable sample returned 38,829 events and 843,631 valid odds in the 04:06 UTC audit. Structural checks reported no duplicate event IDs, duplicate odds IDs, invalid odds or stale ingestion timestamps.
+- The same off-peak run failed event-volume thresholds: no feed met the live-event target and 11/12 met the prematch target. This is a sample-volume result, not evidence that every parser is structurally broken.
+- Raw market-label counts are not normalized market counts. Different labels may describe the same market, while period, team and line scope must remain distinct to prevent false arbitrage matches.
+- Quote ingestion timestamps do not prove bookmaker-side quote freshness. The scanner must not present them as source price-update timestamps.
 
-Do not silently replace an operator parser with a generic aggregator feed. Implement provider adapters as separately identified sources with:
-- source_provider and source_bookmaker provenance;
-- original bookmaker event/market IDs retained where supplied;
-- strict source timestamp and board freshness handling;
-- no merging of provider events until team/competition/time matching is proven;
-- provider health and per-bookmaker availability exposed independently;
-- feature flag and API key from environment/secret store only;
-- a provider contract test fixture and live smoke test before production enablement.
+See `PARSER_MASTER_INVENTORY.md` and `runtime_market_depth_summary_2026-11-27.json` for the detailed per-operator audit.
 
-## Remaining work
+## Archived third-party catalogue research — excluded
 
-1. Request the free two-week ODDSCORP trial for BetBoom, Liga Stavok and MelBet; in parallel request an API-SPORT trial for BetBoom and MelBet. Compare the same sample events.
-2. Confirm commercial use and redistribution rights, region variant, markets, rate limits, SLA, latency and cancellation terms.
-3. Evaluate Bet-M against licensed providers and permitted public feed behavior; do not evade regional restrictions.
-4. Recheck Poolbet after 2026-12-01 and Tennisi only after official resumption.
-5. Continue market-depth audit for the 12 currently reachable direct parsers.
+The earlier research pass found that API-SPORT, ODDSCORP, Odds-API.io and OpticOdds advertise odds for some Russian-facing bookmaker brands. These services are independent third parties, not the bookmakers' own APIs. Their catalogue claims, vendor update-speed claims, prices, trial offers and data rights were not independently verified in this project.
+
+This information is retained only to explain why it was considered during initial research. **It does not change the direct-only rule above:** no trial request, API key, adapter, fallback, feed ingestion, or production dependency should be created for these services.
+
+## Implementation and readiness rules
+
+- Every quote must retain the exact bookmaker slug and direct source provenance.
+- Keep the bookmaker's original event, market, factor and selection IDs when supplied.
+- Do not infer market semantics from an unknown numeric factor ID. Quarantine unresolved factors until the direct bookmaker catalogue or payload provides unambiguous market, selection and line semantics.
+- Do not merge events across books until teams, competition, scheduled start and sport are matched with explicit confidence checks.
+- Track source availability, parser health, market coverage, event volume and quote freshness separately.
+- A parser being registered, compiling, or passing fixture tests does not prove that a live bookmaker feed is working.
+- Keep execution disabled until direct live and prematch feed checks, event/odds linkage, market semantics, freshness and volume gates pass.
+- Credentials or session material, if required, must be supplied through the user's own authorized session and stored locally/in the approved secret store. Never commit secrets.
+
+## Remaining direct-source work
+
+1. Improve market/selection normalization using direct bookmaker labels and factor catalogues; unknown markets remain quarantined.
+2. Compare raw bookmaker payloads with the website's rendered line for the twelve reachable feeds, especially where runtime market-label counts are unexpectedly low.
+3. For BetBoom and Liga Stavok, document the official session/bootstrap contract only when it can be observed through a permitted route or authorized account session.
+4. For MelBet and Bet-M, retry the direct official Russian endpoints only from a permitted environment; do not route around regional blocks.
+5. Recheck Tennisi only after an official resumption notice, and Poolbet after its announced 2026-12-01 launch.
+6. Implement Golden Bet and ABET only after a real official interactive line or authorized direct feed is demonstrated.
