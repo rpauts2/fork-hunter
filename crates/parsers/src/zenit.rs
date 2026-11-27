@@ -1408,9 +1408,11 @@ mod tests {
             !query.contains_key("popular"),
             "normal sport-line requests must not be forced into the popular-only view"
         );
+        let expected_front_version = ZenitParser::frontversion();
         assert_eq!(
-            query.get("client_v").map(String::as_str),
-            Some(ZenitParser::DEFAULT_FRONT_VERSION)
+            query.get("client_v"),
+            Some(&expected_front_version),
+            "Zenit line requests must use the configured browser build version"
         );
         assert_eq!(query.get("length").map(String::as_str), Some("3000"));
         assert_eq!(query.get("offset").map(String::as_str), Some("150"));
