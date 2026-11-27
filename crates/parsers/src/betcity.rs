@@ -795,11 +795,11 @@ impl BetcityParser {
             return None;
         }
 
-        let event_numeric_id = event_value.get("id_ev").and_then(|value| value.as_i64())?;
+        let event_numeric_id = event_value.get("id_ev").and_then(Self::parse_i64_value)?;
         let event_id = format!("betcity-{event_numeric_id}");
         let start_time = event_value
             .get("date_ev")
-            .and_then(|value| value.as_i64())
+            .and_then(Self::parse_i64_value)
             .and_then(|timestamp| chrono::DateTime::<Utc>::from_timestamp(timestamp, 0));
 
         let event = Event {
@@ -1226,17 +1226,27 @@ impl BetcityParser {
     }
 
     fn extract_numeric_value(value: &serde_json::Value) -> Option<f64> {
+        match value {
+            serde_json::Value::Number(number) => number.as_f64(),
+            serde_json::Value::String(text) => {
+                text.trim().replace(',', ".").parse::<f64>().ok()
+            }
+            _ => None,
+        }
+    }
+
+    fn parse_i64_value(value: &serde_json::Value) -> Option<i64> {
         value
-            .as_f64()
-            .or_else(|| value.as_i64().map(|value| value as f64))
-            .or_else(|| value.as_u64().map(|value| value as f64))
+            .as_i64()
+            .or_else(|| value.as_str().and_then(|text| text.trim().parse::<i64>().ok()))
     }
 
     fn extract_line(value: &serde_json::Value) -> Option<f64> {
         value
             .get("lv")
-            .and_then(|line| line.as_f64())
-            .or_else(|| value.get("lvt").and_then(|line| line.as_f64()))
+            .and_then(Self::extract_numeric_value)
+            .or_else(|| value.get("lvt").and_then(Self::extract_numeric_value))
+            .filter(|line| line.is_finite())
     }
 
     fn is_period_market_name(market_name_lower: &str) -> bool {
@@ -1943,6 +1953,46 @@ mod tests {
                 && odd.odds == 1.22
                 && odd.line == Some(12.0)
         }));
+    }
+
+    #[test]
+    fn parses_string_event_ids_timestamps_and_decimal_comma_lines() {
+        let now = Utc::now();
+        let event_value = serde_json::json!({
+            "id_ev": " 900123 ",
+            "name_ht": "Home FC",
+            "name_at": "Away FC",
+            "date_ev": "1795618800",
+            "main": {}
+        });
+
+        let (event, odds) = BetcityParser::parse_nested_event(
+            &event_value,
+            Sport::Football,
+            "Test League",
+            false,
+            now,
+        )
+        .expect("string event identity should parse");
+        assert_eq!(event.id, "betcity-900123");
+        assert_eq!(
+            event.start_time.map(|value| value.timestamp()),
+            Some(1795618800)
+        );
+        assert!(odds.is_empty());
+
+        assert_eq!(
+            BetcityParser::extract_line(&serde_json::json!({"lv": " 2,5 "})),
+            Some(2.5)
+        );
+        assert_eq!(
+            BetcityParser::extract_line(&serde_json::json!({"lvt": "-0,75"})),
+            Some(-0.75)
+        );
+        assert_eq!(
+            BetcityParser::extract_line(&serde_json::json!({"lv": "NaN", "lvt": "1.5"})),
+            Some(1.5)
+        );
     }
 
     #[test]
