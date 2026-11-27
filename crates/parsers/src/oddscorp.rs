@@ -63,8 +63,8 @@ impl OddsCorpClient {
             .ok()
             .filter(|value| !value.trim().is_empty())
             .ok_or(OddsCorpError::MissingToken)?;
-        let base_url = std::env::var(BASE_URL_ENV_VAR)
-            .unwrap_or_else(|_| DEFAULT_BASE_URL.to_string());
+        let base_url =
+            std::env::var(BASE_URL_ENV_VAR).unwrap_or_else(|_| DEFAULT_BASE_URL.to_string());
         let allow_insecure_http = std::env::var(ALLOW_INSECURE_HTTP_ENV_VAR)
             .map(|value| value.trim() == "1")
             .unwrap_or(false);
@@ -306,7 +306,10 @@ impl OddsCorpMarket {
             Value::Bool(value) => *value,
             Value::Number(value) => value.as_i64().unwrap_or_default() != 0,
             Value::String(value) => {
-                matches!(value.trim().to_ascii_lowercase().as_str(), "1" | "true" | "yes")
+                matches!(
+                    value.trim().to_ascii_lowercase().as_str(),
+                    "1" | "true" | "yes"
+                )
             }
             _ => false,
         }
@@ -343,8 +346,7 @@ impl OddsCorpMarket {
 
     /// Provider price-update time, not local parser ingestion time.
     pub fn source_updated_at(&self) -> Option<DateTime<Utc>> {
-        parse_timestamp(&self.updated_at_ms)
-            .or_else(|| parse_timestamp(&self.updated_at))
+        parse_timestamp(&self.updated_at_ms).or_else(|| parse_timestamp(&self.updated_at))
     }
 }
 
@@ -491,7 +493,9 @@ mod tests {
         let items = parse_collection::<super::OddsCorpBookmaker>(wrapped).expect("wrapped");
         assert_eq!(items.len(), 1);
         assert_eq!(items[0].bk_name, "melbet");
-        assert!(parse_collection::<super::OddsCorpBookmaker>(json!({"error": "unauthorized"})).is_err());
+        assert!(
+            parse_collection::<super::OddsCorpBookmaker>(json!({"error": "unauthorized"})).is_err()
+        );
     }
 
     #[test]
