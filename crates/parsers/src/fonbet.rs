@@ -300,30 +300,33 @@ impl FonbetParser {
                                     let line =
                                         factor.get("p").and_then(|v| v.as_f64()).map(|p| p / 100.0);
 
-                                    let catalog_definition = factor_catalog.and_then(|catalog| {
-                                        let source_sport_id = sport_id.to_string();
-                                        catalog.get_factor_for_sport(fid, Some(&source_sport_id))
-                                    });
-                                    if let Some(definition) = catalog_definition {
-                                        let market_type = definition.market_type.to_lowercase();
-                                        let selection_name = definition.selection_name.to_lowercase();
-                                        let catalog_odd = crate::marathon::classify_catalog_factor(
-                                            "fonbet",
-                                            &all_odds[idx].0,
-                                            fid,
-                                            val,
-                                            line,
-                                            &market_type,
-                                            &selection_name,
-                                            now,
-                                        );
-                                        if let Some(odd) = catalog_odd {
-                                            all_odds[idx].1.push(odd);
-                                        }
-                                        // A catalog hit with unsupported semantics is
-                                        // quarantined; do not guess from the numeric ID.
-                                        continue;
-                                    }
+                                    if let Some(catalog) = factor_catalog {
+                                    let source_sport_id = sport_id.to_string();
+                                                                        if catalog.contains_factor_id(fid) {
+                                                                            if let Some(definition) =
+                                                                                catalog.get_factor_for_sport(fid, Some(&source_sport_id))
+                                                                            {
+                                                                                let market_type = definition.market_type.to_lowercase();
+                                                                                let selection_name = definition.selection_name.to_lowercase();
+                                                                                let catalog_odd = crate::marathon::classify_catalog_factor(
+                                                                                    "fonbet",
+                                                                                    &all_odds[idx].0,
+                                                                                    fid,
+                                                                                    val,
+                                                                                    line,
+                                                                                    &market_type,
+                                                                                    &selection_name,
+                                                                                    now,
+                                                                                );
+                                                                                if let Some(odd) = catalog_odd {
+                                                                                    all_odds[idx].1.push(odd);
+                                                                                }
+                                                                            }
+                                                                            // A catalog-known but ambiguous/unsupported ID is
+                                                                            // quarantined instead of guessed by numeric fallback.
+                                                                            continue;
+                                                                        }
+                                }
 
                                     let (market, selection, odds_type) =
                                         Self::factor_to_market(fid);
