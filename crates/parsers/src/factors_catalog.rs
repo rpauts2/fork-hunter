@@ -543,6 +543,8 @@ impl FactorsCatalog {
             "1st half",
             "1st_half",
             "1st-half",
+            "1h",
+            "1 h",
         ]
         .iter()
         .any(|marker| combined.contains(marker))
@@ -564,6 +566,8 @@ impl FactorsCatalog {
             "2nd half",
             "2nd_half",
             "2nd-half",
+            "2h",
+            "2 h",
         ]
         .iter()
         .any(|marker| combined.contains(marker))
@@ -584,6 +588,7 @@ impl FactorsCatalog {
             || combined.contains("тотал первой команды")
             || combined.contains("тотал 1-й команды")
             || combined.contains("team1_total")
+            || combined.contains("team1 total")
             || combined.contains("team 1 total")
         {
             format!("{period_prefix}team1_total")
@@ -593,6 +598,7 @@ impl FactorsCatalog {
             || combined.contains("тотал второй команды")
             || combined.contains("тотал 2-й команды")
             || combined.contains("team2_total")
+            || combined.contains("team2 total")
             || combined.contains("team 2 total")
         {
             format!("{period_prefix}team2_total")
@@ -1260,6 +1266,26 @@ mod tests {
         assert_eq!(catalog.get_factor(910).unwrap().selection_name, "1");
         assert_eq!(catalog.get_factor(912).unwrap().selection_name, "2");
     }
+    #[test]
+    fn market_normalization_accepts_numeric_half_markers_and_team_aliases() {
+        assert_eq!(
+            FactorsCatalog::normalize_market_type("1H Total", ""),
+            "first_half_total"
+        );
+        assert_eq!(
+            FactorsCatalog::normalize_market_type("2H Team1 Total", ""),
+            "second_half_team1_total"
+        );
+        assert_eq!(
+            FactorsCatalog::normalize_market_type("Team1 Total", ""),
+            "team1_total"
+        );
+        assert_eq!(
+            FactorsCatalog::normalize_market_type("Team 2 Total", ""),
+            "team2_total"
+        );
+    }
+
     #[test]
     fn market_normalization_preserves_first_and_second_half_scope() {
         assert_eq!(
