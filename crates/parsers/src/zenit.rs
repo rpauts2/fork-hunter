@@ -7,7 +7,7 @@ use shared::{
     DiagnosticSeverity, Event, Odd, ParserDiagnosticCheck, ParserReadiness, ParserReadinessStage,
     Sport,
 };
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::env;
 use std::sync::Arc;
 use std::time::Duration;
@@ -33,6 +33,10 @@ struct ParsedPage {
     odds: Vec<Odd>,
     raw_game_ids: Vec<String>,
     discovered_game_ids: Vec<String>,
+    /// Valid-priced source rows whose factor ID/header pair is not understood.
+    /// These are intentionally not emitted as odds; report them so new markets
+    /// can be mapped from real bookmaker payloads rather than guessed.
+    unmapped_factor_counts: BTreeMap<String, usize>,
     schema_error: Option<String>,
 }
 
@@ -1195,6 +1199,14 @@ impl ZenitParser {
                     };
 
                     let Some((market, selection, odds_type, line)) = mapped else {
+                        let factor = factor_code.as_deref().unwrap_or("<missing>");
+                        let column = if header.trim().is_empty() {
+                            "<empty>"
+                        } else {
+                            header.trim()
+                        };
+                        let key = format!("factor={factor};header={column}");
+                        *parsed.unmapped_factor_counts.entry(key).or_insert(0) += 1;
                         continue;
                     };
 
@@ -1242,6 +1254,16 @@ impl ZenitParser {
         }
 
         parsed.discovered_game_ids = discovered_game_ids.into_iter().collect();
+
+        for (factor_context, count) in &parsed.unmapped_factor_counts {
+            warn!(
+                sport_id = ?sport_id,
+                is_live,
+                factor_context,
+                count,
+                "Zenit direct feed contains a priced factor that is not yet classified; quote omitted"
+            );
+        }
 
         parsed
     }
@@ -1463,6 +1485,38 @@ mod tests {
             .odds
             .iter()
             .all(|odd| odd.id.contains("zenit-prematch-77")));
+    }
+
+    #[test]
+    fn reports_unknown_priced_factor_codes_without_fabricating_market_types() {
+        let payload = json!({
+            "games": {
+                "77": {
+                    "sid": 1,
+                    "c1_id": "101",
+                    "c2_id": "202",
+                    "f_l": [
+                        {"o": "42", "h": "1.90", "id": "unknown-factor-row"}
+                    ],
+                    "hd": [{"n": "Корнеры"}]
+                }
+            },
+            "dict": {
+                "cmd": {"101": "Home", "202": "Away"}
+            }
+        });
+
+        let parsed = ZenitParser::parse_response(&payload, Some(1), false);
+        assert_eq!(parsed.schema_error, None);
+        assert_eq!(parsed.events.len(), 1);
+        assert!(
+            parsed.odds.is_empty(),
+            "unclassified factor codes must not become actionable odds"
+        );
+        assert_eq!(
+            parsed.unmapped_factor_counts.get("factor=42;header=Корнеры"),
+            Some(&1)
+        );
     }
 
     #[test]
