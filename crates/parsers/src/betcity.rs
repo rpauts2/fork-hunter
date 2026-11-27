@@ -1945,14 +1945,20 @@ mod tests {
                 "Y": {"kf": 1.8},
                 "N": {"kf": 2.0}
             }
-        }).as_object().cloned().expect("BTTS block");
+        })
+            .as_object()
+            .cloned()
+            .expect("BTTS block");
         let double_chance = serde_json::json!({
             "market": {
                 "1X": {"kf": 1.2},
                 "12": {"kf": 1.3},
                 "X2": {"kf": 1.4}
             }
-        }).as_object().cloned().expect("double-chance block");
+        })
+            .as_object()
+            .cloned()
+            .expect("double-chance block");
         let handicap = serde_json::json!({
             "market": {
                 "F1": -0.5,
@@ -1960,7 +1966,10 @@ mod tests {
                 "Kf_F1": {"kf": 1.9, "ps": 101},
                 "Kf_F2": {"kf": 1.9, "ps": 102}
             }
-        }).as_object().cloned().expect("handicap block");
+        })
+            .as_object()
+            .cloned()
+            .expect("handicap block");
         let mut odds = Vec::new();
         let mut seen = std::collections::HashSet::new();
         let now = Utc::now();
@@ -1997,14 +2006,10 @@ mod tests {
             odd.market == "Двойной шанс 1-го тайма" && odd.selection == "1X"
         }));
         assert!(odds.iter().any(|odd| {
-            odd.market == "Фора 1-го тайма"
-                && odd.selection == "1"
-                && odd.line == Some(-0.5)
+            odd.market == "Фора 1-го тайма" && odd.selection == "1" && odd.line == Some(-0.5)
         }));
         assert!(odds.iter().all(|odd| {
-            odd.market != "BTTS"
-                && odd.market != "DoubleChance"
-                && odd.market != "Handicap"
+            odd.market != "BTTS" && odd.market != "DoubleChance" && odd.market != "Handicap"
         }));
     }
 
