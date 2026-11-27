@@ -590,6 +590,10 @@ impl FactorsCatalog {
             || combined.contains("team1_total")
             || combined.contains("team1 total")
             || combined.contains("team 1 total")
+            || combined.contains("индивидуальный тотал хозяев")
+            || combined.contains("инд. тотал хозяев")
+            || combined.contains("тотал хозяев")
+            || combined.contains("home team total")
         {
             format!("{period_prefix}team1_total")
         } else if combined.contains("инд. тотал 2")
@@ -600,8 +604,19 @@ impl FactorsCatalog {
             || combined.contains("team2_total")
             || combined.contains("team2 total")
             || combined.contains("team 2 total")
+            || combined.contains("индивидуальный тотал гостей")
+            || combined.contains("инд. тотал гостей")
+            || combined.contains("тотал гостей")
+            || combined.contains("away team total")
         {
             format!("{period_prefix}team2_total")
+        } else if combined.contains("индивидуальн")
+            || combined.contains("инд. тотал")
+            || combined.contains("individual total")
+        {
+            // An individual total without a proven team side is not the
+            // match total and must not enter cross-book comparison.
+            "unresolved_individual".to_string()
         } else if combined.contains("тотал сет") || combined.contains("sets_total") {
             "sets_total".to_string()
         } else if combined.contains("тотал карт") || combined.contains("maps_total") {
@@ -1282,6 +1297,22 @@ mod tests {
         );
         assert_eq!(
             FactorsCatalog::normalize_market_type("Team 2 Total", ""),
+            "team2_total"
+        );
+    }
+
+    #[test]
+    fn market_normalization_quarantines_individual_totals_without_team_scope() {
+        assert_eq!(
+            FactorsCatalog::normalize_market_type("Индивидуальный тотал", ""),
+            "unresolved_individual"
+        );
+        assert_eq!(
+            FactorsCatalog::normalize_market_type("Индивидуальный тотал хозяев", ""),
+            "team1_total"
+        );
+        assert_eq!(
+            FactorsCatalog::normalize_market_type("Индивидуальный тотал гостей", ""),
             "team2_total"
         );
     }
