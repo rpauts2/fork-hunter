@@ -1009,8 +1009,8 @@ mod tests {
     fn normalizes_live_source_market_names_without_collapsing_market_scopes() {
         for (source, expected) in [
             ("Исход", "1X2"),
-            ("Двойной шанс", "Double Chance"),
-            ("Победитель", "winner"),
+            ("Двойной шанс", "DoubleChance"),
+            ("Победитель", "Winner"),
             ("Победитель карты", "MapWinner"),
             ("Результат карты", "MapWinner"),
             ("Результат сета", "SetWinner"),
