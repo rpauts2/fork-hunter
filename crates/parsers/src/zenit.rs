@@ -550,6 +550,24 @@ impl ZenitParser {
         .await
     }
 
+    fn ross_details_url(is_live: bool, imprinthash: &str) -> String {
+        if is_live {
+            format!("https://zenit.win/ajax/live/ross/data/{imprinthash}/")
+        } else {
+            "https://zenit.win/ajax/line/ross/data/".to_string()
+        }
+    }
+
+    fn ross_details_query(game_ids: &[String], frontversion: &str) -> Vec<(String, String)> {
+        vec![
+            ("onlyview".to_string(), "0".to_string()),
+            ("gid".to_string(), game_ids.join("-")),
+            ("lang_id".to_string(), "1".to_string()),
+            ("client_v".to_string(), frontversion.to_string()),
+            ("show_from_main".to_string(), "0".to_string()),
+        ]
+    }
+
     /// Fetch the bookmaker's own event-specific expanded market payload.
     /// The official frontend calls this endpoint only after expanding the
     /// additional-market counter for the corresponding match.
@@ -562,16 +580,9 @@ impl ZenitParser {
             return Ok(HashMap::new());
         }
 
-        let games = game_ids.join("-");
         let frontversion = Self::frontversion();
-        let endpoint = if is_live {
-            format!(
-                "https://zenit.win/ajax/live/ross/data/{}/",
-                Self::imprinthash()
-            )
-        } else {
-            "https://zenit.win/ajax/line/ross/data/".to_string()
-        };
+        let endpoint = Self::ross_details_url(is_live, &Self::imprinthash());
+        let query = Self::ross_details_query(game_ids, &frontversion);
         let referer = if is_live {
             "https://zenit.win/live/football"
         } else {
@@ -591,13 +602,7 @@ impl ZenitParser {
                 .header("X-Requested-With", "XMLHttpRequest")
                 .header("imprinthash", Self::imprinthash())
                 .header("frontversion", &frontversion)
-                .query(&[
-                    ("onlyview", "0"),
-                    ("gid", games.as_str()),
-                    ("lang_id", "1"),
-                    ("client_v", frontversion.as_str()),
-                    ("show_from_main", "0"),
-                ])
+                .query(&query)
                 .send()
                 .await
                 .map_err(|error| {
@@ -1570,6 +1575,101 @@ mod tests {
     use serde_json::json;
     use std::sync::Arc;
     use std::time::Duration;
+
+    #[test]
+    fn additional_market_counters_are_collected_only_when_positive() {
+        let payload = json!({
+            "games": {
+                "77": {
+                    "sid": 1,
+                    "c1_id": "101",
+                    "c2_id": "202",
+                    "ross": "4",
+                    "ross_stats_count": 0,
+                    "ross_count_with_double_chances": "6",
+                    "hd": [],
+                    "f_l": []
+                },
+                "78": {
+                    "sid": 1,
+                    "c1_id": "101",
+                    "c2_id": "202",
+                    "ross": 0,
+                    "ross_stats_count": 0,
+                    "ross_count_with_double_chances": 0,
+                    "hd": [],
+                    "f_l": []
+                }
+            },
+            "dict": {
+                "cmd": {"101": "Home", "202": "Away"},
+                "sport": {"1": "Футбол"}
+            }
+        });
+
+        let parsed = ZenitParser::parse_response(&payload, Some(1), false);
+        assert_eq!(parsed.schema_error, None);
+        assert_eq!(parsed.events.len(), 2);
+        assert_eq!(parsed.additional_market_game_ids, vec!["77".to_string()]);
+    }
+
+    #[test]
+    fn additional_market_endpoint_matches_first_party_frontend_routes() {
+        assert_eq!(
+            ZenitParser::ross_details_url(false, "imprint"),
+            "https://zenit.win/ajax/line/ross/data/"
+        );
+        assert_eq!(
+            ZenitParser::ross_details_url(true, "imprint"),
+            "https://zenit.win/ajax/live/ross/data/imprint/"
+        );
+
+        let query = ZenitParser::ross_details_query(
+            &["77".to_string(), "88".to_string()],
+            "1.72.1",
+        )
+        .into_iter()
+        .collect::<HashMap<_, _>>();
+        assert_eq!(query.get("onlyview").map(String::as_str), Some("0"));
+        assert_eq!(query.get("gid").map(String::as_str), Some("77-88"));
+        assert_eq!(query.get("lang_id").map(String::as_str), Some("1"));
+        assert_eq!(query.get("client_v").map(String::as_str), Some("1.72.1"));
+        assert_eq!(query.get("show_from_main").map(String::as_str), Some("0"));
+    }
+
+    #[test]
+    fn attaches_expanded_market_payload_to_the_matching_source_event() {
+        let source = json!({
+            "games": {"77": {
+                "sid": 1,
+                "c1_id": "101",
+                "c2_id": "202",
+                "ross": 2,
+                "hd": [],
+                "f_l": []
+            }},
+            "dict": {
+                "cmd": {"101": "Home", "202": "Away"},
+                "sport": {"1": "Футбол"}
+            }
+        });
+        let mut parsed = ZenitParser::parse_response(&source, Some(1), false);
+        let expanded = json!({
+            "data": {"order": ["total"], "data": {}},
+            "other": [{"id": "bet-1", "name": "Test market", "cf": "2.10"}],
+            "filter": {"77": []}
+        });
+        let payloads = HashMap::from([("77".to_string(), expanded.clone())]);
+
+        assert_eq!(
+            ZenitParser::attach_ross_payloads(&mut parsed.events, payloads),
+            1
+        );
+        assert_eq!(
+            parsed.events[0].extra.get("zenit_additional_markets"),
+            Some(&expanded)
+        );
+    }
 
     #[test]
     fn is_transient_error_detects_timeout() {
