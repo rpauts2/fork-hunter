@@ -84,6 +84,29 @@ The full FNS list is not the same as the active betting market. The active runti
 
 **Validation after this phase:** `cargo test -p parsers -- --test-threads=1` passed across all targets (parser library: 424 passed, 0 failed, 2 ignored; parser-factory integration: 12 passed; tennis integration: 2 passed). `cargo check -p parsers --all-targets --quiet`, rustfmt checks for all changed Rust files, and `git diff --check` passed. Existing dead-code warnings remain in legacy/blocked parser paths; they do not fail validation.
 
+## Latest parser hardening — 2026-11-27 17:12 UTC
+
+Source code and normalization changes on `work/core-engine-refactor`:
+
+1. Shared Line51 factor resolution now fails closed if one factor ID maps to conflicting market/selection definitions within the same sport. Numeric JSON sport IDs are accepted; matching IDs are trimmed. New regression tests cover conflicting same-sport reuse and numeric sport IDs.
+2. First-/second-half market normalization recognizes Russian and English spelling variants and keeps those periods separate from full-match markets. Team 1/team 2 totals, BTTS and double-chance aliases are normalized into explicit market families.
+3. Total and handicap selection labels accept common bookmaker forms (`ТБ`, `ИТБ`, `ТМ`, `ИТМ`, `Ф1`, `Ф2`). Double-chance selections normalize Cyrillic `Х`, verbose alternatives and reversed labels into only `1X`, `X2` or `12`.
+4. The shared Line51 classifier rejects unrecognized 1X2, BTTS and double-chance outcome captions. Even/Odd checks the negative `Нечёт` outcome before positive `Чёт` matching. The 1X2 classifier no longer uses a broad Cyrillic `х` substring that could misread `Хозяева` as a draw.
+5. Winner markets can resolve an explicitly named participant to side 1 or 2 only when the normalized label exactly matches the corresponding event participant; otherwise the quote is quarantined.
+6. Third-party odds aggregators are explicitly excluded from the integration architecture. Direct bookmaker endpoints and authorized direct sessions remain the only permitted feed paths.
+
+**CI validation — commit `75c073d67b4eed176c16e695d28422f24a9d1be4`:**
+
+- `cargo check -p parsers --all-targets --quiet`: passed.
+- Parser library tests: **473 passed, 0 failed, 2 ignored** (475 discovered).
+- Runtime-diagnostics integration tests: **4 passed**.
+- Parser-factory integration tests: **12 passed**.
+- Tennis boundary tests: **2 passed**.
+- Total in this workflow: **491 passed, 0 failed, 2 ignored**.
+- `cargo fmt -p parsers -- --check`: passed.
+
+This validates compilation and deterministic tests. It does **not** make the four environment-blocked active feeds live-verified, establish source-side quote freshness, or sign off the full parser catalogue. The 12 reachable direct feeds still require peak-hour volume checks and source-vs-frontend market-depth reconciliation; unknown factors remain quarantined.
+
 ## Runtime quality rules
 
 1. A parser must return both live and prematch feeds where the operator offers them.
