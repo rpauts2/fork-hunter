@@ -26,11 +26,12 @@ fn parse_i64_value(value: &serde_json::Value) -> Option<i64> {
 }
 
 fn parse_f64_value(value: &serde_json::Value) -> Option<f64> {
-    value.as_f64().or_else(|| {
+    let parsed = value.as_f64().or_else(|| {
         value
             .as_str()
-            .and_then(|text| text.trim().replace(',', ".").parse().ok())
-    })
+            .and_then(|text| text.trim().replace(',', ".").parse::<f64>().ok())
+    })?;
+    parsed.is_finite().then_some(parsed)
 }
 
 #[derive(Debug)]
@@ -664,6 +665,13 @@ mod parser_fixture_tests {
             odds.is_empty(),
             "a catalog-known but sport-ambiguous factor must not use numeric fallback"
         );
+    }
+
+    #[test]
+    fn rejects_non_finite_factor_numbers_and_accepts_decimal_comma_strings() {
+        assert_eq!(super::parse_f64_value(&serde_json::json!(" 1,75 ")), Some(1.75));
+        assert!(super::parse_f64_value(&serde_json::json!("NaN")).is_none());
+        assert!(super::parse_f64_value(&serde_json::json!("Infinity")).is_none());
     }
 
     #[test]
