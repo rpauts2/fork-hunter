@@ -204,8 +204,8 @@ fn factory_keeps_paused_tennisi_registered_but_disabled() {
     assert_eq!(coverage.parser_type, "api");
     assert!(!coverage.enabled);
     assert!(!coverage.scan_supported);
-    assert!(notes.contains("suspended interactive betting"));
-    assert!(notes.contains("maintenance page"));
+    assert!(notes.contains("suspended acceptance of bets"));
+    assert!(notes.contains("withdrawals only"));
 }
 
 #[test]

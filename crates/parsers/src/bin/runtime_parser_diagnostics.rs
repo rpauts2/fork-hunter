@@ -334,6 +334,7 @@ mod tests {
                 prematch_events: 0,
                 total_odds: 0,
                 valid_odds: 0,
+                market_counts: std::collections::BTreeMap::new(),
                 events_with_odds: 0,
                 events_without_odds_samples: Vec::new(),
                 duplicate_event_ids: 0,

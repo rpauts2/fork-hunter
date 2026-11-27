@@ -8,6 +8,7 @@ use crate::zenit::ZenitParser;
 use chrono::{DateTime, Duration as ChronoDuration, Utc};
 use serde::Serialize;
 use shared::Event;
+use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -95,6 +96,8 @@ pub struct RuntimeCountReport {
     pub prematch_events: usize,
     pub total_odds: usize,
     pub valid_odds: usize,
+    /// Raw odds count by parser market label; useful for market-depth audits.
+    pub market_counts: BTreeMap<String, usize>,
     pub events_with_odds: usize,
     /// First few events with no linked valid price, for diagnosing coverage gaps.
     pub events_without_odds_samples: Vec<EventWithoutOddsSample>,
@@ -177,6 +180,12 @@ impl RuntimeCountReport {
     ) -> Self {
         let live_events = events.iter().filter(|event| event.is_live).count();
         let prematch_events = events.len().saturating_sub(live_events);
+        let mut market_counts = BTreeMap::new();
+        for odd in odds {
+            *market_counts
+                .entry(odd.market.trim().to_string())
+                .or_insert(0) += 1;
+        }
         let (live_threshold, prematch_threshold) = thresholds_for_bookmaker(bookmaker_slug);
         let mut event_owners = std::collections::HashMap::new();
         let mut duplicate_event_ids = 0usize;
@@ -382,6 +391,7 @@ impl RuntimeCountReport {
             prematch_events,
             total_odds: odds.len(),
             valid_odds,
+            market_counts,
             events_with_odds: events_with_odds.len(),
             events_without_odds_samples,
             duplicate_event_ids,
@@ -418,6 +428,7 @@ impl RuntimeCountReport {
             prematch_events: 0,
             total_odds: 0,
             valid_odds: 0,
+            market_counts: BTreeMap::new(),
             events_with_odds: 0,
             events_without_odds_samples: Vec::new(),
             duplicate_event_ids: 0,
@@ -794,6 +805,7 @@ mod tests {
         assert_eq!(report.valid_odds, 1);
         assert_eq!(report.events_with_odds, 1);
         assert_eq!(report.odds_coverage_percent, 100.0);
+        assert_eq!(report.market_counts.get("1X2"), Some(&1));
         assert!(
             !report.passed,
             "volume KPIs must still be enforced separately"

@@ -5,6 +5,15 @@ Regulatory scope: all 20 operators and official domains in the latest FNS list l
 
 This document distinguishes **parser code exists**, **real feed verified**, **environment/provider blocked**, and **no usable public line found**. A registry entry or passing fixture test is not proof of a working live feed. The latest full 16-operator post-hardening sweep is archived in [runtime_audit_2026-11-26_full_16_after_factor_mapping_fix.json](runtime_audit_2026-11-26_full_16_after_factor_mapping_fix.json) (2026-11-26 14:05 UTC). The synchronized 12-provider reachable-feed report is archived in [runtime_audit_2026-11-26_reachable_after_factor_mapping_fix.json](runtime_audit_2026-11-26_reachable_after_factor_mapping_fix.json) (2026-11-26 14:01 UTC). The previous 12:50 Moscow-time report and earlier reports are historical; this child-market aggregation sweep supersedes them for the current feed state. A targeted Olimp repeat is archived in [runtime_audit_2026-11-26_olimp_repeat.json](runtime_audit_2026-11-26_olimp_repeat.json). The quote-time schema findings are documented in [SOURCE_QUOTE_TIMESTAMP_AUDIT_2026-11-26.md](SOURCE_QUOTE_TIMESTAMP_AUDIT_2026-11-26.md).
 
+## Market depth audit — 2026-11-27 04:23 UTC
+
+- Runtime artifact: [runtime_market_depth_summary_2026-11-27.json](runtime_market_depth_summary_2026-11-27.json).
+- Runtime diagnostics now report a distribution of odds by raw market label, rather than only total odds and event coverage.
+- The 12 reachable feeds returned 173k+ valid odds in this sample, but market taxonomy is uneven: Baltbet 317 raw labels, Bettery 253, Marathon 251, Bet24/Fonbet/PARI 126 each, Winline 84, Betcity 47, Leon 6, Olimp 6, SportBet 5, Zenit 4.
+- Fonbet, PARI and Bet24 expose large clusters of unresolved technical labels such as factor_1696, factor_1697, factor_1727, factor_1728, factor_1730 and factor_1731. These odds are structurally valid but are not safe to compare across books until the factor IDs are mapped to market/selection/line semantics.
+- The raw-label count is not a normalized market count: labels can include period/segment suffixes, and books use different naming conventions. The next parser task is to normalize known market families and explicitly quarantine unknown factor IDs rather than treating them as comparable markets.
+- Low distinct-label counts at Leon, Olimp, SportBet and Zenit require source-vs-parser comparison before concluding that the operator offers only those markets.
+
 ## Feed access research — 2026-11-27
 
 Detailed provider and operator findings are recorded in [RUSSIAN_BK_FEED_ACCESS_RESEARCH_2026-11-27.md](RUSSIAN_BK_FEED_ACCESS_RESEARCH_2026-11-27.md). Key change: API-SPORT documents BetBoom and MelBet odds; ODDSCORP lists BetBoom, Liga Stavok, MelBet and Tennisi, but its older catalogue is not proof of current feed health. Tennisi is paused, Poolbet launch is announced for 2026-12-01, and Golden Bet / ABET have no verified public feed. No third-party provider is production-enabled without a trial, source-health evidence and written data-use terms.
