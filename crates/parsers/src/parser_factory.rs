@@ -99,7 +99,7 @@ const BOOKMAKER_REGISTRY: &[BookmakerRegistryEntry] = &[
         parser_type: "unavailable",
         source: "not_implemented",
         execution_supported: false,
-        notes: Some("FNS-listed operator (official domain abet.ru). The current site is an informational Alfabet/ООО Панорама page; no public interactive sports-line API or event feed was found. Not counted as an active feed target pending proof of live betting."),
+        notes: Some("FNS-listed operator (official domain abet.ru), branded as Alfabet by ООО Панорама. The official page publishes company/licence details and lists sports, but no public event/odds feed or machine-readable betting line is documented. Keep disabled until an authorized feed is verified."),
     },
     BookmakerRegistryEntry {
         slug: "goldenbet",
@@ -108,7 +108,7 @@ const BOOKMAKER_REGISTRY: &[BookmakerRegistryEntry] = &[
         parser_type: "unavailable",
         source: "not_implemented",
         execution_supported: false,
-        notes: Some("FNS-listed operator (official domain golden-bet.bet). This license is reported as dormant and the official domain returns HTTP 403 from the development environment; no operational public line has been verified."),
+        notes: Some("FNS-listed operator (official domain golden-bet.bet). Current public research did not verify an operating interactive line or a documented odds API; the official domain returned HTTP 403 from the development environment. Keep disabled pending operator confirmation."),
     },
     BookmakerRegistryEntry {
         slug: "poolbet",
@@ -117,7 +117,7 @@ const BOOKMAKER_REGISTRY: &[BookmakerRegistryEntry] = &[
         parser_type: "unavailable",
         source: "not_implemented",
         execution_supported: false,
-        notes: Some("FNS-listed operator (official domain poolbet.ru). The official domain returns HTTP 502 from the development environment and has been reported redirecting to a third-party site; no operational public line has been verified."),
+        notes: Some("FNS-listed operator (official domain poolbet.ru). As of 2026-11-27 the planned launch has been postponed to 2026-12-01; no operating public odds feed is verified yet. Keep disabled and recheck after the announced launch date."),
     },
     BookmakerRegistryEntry {
         slug: "betboom",
@@ -126,7 +126,7 @@ const BOOKMAKER_REGISTRY: &[BookmakerRegistryEntry] = &[
         parser_type: "browser_interception",
         source: "crates/parsers/src/betboom.rs",
         execution_supported: false,
-        notes: Some("Registered for runtime diagnostics; production promotion requires a verified live and prematch feed."),
+        notes: Some("Direct site is blocked by QRATOR in this environment. Public provider alternatives found: API-SPORT documents BetBoom odds; ODDSCORP lists BetBoom in its commercial feed catalogue. Require a provider trial, source timestamps, live/prematch coverage and data-use terms before enabling production."),
     },
     BookmakerRegistryEntry {
         slug: "pari",
@@ -212,7 +212,7 @@ const BOOKMAKER_REGISTRY: &[BookmakerRegistryEntry] = &[
         source: "crates/parsers/src/melbet.rs",
         execution_supported: false,
         notes: Some(
-            "Registered for diagnostics only. Runtime transport mapping still lacks the required bootstrap API context; it is intentionally disabled for scanner production use.",
+            "Direct site is blocked by a regional HTTP 403 in this environment. API-SPORT documents MelBet odds; ODDSCORP and Odds-API.io list MelBet as a supported commercial feed. Require a provider trial, region-specific coverage, source timestamps and data-use terms before enabling production.",
         ),
     },
     BookmakerRegistryEntry {
@@ -232,7 +232,7 @@ const BOOKMAKER_REGISTRY: &[BookmakerRegistryEntry] = &[
         source: "crates/parsers/src/tennisi.rs",
         execution_supported: false,
         notes: Some(
-            "Parser implementation retained for possible service resumption. The operator suspended interactive betting on 2026-09-01; current official domain serves a maintenance page, so it is excluded from active runtime gates.",
+            "Operator suspended acceptance of bets from 2026-09-01; public reporting says the site/app were left for withdrawals only through 2026-09-30. ODDSCORP still lists Tennisi in its bookmaker catalogue, but that legacy listing does not prove a live feed. Keep disabled until the operator resumes betting and a provider confirms current quotes.",
         ),
     },
     BookmakerRegistryEntry {
@@ -296,7 +296,7 @@ const BOOKMAKER_REGISTRY: &[BookmakerRegistryEntry] = &[
         source: "crates/parsers/src/ligastavok.rs",
         execution_supported: false,
         notes: Some(
-            "Sport-scoped HTTP parser with tournament discovery remains disabled until QRATOR bootstrap is proven in runtime diagnostics.",
+            "Direct site is blocked by QRATOR in this environment. ODDSCORP lists Liga Stavok in its commercial odds feed catalogue; no equivalent bookmaker-specific key was confirmed in API-SPORT docs. Validate a paid/trial feed and licensing before enabling.",
         ),
     },
     BookmakerRegistryEntry {
@@ -765,7 +765,7 @@ mod tests {
         assert_eq!(
             coverage.notes.as_deref(),
             Some(
-                "Parser implementation retained for possible service resumption. The operator suspended interactive betting on 2026-09-01; current official domain serves a maintenance page, so it is excluded from active runtime gates."
+                "Operator suspended acceptance of bets from 2026-09-01; public reporting says the site/app were left for withdrawals only through 2026-09-30. ODDSCORP still lists Tennisi in its bookmaker catalogue, but that legacy listing does not prove a live feed. Keep disabled until the operator resumes betting and a provider confirms current quotes."
             )
         );
     }

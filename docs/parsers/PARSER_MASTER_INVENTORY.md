@@ -5,6 +5,10 @@ Regulatory scope: all 20 operators and official domains in the latest FNS list l
 
 This document distinguishes **parser code exists**, **real feed verified**, **environment/provider blocked**, and **no usable public line found**. A registry entry or passing fixture test is not proof of a working live feed. The latest full 16-operator post-hardening sweep is archived in [runtime_audit_2026-11-26_full_16_after_factor_mapping_fix.json](runtime_audit_2026-11-26_full_16_after_factor_mapping_fix.json) (2026-11-26 14:05 UTC). The synchronized 12-provider reachable-feed report is archived in [runtime_audit_2026-11-26_reachable_after_factor_mapping_fix.json](runtime_audit_2026-11-26_reachable_after_factor_mapping_fix.json) (2026-11-26 14:01 UTC). The previous 12:50 Moscow-time report and earlier reports are historical; this child-market aggregation sweep supersedes them for the current feed state. A targeted Olimp repeat is archived in [runtime_audit_2026-11-26_olimp_repeat.json](runtime_audit_2026-11-26_olimp_repeat.json). The quote-time schema findings are documented in [SOURCE_QUOTE_TIMESTAMP_AUDIT_2026-11-26.md](SOURCE_QUOTE_TIMESTAMP_AUDIT_2026-11-26.md).
 
+## Feed access research — 2026-11-27
+
+Detailed provider and operator findings are recorded in [RUSSIAN_BK_FEED_ACCESS_RESEARCH_2026-11-27.md](RUSSIAN_BK_FEED_ACCESS_RESEARCH_2026-11-27.md). Key change: API-SPORT documents BetBoom and MelBet odds; ODDSCORP lists BetBoom, Liga Stavok, MelBet and Tennisi, but its older catalogue is not proof of current feed health. Tennisi is paused, Poolbet launch is announced for 2026-12-01, and Golden Bet / ABET have no verified public feed. No third-party provider is production-enabled without a trial, source-health evidence and written data-use terms.
+
 ## Runtime validation — 2026-11-27 04:06 UTC (off-peak snapshot)
 
 - Snapshot: [runtime_audit_2026-11-27_full_16.json](runtime_audit_2026-11-27_full_16.json).
