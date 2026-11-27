@@ -22,7 +22,6 @@ pub mod marathon;
 pub mod marathon_rest;
 pub mod melbet;
 pub mod melbet_rest;
-pub mod oddscorp;
 pub mod olimp;
 pub mod olimpbet;
 pub mod onexbet_rest;
