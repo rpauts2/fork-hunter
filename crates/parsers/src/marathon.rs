@@ -694,6 +694,12 @@ pub fn parse_api_response(
 
 fn canonical_total_market(market_type: &str) -> &'static str {
     match market_type {
+        "first_half_total" => "1H_Total",
+        "second_half_total" => "2H_Total",
+        "first_half_team1_total" => "1H_Team1Total",
+        "second_half_team1_total" => "2H_Team1Total",
+        "first_half_team2_total" => "1H_Team2Total",
+        "second_half_team2_total" => "2H_Team2Total",
         "team1_total" => "Team1Total",
         "team2_total" => "Team2Total",
         "sets_total" => "SetsTotal",
@@ -705,9 +711,49 @@ fn canonical_total_market(market_type: &str) -> &'static str {
 
 fn canonical_handicap_market(market_type: &str) -> &'static str {
     match market_type {
+        "first_half_handicap" => "1H_Handicap",
+        "second_half_handicap" => "2H_Handicap",
         "sets_handicap" => "SetsHandicap",
         "maps_handicap" => "MapsHandicap",
         _ => "Handicap",
+    }
+}
+
+fn canonical_result_market(market_type: &str) -> &'static str {
+    match market_type {
+        "first_half_1x2" => "1H_Result",
+        "second_half_1x2" => "2H_Result",
+        "first_half_to_win" => "1H_Winner",
+        "second_half_to_win" => "2H_Winner",
+        "first_half_final_win" => "1H_FinalWin",
+        "second_half_final_win" => "2H_FinalWin",
+        "final_win" => "FinalWin",
+        "to_win" => "Winner",
+        _ => "1X2",
+    }
+}
+
+fn canonical_btts_market(market_type: &str) -> &'static str {
+    match market_type {
+        "first_half_both_teams_score" => "1H_BothTeamsScore",
+        "second_half_both_teams_score" => "2H_BothTeamsScore",
+        _ => "BothTeamsScore",
+    }
+}
+
+fn canonical_even_odd_market(market_type: &str) -> &'static str {
+    match market_type {
+        "first_half_even_odd" => "1H_EvenOdd",
+        "second_half_even_odd" => "2H_EvenOdd",
+        _ => "EvenOdd",
+    }
+}
+
+fn canonical_double_chance_market(market_type: &str) -> &'static str {
+    match market_type {
+        "first_half_double_chance" => "1H_DoubleChance",
+        "second_half_double_chance" => "2H_DoubleChance",
+        _ => "DoubleChance",
     }
 }
 
@@ -760,13 +806,7 @@ fn classify_and_add_odd(
             odds.push(make_odd(
                 slug,
                 event,
-                if market_type.contains("final_win") {
-                    "FinalWin"
-                } else if market_type.contains("to_win") {
-                    "Winner"
-                } else {
-                    "1X2"
-                },
+                canonical_result_market(market_type),
                 "1",
                 val,
                 None,
@@ -778,13 +818,7 @@ fn classify_and_add_odd(
             odds.push(make_odd(
                 slug,
                 event,
-                if market_type.contains("final_win") {
-                    "FinalWin"
-                } else if market_type.contains("to_win") {
-                    "Winner"
-                } else {
-                    "1X2"
-                },
+                canonical_result_market(market_type),
                 "X",
                 val,
                 None,
@@ -796,13 +830,7 @@ fn classify_and_add_odd(
             odds.push(make_odd(
                 slug,
                 event,
-                if market_type.contains("final_win") {
-                    "FinalWin"
-                } else if market_type.contains("to_win") {
-                    "Winner"
-                } else {
-                    "1X2"
-                },
+                canonical_result_market(market_type),
                 "2",
                 val,
                 None,
@@ -920,7 +948,7 @@ fn classify_and_add_odd(
             odds.push(make_odd(
                 slug,
                 event,
-                "BothTeamsScore",
+                canonical_btts_market(market_type),
                 "Yes",
                 val,
                 None,
@@ -932,7 +960,7 @@ fn classify_and_add_odd(
             odds.push(make_odd(
                 slug,
                 event,
-                "BothTeamsScore",
+                canonical_btts_market(market_type),
                 "No",
                 val,
                 None,
@@ -950,7 +978,7 @@ fn classify_and_add_odd(
             odds.push(make_odd(
                 slug,
                 event,
-                "EvenOdd",
+                canonical_even_odd_market(market_type),
                 "Even",
                 val,
                 None,
@@ -962,7 +990,7 @@ fn classify_and_add_odd(
             odds.push(make_odd(
                 slug,
                 event,
-                "EvenOdd",
+                canonical_even_odd_market(market_type),
                 "Odd",
                 val,
                 None,
@@ -975,7 +1003,7 @@ fn classify_and_add_odd(
         odds.push(make_odd(
             slug,
             event,
-            "DoubleChance",
+            canonical_double_chance_market(market_type),
             selection,
             val,
             None,
@@ -1945,6 +1973,51 @@ mod parser_identity_tests {
             parsed[0].1.is_empty(),
             "a catalog-known but unclassifiable ID must not be reinterpreted as 1X2 Home"
         );
+    }
+
+    #[test]
+    fn catalog_classifier_keeps_half_time_markets_separate_from_full_match() {
+        let event = shared::Event {
+            id: "marathon-prematch-1".to_string(),
+            sport: Sport::Football,
+            league: "Test League".to_string(),
+            home_team: "Home FC".to_string(),
+            away_team: "Away FC".to_string(),
+            start_time: None,
+            is_live: false,
+            bookmaker_slug: "marathon".to_string(),
+            raw_url: None,
+            extra: std::collections::HashMap::new(),
+        };
+        let now = chrono::Utc::now();
+        let mut odds = Vec::new();
+
+        assert!(classify_and_add_odd(
+            &mut odds, "marathon", &event, 1, 1.90, Some(1.5),
+            "total", "over", now
+        ));
+        assert!(classify_and_add_odd(
+            &mut odds, "marathon", &event, 2, 1.95, Some(1.5),
+            "first_half_total", "over", now
+        ));
+        assert!(classify_and_add_odd(
+            &mut odds, "marathon", &event, 3, 1.95, Some(1.5),
+            "second_half_total", "over", now
+        ));
+        assert!(classify_and_add_odd(
+            &mut odds, "marathon", &event, 4, 1.90, Some(-0.5),
+            "first_half_handicap", "1", now
+        ));
+        assert!(classify_and_add_odd(
+            &mut odds, "marathon", &event, 5, 1.90, None,
+            "first_half_1x2", "1", now
+        ));
+
+        assert!(odds.iter().any(|odd| odd.market == "Total"));
+        assert!(odds.iter().any(|odd| odd.market == "1H_Total"));
+        assert!(odds.iter().any(|odd| odd.market == "2H_Total"));
+        assert!(odds.iter().any(|odd| odd.market == "1H_Handicap"));
+        assert!(odds.iter().any(|odd| odd.market == "1H_Result"));
     }
 
 }
