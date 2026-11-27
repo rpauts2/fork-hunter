@@ -1005,7 +1005,7 @@ impl BetcityParser {
                     .filter(|line| line.is_finite())
                     .or_else(|| block_obj.get("Tm").and_then(Self::extract_line))
                     .or_else(|| block_obj.get("Tb").and_then(Self::extract_line));
-                let market = if Self::is_period_market_name(&market_name_lower) {
+                let market = if Self::is_scoped_market_name(&market_name_lower) {
                     market_name
                 } else {
                     "Total"
@@ -1210,7 +1210,7 @@ impl BetcityParser {
                     .and_then(Self::extract_numeric_value)
                     .or_else(|| block_obj.get("Kf_F2").and_then(Self::extract_line));
 
-                let market = if Self::is_period_market_name(&market_name_lower) {
+                let market = if Self::is_scoped_market_name(&market_name_lower) {
                     market_name
                 } else {
                     "Handicap"
@@ -1283,6 +1283,29 @@ impl BetcityParser {
         ]
         .iter()
         .any(|marker| market_name_lower.contains(marker))
+    }
+
+    fn is_scoped_market_name(market_name_lower: &str) -> bool {
+        Self::is_period_market_name(market_name_lower)
+            || [
+                "индивидуальн",
+                "инд. тотал",
+                "инд тотал",
+                "команды 1",
+                "команды №1",
+                "команды 2",
+                "команды №2",
+                "тотал хозяев",
+                "тотал гостей",
+                "team 1",
+                "team1",
+                "team 2",
+                "team2",
+                "home team",
+                "away team",
+            ]
+            .iter()
+            .any(|marker| market_name_lower.contains(marker))
     }
 
     fn push_named_outcome_unique(
@@ -1860,6 +1883,77 @@ mod tests {
     use shared::{Event, Odd};
     use std::collections::HashMap;
     use std::time::Duration;
+
+    #[test]
+    fn preserves_team_scope_for_individual_totals_and_handicaps() {
+        let now = Utc::now();
+        let mut odds = Vec::new();
+        let mut seen = std::collections::HashSet::new();
+
+        let team_total = serde_json::json!({
+            "market": {
+                "Tot": 2.5,
+                "Tm": {"kf": 1.80, "lv": 2.5},
+                "Tb": {"kf": 2.00, "lv": 2.5}
+            }
+        }).as_object().cloned().expect("team-total block");
+        BetcityParser::extract_market_blocks(
+            &team_total,
+            "Индивидуальный тотал команды 1",
+            "betcity-pre-701",
+            now,
+            &mut seen,
+            &mut odds,
+        );
+        BetcityParser::extract_market_blocks(
+            &team_total,
+            "Индивидуальный тотал команды 2",
+            "betcity-pre-701",
+            now,
+            &mut seen,
+            &mut odds,
+        );
+
+        let team_handicap = serde_json::json!({
+            "market": {
+                "F1": -0.5,
+                "F2": 0.5,
+                "Kf_F1": {"kf": 1.91, "ps": 103},
+                "Kf_F2": {"kf": 1.91, "ps": 104}
+            }
+        }).as_object().cloned().expect("team-handicap block");
+        BetcityParser::extract_market_blocks(
+            &team_handicap,
+            "Фора команды 1",
+            "betcity-pre-701",
+            now,
+            &mut seen,
+            &mut odds,
+        );
+        BetcityParser::extract_market_blocks(
+            &team_handicap,
+            "Фора команды 2",
+            "betcity-pre-701",
+            now,
+            &mut seen,
+            &mut odds,
+        );
+
+        for market in [
+            "Индивидуальный тотал команды 1",
+            "Индивидуальный тотал команды 2",
+            "Фора команды 1",
+            "Фора команды 2",
+        ] {
+            assert!(
+                odds.iter().any(|odd| odd.market == market),
+                "scoped market was collapsed: {market}"
+            );
+        }
+        assert!(!odds.iter().any(|odd| {
+            odd.market == "Total" || odd.market == "Handicap"
+        }));
+    }
 
     #[test]
     fn recognizes_russian_and_english_period_market_markers() {
