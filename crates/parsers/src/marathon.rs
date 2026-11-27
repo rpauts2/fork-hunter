@@ -1196,7 +1196,9 @@ pub(crate) fn make_market_odd(
     odds_type: OddsType,
     timestamp: chrono::DateTime<Utc>,
 ) -> Odd {
-    make_odd(slug, event, market, selection, odds, line, odds_type, timestamp)
+    make_odd(
+        slug, event, market, selection, odds, line, odds_type, timestamp,
+    )
 }
 
 fn make_odd(
@@ -1993,24 +1995,59 @@ mod parser_identity_tests {
         let mut odds = Vec::new();
 
         assert!(classify_and_add_odd(
-            &mut odds, "marathon", &event, 1, 1.90, Some(1.5),
-            "total", "over", now
+            &mut odds,
+            "marathon",
+            &event,
+            1,
+            1.90,
+            Some(1.5),
+            "total",
+            "over",
+            now
         ));
         assert!(classify_and_add_odd(
-            &mut odds, "marathon", &event, 2, 1.95, Some(1.5),
-            "first_half_total", "over", now
+            &mut odds,
+            "marathon",
+            &event,
+            2,
+            1.95,
+            Some(1.5),
+            "first_half_total",
+            "over",
+            now
         ));
         assert!(classify_and_add_odd(
-            &mut odds, "marathon", &event, 3, 1.95, Some(1.5),
-            "second_half_total", "over", now
+            &mut odds,
+            "marathon",
+            &event,
+            3,
+            1.95,
+            Some(1.5),
+            "second_half_total",
+            "over",
+            now
         ));
         assert!(classify_and_add_odd(
-            &mut odds, "marathon", &event, 4, 1.90, Some(-0.5),
-            "first_half_handicap", "1", now
+            &mut odds,
+            "marathon",
+            &event,
+            4,
+            1.90,
+            Some(-0.5),
+            "first_half_handicap",
+            "1",
+            now
         ));
         assert!(classify_and_add_odd(
-            &mut odds, "marathon", &event, 5, 1.90, None,
-            "first_half_1x2", "1", now
+            &mut odds,
+            "marathon",
+            &event,
+            5,
+            1.90,
+            None,
+            "first_half_1x2",
+            "1",
+            now
         ));
 
         assert!(odds.iter().any(|odd| odd.market == "Total"));
@@ -2019,5 +2056,4 @@ mod parser_identity_tests {
         assert!(odds.iter().any(|odd| odd.market == "1H_Handicap"));
         assert!(odds.iter().any(|odd| odd.market == "1H_Result"));
     }
-
 }

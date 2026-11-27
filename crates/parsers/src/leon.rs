@@ -320,9 +320,7 @@ impl LeonParser {
     fn parse_numeric_value(value: &serde_json::Value) -> Option<f64> {
         let parsed = match value {
             serde_json::Value::Number(number) => number.as_f64(),
-            serde_json::Value::String(text) => {
-                text.trim().replace(',', ".").parse::<f64>().ok()
-            }
+            serde_json::Value::String(text) => text.trim().replace(',', ".").parse::<f64>().ok(),
             _ => None,
         }?;
         parsed.is_finite().then_some(parsed)
@@ -605,9 +603,15 @@ mod tests {
                 && odd.selection == "Home"
                 && odd.id.contains("market-winner-runner-Winner-Home")
         }));
-        let ids = odds.iter().map(|odd| &odd.id).collect::<std::collections::HashSet<_>>();
+        let ids = odds
+            .iter()
+            .map(|odd| &odd.id)
+            .collect::<std::collections::HashSet<_>>();
         assert_eq!(ids.len(), odds.len());
-        assert_eq!(LeonParser::parse_numeric_value(&json!(" 2,05 ")), Some(2.05));
+        assert_eq!(
+            LeonParser::parse_numeric_value(&json!(" 2,05 ")),
+            Some(2.05)
+        );
         assert!(LeonParser::parse_numeric_value(&json!("NaN")).is_none());
         assert!(LeonParser::parse_numeric_value(&json!("Infinity")).is_none());
     }

@@ -20,9 +20,11 @@ fn parse_u64_value(value: &serde_json::Value) -> Option<u64> {
 }
 
 fn parse_i64_value(value: &serde_json::Value) -> Option<i64> {
-    value
-        .as_i64()
-        .or_else(|| value.as_str().and_then(|text| text.trim().parse::<i64>().ok()))
+    value.as_i64().or_else(|| {
+        value
+            .as_str()
+            .and_then(|text| text.trim().parse::<i64>().ok())
+    })
 }
 
 fn parse_f64_value(value: &serde_json::Value) -> Option<f64> {
@@ -180,7 +182,9 @@ impl PariParser {
 
         match self.factors.load().await {
             Ok(count) => info!(factor_count = count, "Pari direct factor catalog loaded"),
-            Err(error) => warn!(error = %error, "Pari direct factor catalog unavailable; using legacy fallback mappings for factors absent from the direct catalog"),
+            Err(error) => {
+                warn!(error = %error, "Pari direct factor catalog unavailable; using legacy fallback mappings for factors absent from the direct catalog")
+            }
         }
 
         let json: serde_json::Value = resp.json().await?;
@@ -322,8 +326,10 @@ impl PariParser {
                                         continue;
                                     }
 
-                                    let line =
-                                        factor.get("p").and_then(parse_f64_value).map(|p| p / 100.0);
+                                    let line = factor
+                                        .get("p")
+                                        .and_then(parse_f64_value)
+                                        .map(|p| p / 100.0);
 
                                     if let Some(catalog) = factor_catalog {
                                         let source_sport_id = source_sport_id.to_string();
@@ -354,7 +360,7 @@ impl PariParser {
                                         }
                                     }
 
-let (market, selection, odds_type) =
+                                    let (market, selection, odds_type) =
                                         Self::factor_to_market(fid);
                                     // A numeric ID alone does not establish market semantics. Keep
                                     // unknown factors out of cross-book comparison and expose
@@ -389,8 +395,7 @@ let (market, selection, odds_type) =
 
         let events = all_odds.iter().map(|(event, _)| event.clone()).collect();
         let odds = all_odds.into_iter().flat_map(|(_, odds)| odds).collect();
-        let (odds, collapsed_duplicates) =
-            crate::marathon::deduplicate_same_market_quotes(odds);
+        let (odds, collapsed_duplicates) = crate::marathon::deduplicate_same_market_quotes(odds);
         if collapsed_duplicates > 0 {
             warn!(
                 bookmaker = "pari",
@@ -534,9 +539,9 @@ let (market, selection, odds_type) =
 mod parser_fixture_tests {
     use super::PariParser;
     use crate::factors_catalog::FactorsCatalog;
-    use std::sync::Arc;
     use shared::odds::OddsType;
     use shared::Sport;
+    use std::sync::Arc;
 
     fn catalog_with_sport_scoped_totals() -> FactorsCatalog {
         let catalog = FactorsCatalog::new(
@@ -587,12 +592,9 @@ mod parser_fixture_tests {
             }]
         });
 
-        let (events, odds) = PariParser::parse_api_response_with_catalog(
-            &payload,
-            false,
-            Some(&catalog),
-        )
-        .expect("direct catalog fixture should parse");
+        let (events, odds) =
+            PariParser::parse_api_response_with_catalog(&payload, false, Some(&catalog))
+                .expect("direct catalog fixture should parse");
 
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].id, "pari-pre-12345");
@@ -664,12 +666,9 @@ mod parser_fixture_tests {
             }]
         });
 
-        let (events, odds) = PariParser::parse_api_response_with_catalog(
-            &payload,
-            false,
-            Some(&catalog),
-        )
-        .expect("ambiguous factor should not fail the event feed");
+        let (events, odds) =
+            PariParser::parse_api_response_with_catalog(&payload, false, Some(&catalog))
+                .expect("ambiguous factor should not fail the event feed");
 
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].id, "pari-pre-12345");
@@ -681,7 +680,10 @@ mod parser_fixture_tests {
 
     #[test]
     fn rejects_non_finite_factor_numbers_and_accepts_decimal_comma_strings() {
-        assert_eq!(super::parse_f64_value(&serde_json::json!(" 1,75 ")), Some(1.75));
+        assert_eq!(
+            super::parse_f64_value(&serde_json::json!(" 1,75 ")),
+            Some(1.75)
+        );
         assert!(super::parse_f64_value(&serde_json::json!("NaN")).is_none());
         assert!(super::parse_f64_value(&serde_json::json!("Infinity")).is_none());
     }

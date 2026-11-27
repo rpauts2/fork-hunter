@@ -1229,17 +1229,17 @@ impl BetcityParser {
     fn extract_numeric_value(value: &serde_json::Value) -> Option<f64> {
         match value {
             serde_json::Value::Number(number) => number.as_f64(),
-            serde_json::Value::String(text) => {
-                text.trim().replace(',', ".").parse::<f64>().ok()
-            }
+            serde_json::Value::String(text) => text.trim().replace(',', ".").parse::<f64>().ok(),
             _ => None,
         }
     }
 
     fn parse_i64_value(value: &serde_json::Value) -> Option<i64> {
-        value
-            .as_i64()
-            .or_else(|| value.as_str().and_then(|text| text.trim().parse::<i64>().ok()))
+        value.as_i64().or_else(|| {
+            value
+                .as_str()
+                .and_then(|text| text.trim().parse::<i64>().ok())
+        })
     }
 
     fn extract_line(value: &serde_json::Value) -> Option<f64> {
@@ -1947,12 +1947,12 @@ mod tests {
         );
 
         assert_eq!(odds.len(), 2);
-        assert!(odds.iter().any(|odd| {
-            odd.selection == "Under" && odd.odds == 1.95 && odd.line == Some(2.5)
-        }));
-        assert!(odds.iter().any(|odd| {
-            odd.selection == "Over" && odd.odds == 2.05 && odd.line == Some(2.5)
-        }));
+        assert!(odds
+            .iter()
+            .any(|odd| { odd.selection == "Under" && odd.odds == 1.95 && odd.line == Some(2.5) }));
+        assert!(odds
+            .iter()
+            .any(|odd| { odd.selection == "Over" && odd.odds == 2.05 && odd.line == Some(2.5) }));
     }
 
     #[test]
@@ -2043,11 +2043,8 @@ mod tests {
             "odds": ["2,10", "3,20", "3,50", "1.0", "NaN", "100.1"]
         }]);
 
-        let (events, odds) = BetcityParser::parse_events_array(
-            payload.as_array().expect("event array"),
-            false,
-            now,
-        );
+        let (events, odds) =
+            BetcityParser::parse_events_array(payload.as_array().expect("event array"), false, now);
 
         assert_eq!(events.len(), 1);
         assert_eq!(odds.len(), 3);

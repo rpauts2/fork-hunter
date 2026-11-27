@@ -658,7 +658,10 @@ impl ZenitParser {
         };
 
         self.retry_with_backoff(
-            &format!("fetch_ross_details(live={is_live}, games={})", game_ids.len()),
+            &format!(
+                "fetch_ross_details(live={is_live}, games={})",
+                game_ids.len()
+            ),
             operation,
         )
         .await
@@ -755,7 +758,8 @@ impl ZenitParser {
                 filter_group_count,
                 "Zenit raw expanded market payload attached"
             );
-            event.extra
+            event
+                .extra
                 .insert("zenit_additional_markets".to_string(), payload);
             attached += 1;
         }
@@ -1321,18 +1325,15 @@ impl ZenitParser {
 
             parsed.raw_game_ids.push(game_id.clone());
 
-            let advertises_additional_markets = [
-                "ross",
-                "ross_stats_count",
-                "ross_count_with_double_chances",
-            ]
-            .iter()
-            .any(|field| {
-                game_obj
-                    .get(*field)
-                    .and_then(Self::parse_u64_value)
-                    .is_some_and(|count| count > 0)
-            });
+            let advertises_additional_markets =
+                ["ross", "ross_stats_count", "ross_count_with_double_chances"]
+                    .iter()
+                    .any(|field| {
+                        game_obj
+                            .get(*field)
+                            .and_then(Self::parse_u64_value)
+                            .is_some_and(|count| count > 0)
+                    });
             if advertises_additional_markets {
                 parsed.additional_market_game_ids.push(game_id.clone());
             }
@@ -1499,16 +1500,9 @@ impl ZenitParser {
             parsed.odds.extend(event_odds);
 
             let mut event_extra = HashMap::new();
-            for field in [
-                "ross",
-                "ross_stats_count",
-                "ross_count_with_double_chances",
-            ] {
+            for field in ["ross", "ross_stats_count", "ross_count_with_double_chances"] {
                 if let Some(count) = game_obj.get(field).and_then(Self::parse_u64_value) {
-                    event_extra.insert(
-                        format!("zenit_{field}"),
-                        serde_json::Value::from(count),
-                    );
+                    event_extra.insert(format!("zenit_{field}"), serde_json::Value::from(count));
                 }
             }
 
@@ -1661,7 +1655,9 @@ mod tests {
             .expect("flagged event");
         assert_eq!(flagged_event.extra.get("zenit_ross"), Some(&json!(4)));
         assert_eq!(
-            flagged_event.extra.get("zenit_ross_count_with_double_chances"),
+            flagged_event
+                .extra
+                .get("zenit_ross_count_with_double_chances"),
             Some(&json!(6))
         );
     }
@@ -1677,12 +1673,10 @@ mod tests {
             "https://zenit.win/ajax/live/ross/data/imprint/"
         );
 
-        let query = ZenitParser::ross_details_query(
-            &["77".to_string(), "88".to_string()],
-            "1.72.1",
-        )
-        .into_iter()
-        .collect::<HashMap<_, _>>();
+        let query =
+            ZenitParser::ross_details_query(&["77".to_string(), "88".to_string()], "1.72.1")
+                .into_iter()
+                .collect::<HashMap<_, _>>();
         assert_eq!(query.get("onlyview").map(String::as_str), Some("0"));
         assert_eq!(query.get("gid").map(String::as_str), Some("77-88"));
         assert_eq!(query.get("lang_id").map(String::as_str), Some("1"));
@@ -1902,7 +1896,9 @@ mod tests {
             "unclassified factor codes must not become actionable odds"
         );
         assert_eq!(
-            parsed.unmapped_factor_counts.get("factor=42;header=Корнеры"),
+            parsed
+                .unmapped_factor_counts
+                .get("factor=42;header=Корнеры"),
             Some(&1)
         );
     }

@@ -663,13 +663,14 @@ impl FactorsCatalog {
             "double_chance" => {
                 // Russian feeds commonly use Cyrillic Х where Latin X is
                 // expected. Normalize both alphabets and verbose captions.
-                let compact = value
-                    .replace('х', "x")
-                    .replace(' ', "")
-                    .replace('-', "");
-                if compact == "1x" || compact.contains("1илиx") || compact.contains("1илиничья") {
+                let compact = value.replace('х', "x").replace(' ', "").replace('-', "");
+                if compact == "1x" || compact.contains("1илиx") || compact.contains("1илиничья")
+                {
                     "1X".to_string()
-                } else if compact == "x2" || compact.contains("xили2") || compact.contains("ничьяили2") {
+                } else if compact == "x2"
+                    || compact.contains("xили2")
+                    || compact.contains("ничьяили2")
+                {
                     "X2".to_string()
                 } else if compact == "12" || compact.contains("1или2") {
                     "12".to_string()
@@ -1127,7 +1128,7 @@ mod tests {
         assert_eq!(count, 2);
         assert_eq!(catalog.get_factor(910).unwrap().selection_name, "1");
         assert_eq!(catalog.get_factor(912).unwrap().selection_name, "2");
-    } 
+    }
     #[test]
     fn market_normalization_preserves_first_and_second_half_scope() {
         assert_eq!(
@@ -1187,5 +1188,4 @@ mod tests {
             "1X"
         );
     }
-
 }

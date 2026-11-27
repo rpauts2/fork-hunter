@@ -238,10 +238,7 @@ impl SportbetParser {
                             .unwrap_or_else(|| {
                                 format!(
                                     "name-{}",
-                                    market_name
-                                        .trim()
-                                        .to_lowercase()
-                                        .replace([' ', '/'], "_")
+                                    market_name.trim().to_lowercase().replace([' ', '/'], "_")
                                 )
                             });
                         let Some(outcomes) = market_data
@@ -771,12 +768,24 @@ mod tests {
             events[0].start_time.map(|value| value.timestamp_millis()),
             Some(1795618800000)
         );
-        assert!(odds.iter().any(|odd| odd.id.contains("market-market-result-")));
-        assert!(odds.iter().any(|odd| odd.id.contains("market-market-handicap-")));
-        assert!(odds.iter().any(|odd| odd.id.contains("market-market-total-")));
-        let ids = odds.iter().map(|odd| &odd.id).collect::<std::collections::HashSet<_>>();
+        assert!(odds
+            .iter()
+            .any(|odd| odd.id.contains("market-market-result-")));
+        assert!(odds
+            .iter()
+            .any(|odd| odd.id.contains("market-market-handicap-")));
+        assert!(odds
+            .iter()
+            .any(|odd| odd.id.contains("market-market-total-")));
+        let ids = odds
+            .iter()
+            .map(|odd| &odd.id)
+            .collect::<std::collections::HashSet<_>>();
         assert_eq!(ids.len(), odds.len());
-        assert_eq!(SportbetParser::parse_f64_value(&serde_json::json!(" 2,05 ")), Some(2.05));
+        assert_eq!(
+            SportbetParser::parse_f64_value(&serde_json::json!(" 2,05 ")),
+            Some(2.05)
+        );
         assert!(SportbetParser::parse_f64_value(&serde_json::json!("NaN")).is_none());
         assert!(SportbetParser::parse_f64_value(&serde_json::json!("Infinity")).is_none());
     }

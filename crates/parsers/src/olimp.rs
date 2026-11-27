@@ -477,9 +477,8 @@ impl OlimpParser {
                                     .map(str::trim)
                                     .filter(|value| !value.is_empty())
                                 {
-                                    let probability = outcome
-                                        .get("probability")
-                                        .and_then(Self::parse_f64_value);
+                                    let probability =
+                                        outcome.get("probability").and_then(Self::parse_f64_value);
                                     if let Some(prob) = probability
                                         .filter(|value| value.is_finite() && *value > 1.0)
                                     {
@@ -638,9 +637,7 @@ impl OlimpParser {
     fn parse_f64_value(value: &serde_json::Value) -> Option<f64> {
         match value {
             serde_json::Value::Number(number) => number.as_f64(),
-            serde_json::Value::String(text) => {
-                text.trim().replace(',', ".").parse::<f64>().ok()
-            }
+            serde_json::Value::String(text) => text.trim().replace(',', ".").parse::<f64>().ok(),
             _ => None,
         }
     }
