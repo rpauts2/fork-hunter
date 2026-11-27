@@ -192,7 +192,7 @@ impl SportbetParser {
                     let event_id = format!("sportbet-{}-{}", mode, source_event_id);
                     let start_time = event_data
                         .get("scheduled")
-                        .and_then(|value| value.as_i64())
+                        .and_then(Self::parse_i64_value)
                         .and_then(DateTime::<Utc>::from_timestamp_millis);
 
                     let event = Event {
@@ -231,11 +231,19 @@ impl SportbetParser {
                             .get("name")
                             .and_then(|value| value.as_str())
                             .unwrap_or("Other");
-                        let market_id = market_data
-                            .get("id")
-                            .and_then(|value| value.as_u64())
-                            .unwrap_or_default();
                         let normalized_market = Self::normalize_market(market_name);
+                        // Market IDs can be numeric or strings. Falling back to 0
+                        // collapses distinct string-ID markets into the same Odd IDs.
+                        let market_id = Self::parse_identifier(market_data.get("id"))
+                            .unwrap_or_else(|| {
+                                format!(
+                                    "name-{}",
+                                    market_name
+                                        .trim()
+                                        .to_lowercase()
+                                        .replace([' ', '/'], "_")
+                                )
+                            });
                         let Some(outcomes) = market_data
                             .get("outcomes")
                             .and_then(|value| value.as_array())
@@ -357,6 +365,23 @@ impl SportbetParser {
                 .as_str()
                 .and_then(|text| text.trim().replace(',', ".").parse().ok())
         })
+    }
+
+    fn parse_i64_value(value: &serde_json::Value) -> Option<i64> {
+        value
+            .as_i64()
+            .or_else(|| value.as_str().and_then(|text| text.trim().parse().ok()))
+    }
+
+    fn parse_identifier(value: Option<&serde_json::Value>) -> Option<String> {
+        match value? {
+            serde_json::Value::String(text) => {
+                let text = text.trim();
+                (!text.is_empty()).then(|| text.to_string())
+            }
+            serde_json::Value::Number(number) => Some(number.to_string()),
+            _ => None,
+        }
     }
 
     fn parse_sport(slug: &str, name: &str) -> Sport {
@@ -728,6 +753,28 @@ mod tests {
         assert_ne!(totals[0].id, totals[1].id);
         assert!(totals.iter().any(|odd| odd.odds == 1.8));
         assert!(totals.iter().any(|odd| odd.odds == 2.0));
+    }
+
+    #[test]
+    fn string_market_ids_and_string_timestamps_remain_distinct() {
+        let mut payload = sample_payload("not_started");
+        let event = &mut payload["data"]["sports"][0]["tournaments"][0]["events"][0];
+        event["scheduled"] = serde_json::json!("1795618800000");
+        event["markets"][0]["id"] = serde_json::json!("market-result");
+        event["markets"][1]["id"] = serde_json::json!("market-handicap");
+        event["markets"][2]["id"] = serde_json::json!("market-total");
+
+        let (events, odds) =
+            SportbetParser::parse_api_response(&payload, false).expect("string identifiers parse");
+        assert_eq!(
+            events[0].start_time.map(|value| value.timestamp_millis()),
+            Some(1795618800000)
+        );
+        assert!(odds.iter().any(|odd| odd.id.contains("market-market-result-")));
+        assert!(odds.iter().any(|odd| odd.id.contains("market-market-handicap-")));
+        assert!(odds.iter().any(|odd| odd.id.contains("market-market-total-")));
+        let ids = odds.iter().map(|odd| &odd.id).collect::<std::collections::HashSet<_>>();
+        assert_eq!(ids.len(), odds.len());
     }
 
     #[test]
