@@ -659,6 +659,48 @@ impl ZenitParser {
         .await
     }
 
+    async fn attach_additional_market_details(
+        &self,
+        events: &mut [Event],
+        game_ids: &HashSet<String>,
+        is_live: bool,
+    ) {
+        if game_ids.is_empty() {
+            return;
+        }
+
+        let mut ordered_game_ids = game_ids.iter().cloned().collect::<Vec<_>>();
+        ordered_game_ids.sort_unstable();
+        let mut payloads = HashMap::new();
+        let mut failed_batches = 0usize;
+
+        for chunk in ordered_game_ids.chunks(Self::GAME_BATCH_SIZE) {
+            match self.fetch_ross_details(is_live, chunk).await {
+                Ok(batch) => payloads.extend(batch),
+                Err(error) => {
+                    failed_batches += 1;
+                    warn!(
+                        error = %error,
+                        is_live,
+                        batch_size = chunk.len(),
+                        "Zenit additional-market batch failed; main event and odds data are retained"
+                    );
+                }
+            }
+        }
+
+        let response_game_count = payloads.len();
+        let attached = Self::attach_ross_payloads(events, payloads);
+        info!(
+            is_live,
+            advertised_games = ordered_game_ids.len(),
+            returned_games = response_game_count,
+            attached_games = attached,
+            failed_batches,
+            "Zenit additional-market expansion completed"
+        );
+    }
+
     fn attach_ross_payloads(
         events: &mut [Event],
         payloads: HashMap<String, serde_json::Value>,
@@ -942,6 +984,7 @@ impl ZenitParser {
         let mut seen_events = HashSet::new();
         let mut seen_odds = HashSet::new();
         let mut discovered_game_ids = HashSet::new();
+        let mut additional_market_game_ids = HashSet::new();
         let mut offset = 0usize;
         let mut expected_total: Option<usize> = None;
 
@@ -999,6 +1042,9 @@ impl ZenitParser {
 
             for game_id in &parsed.discovered_game_ids {
                 discovered_game_ids.insert(game_id.clone());
+            }
+            for game_id in &parsed.additional_market_game_ids {
+                additional_market_game_ids.insert(game_id.clone());
             }
 
             for raw_game_id in parsed.raw_game_ids {
@@ -1080,6 +1126,9 @@ impl ZenitParser {
                     .into());
                 }
 
+                for game_id in &parsed.additional_market_game_ids {
+                    additional_market_game_ids.insert(game_id.clone());
+                }
                 for raw_game_id in parsed.raw_game_ids {
                     seen_raw_games.insert(raw_game_id);
                 }
@@ -1106,6 +1155,13 @@ impl ZenitParser {
             .into());
         }
 
+        self.attach_additional_market_details(
+            &mut all_events,
+            &additional_market_game_ids,
+            is_live,
+        )
+        .await;
+
         Ok((all_events, all_odds))
     }
 
@@ -1125,13 +1181,25 @@ impl ZenitParser {
             return Err(format!("Zenit live API application error: {msg}").into());
         }
 
-        let parsed = Self::parse_response(&json, None, true);
+        let mut parsed = Self::parse_response(&json, None, true);
         if let Some(schema_error) = parsed.schema_error.as_deref() {
             return Err(std::io::Error::other(format!(
                 "Zenit live response schema error: {schema_error}"
             ))
             .into());
         }
+        let additional_market_game_ids = parsed
+            .additional_market_game_ids
+            .iter()
+            .cloned()
+            .collect::<HashSet<_>>();
+        self.attach_additional_market_details(
+            &mut parsed.events,
+            &additional_market_game_ids,
+            true,
+        )
+        .await;
+
         let linked_odds = parsed
             .odds
             .iter()
