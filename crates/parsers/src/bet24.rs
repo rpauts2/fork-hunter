@@ -1,4 +1,5 @@
 use crate::base::{BookmakerParser, ParserResult};
+use crate::factors_catalog::FactorsCatalog;
 use async_trait::async_trait;
 use chrono::Utc;
 use reqwest::Client;
@@ -44,6 +45,7 @@ fn line_id_component(line: Option<f64>) -> String {
 }
 #[derive(Debug)]
 pub struct _24betParser {
+    factors: Arc<FactorsCatalog>,
     client: Arc<Client>,
     live_url: String,
     prematch_url: String,
@@ -52,6 +54,11 @@ pub struct _24betParser {
 impl _24betParser {
     pub fn new(client: Arc<Client>) -> Self {
         Self {
+            factors: Arc::new(FactorsCatalog::new(
+                client.clone(),
+                "https://line51.tf39be-resources.com",
+                3000,
+            )),
             client,
             live_url: "https://line51.tf39be-resources.com/events/list?lang=ru&scopeMarket=3000"
                 .to_string(),
@@ -172,13 +179,26 @@ impl _24betParser {
             .into());
         }
 
+        match self.factors.load().await {
+            Ok(count) => debug!(factor_count = count, "24bet direct factor catalog loaded"),
+            Err(error) => warn!(error = %error, "24bet direct factor catalog unavailable; using verified fallback mappings"),
+        }
+
         let json: serde_json::Value = resp.json().await?;
-        Self::parse_api_response(&json, is_live)
+        Self::parse_api_response_with_catalog(&json, is_live, Some(&self.factors))
     }
 
     fn parse_api_response(
         json: &serde_json::Value,
         is_live: bool,
+    ) -> Result<(Vec<Event>, Vec<Odd>), Box<dyn std::error::Error + Send + Sync>> {
+        Self::parse_api_response_with_catalog(json, is_live, None)
+    }
+
+    fn parse_api_response_with_catalog(
+        json: &serde_json::Value,
+        is_live: bool,
+        factor_catalog: Option<&FactorsCatalog>,
     ) -> Result<(Vec<Event>, Vec<Odd>), Box<dyn std::error::Error + Send + Sync>> {
         let events_data = match json.get("events").and_then(|e| e.as_array()) {
             Some(e) => e,
@@ -201,7 +221,7 @@ impl _24betParser {
         }
 
         // Build event lookup: id -> (team1, team2, name, sport)
-        let mut event_map: HashMap<u64, (String, String, String, Option<i64>)> = HashMap::new();
+        let mut event_map: HashMap<u64, (String, String, String, Option<i64>, Option<u64>)> = HashMap::new();
         for event_data in events_data {
             if !crate::marathon::event_place_matches_feed(event_data, is_live) {
                 continue;
@@ -217,7 +237,8 @@ impl _24betParser {
                     .unwrap_or("")
                     .to_string();
                 let start_time = event_data.get("startTime").and_then(|value| value.as_i64());
-                event_map.insert(id, (team1.to_string(), team2.to_string(), name, start_time));
+                let source_sport_id = event_data.get("sportId").and_then(parse_u64_value);
+                event_map.insert(id, (team1.to_string(), team2.to_string(), name, start_time, source_sport_id));
             }
         }
 
@@ -231,7 +252,7 @@ impl _24betParser {
                     cf.get("e").and_then(|v| v.as_u64()),
                     cf.get("factors").and_then(|f| f.as_array()),
                 ) {
-                    if let Some((team1, team2, league_name, start_time)) = event_map.get(&event_id)
+                    if let Some((team1, team2, league_name, start_time, source_sport_id)) = event_map.get(&event_id)
                     {
                         if !event_indices.contains_key(&event_id) {
                             let sport = Self::detect_sport(league_name);
@@ -253,7 +274,12 @@ impl _24betParser {
                                     is_live,
                                     bookmaker_slug: "_24bet".to_string(),
                                     raw_url: None,
-                                    extra: HashMap::new(),
+                                    extra: source_sport_id
+                                        .map(|id| HashMap::from([(
+                                            "source_sport_id".to_string(),
+                                            serde_json::Value::String(id.to_string()),
+                                        )]))
+                                        .unwrap_or_default(),
                                 },
                                 Vec::new(),
                             ));
@@ -273,6 +299,34 @@ impl _24betParser {
 
                                     let line =
                                         factor.get("p").and_then(|v| v.as_f64()).map(|p| p / 100.0);
+
+                                    let catalog_definition = factor_catalog.and_then(|catalog| {
+                                        let source_sport_id = source_sport_id
+                                            .map(|id| id.to_string());
+                                        catalog.get_factor_for_sport(
+                                            fid,
+                                            source_sport_id.as_deref(),
+                                        )
+                                    });
+                                    if let Some(definition) = catalog_definition {
+                                        let market_type = definition.market_type.to_lowercase();
+                                        let selection_name = definition.selection_name.to_lowercase();
+                                        let catalog_odd = crate::marathon::classify_catalog_factor(
+                                            "_24bet",
+                                            &all_odds[idx].0,
+                                            fid,
+                                            val,
+                                            line,
+                                            &market_type,
+                                            &selection_name,
+                                            now,
+                                        );
+                                        if let Some(odd) = catalog_odd {
+                                            all_odds[idx].1.push(odd);
+                                        }
+                                        continue;
+                                    }
+
                                     let (market, selection, odds_type) =
                                         Self::factor_to_market(fid);
 
