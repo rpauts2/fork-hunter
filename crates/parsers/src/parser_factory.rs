@@ -126,7 +126,7 @@ const BOOKMAKER_REGISTRY: &[BookmakerRegistryEntry] = &[
         parser_type: "browser_interception",
         source: "crates/parsers/src/betboom.rs",
         execution_supported: false,
-        notes: Some("Direct site is blocked by QRATOR in this environment. Public provider alternatives found: API-SPORT documents BetBoom odds; ODDSCORP lists BetBoom in its commercial feed catalogue. Require a provider trial, source timestamps, live/prematch coverage and data-use terms before enabling production."),
+        notes: Some("Direct site is blocked by QRATOR in this environment. The parser remains a direct-bookmaker implementation only; verify the official application contract through a permitted session or operator-authorized access. Do not substitute third-party feeds or bypass the access challenge."),
     },
     BookmakerRegistryEntry {
         slug: "pari",
@@ -212,7 +212,7 @@ const BOOKMAKER_REGISTRY: &[BookmakerRegistryEntry] = &[
         source: "crates/parsers/src/melbet.rs",
         execution_supported: false,
         notes: Some(
-            "Direct site is blocked by a regional HTTP 403 in this environment. API-SPORT documents MelBet odds; ODDSCORP and Odds-API.io list MelBet as a supported commercial feed. Require a provider trial, region-specific coverage, source timestamps and data-use terms before enabling production.",
+            "Direct site is blocked by a regional HTTP 403 in this environment. Keep this as a direct-bookmaker parser; verify the official RU operator endpoint from a permitted environment or through operator-authorized access. Do not substitute third-party feeds or evade regional restrictions.",
         ),
     },
     BookmakerRegistryEntry {
@@ -296,7 +296,7 @@ const BOOKMAKER_REGISTRY: &[BookmakerRegistryEntry] = &[
         source: "crates/parsers/src/ligastavok.rs",
         execution_supported: false,
         notes: Some(
-            "Direct site is blocked by QRATOR in this environment. ODDSCORP lists Liga Stavok in its commercial odds feed catalogue; no equivalent bookmaker-specific key was confirmed in API-SPORT docs. Validate a paid/trial feed and licensing before enabling.",
+            "Direct site is blocked by QRATOR in this environment. Keep this as a direct-bookmaker parser; verify the official application contract through a permitted session or operator-authorized access. Do not substitute third-party feeds or bypass the access challenge.",
         ),
     },
     BookmakerRegistryEntry {
