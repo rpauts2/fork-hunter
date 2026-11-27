@@ -802,43 +802,35 @@ fn classify_and_add_odd(
         || market_type.contains("to_win")
         || market_type.contains("final_win")
     {
-        if selection.contains("п1") || selection == "1" || selection.contains("home") {
-            odds.push(make_odd(
-                slug,
-                event,
-                canonical_result_market(market_type),
-                "1",
-                val,
-                None,
-                OddsType::Home,
-                now,
-            ));
-            return true;
-        } else if selection.contains("х") || selection == "x" || selection.contains("draw") {
-            odds.push(make_odd(
-                slug,
-                event,
-                canonical_result_market(market_type),
-                "X",
-                val,
-                None,
-                OddsType::Draw,
-                now,
-            ));
-            return true;
-        } else if selection.contains("п2") || selection == "2" || selection.contains("away") {
-            odds.push(make_odd(
-                slug,
-                event,
-                canonical_result_market(market_type),
-                "2",
-                val,
-                None,
-                OddsType::Away,
-                now,
-            ));
-            return true;
-        }
+        // A broad Cyrillic substring check such as contains("х") matches
+        // "хозяева" and can turn a home-win quote into a draw. Accept only
+        // unambiguous canonical outcomes or explicit bookmaker synonyms.
+        let selection_lower = selection.trim().to_lowercase();
+        let canonical_selection = match selection_lower.as_str() {
+            "1" | "п1" | "home" | "home win" | "хозяева" | "победа хозяев"
+            | "победа 1" | "команда 1" | "первая команда" => "1",
+            "x" | "х" | "draw" | "tie" | "ничья" => "X",
+            "2" | "п2" | "away" | "away win" | "гости" | "победа гостей"
+            | "победа 2" | "команда 2" | "вторая команда" => "2",
+            _ => return false,
+        };
+        let (selection, odds_type) = match canonical_selection {
+            "1" => ("1", OddsType::Home),
+            "X" => ("X", OddsType::Draw),
+            "2" => ("2", OddsType::Away),
+            _ => return false,
+        };
+        odds.push(make_odd(
+            slug,
+            event,
+            canonical_result_market(market_type),
+            selection,
+            val,
+            None,
+            odds_type,
+            now,
+        ));
+        return true;
     } else if market_type.contains("total") || market_type.contains("тотал") {
         if let Some(l) = line {
             if selection == "б"
@@ -944,8 +936,10 @@ fn classify_and_add_odd(
         || market_type.contains("oz")
         || market_type.contains("btts")
     {
-        if selection.contains("да") || selection.contains("yes") {
-            odds.push(make_odd(
+        // Keep a strict two-way mapping; substring matches such as "да" in
+        // unrelated captions (for example "команда") are not outcome evidence.
+        match selection.trim().to_lowercase().as_str() {
+            "да" | "yes" | "y" => odds.push(make_odd(
                 slug,
                 event,
                 canonical_btts_market(market_type),
@@ -954,10 +948,8 @@ fn classify_and_add_odd(
                 None,
                 OddsType::BothTeamsScoreYes,
                 now,
-            ));
-            return true;
-        } else if selection.contains("нет") || selection.contains("no") {
-            odds.push(make_odd(
+            )),
+            "нет" | "no" | "n" => odds.push(make_odd(
                 slug,
                 event,
                 canonical_btts_market(market_type),
@@ -966,9 +958,10 @@ fn classify_and_add_odd(
                 None,
                 OddsType::BothTeamsScoreNo,
                 now,
-            ));
-            return true;
+            )),
+            _ => return false,
         }
+        return true;
     } else if market_type.contains("even")
         || market_type.contains("odd")
         || market_type.contains("чёт")
@@ -1434,6 +1427,86 @@ mod parser_identity_tests {
                 && odd.odds == 2.0
                 && odd.line == Some(2.5)
         }));
+    }
+
+    #[test]
+    fn shared_platform_uses_explicit_result_labels_and_rejects_unknowns() {
+        use chrono::Utc;
+        use shared::{Event, OddsType};
+        use std::collections::HashMap;
+
+        let event = Event {
+            id: "marathon-pre-result-fixture".into(),
+            sport: Sport::Football,
+            league: "League".into(),
+            home_team: "Home".into(),
+            away_team: "Away".into(),
+            start_time: None,
+            is_live: false,
+            bookmaker_slug: "marathon".into(),
+            raw_url: None,
+            extra: HashMap::new(),
+        };
+        let mut odds = Vec::new();
+        assert!(classify_and_add_odd(
+            &mut odds,
+            "marathon",
+            &event,
+            921,
+            1.80,
+            None,
+            "1x2",
+            "Хозяева",
+            Utc::now(),
+        ));
+        assert_eq!(odds[0].selection, "1");
+        assert_eq!(odds[0].odds_type, OddsType::Home);
+
+        assert!(!classify_and_add_odd(
+            &mut odds,
+            "marathon",
+            &event,
+            921,
+            1.80,
+            None,
+            "1x2",
+            "неизвестный исход",
+            Utc::now(),
+        ));
+        assert_eq!(odds.len(), 1);
+    }
+
+    #[test]
+    fn shared_platform_rejects_ambiguous_btts_captions() {
+        use chrono::Utc;
+        use shared::Event;
+        use std::collections::HashMap;
+
+        let event = Event {
+            id: "marathon-pre-btts-fixture".into(),
+            sport: Sport::Football,
+            league: "League".into(),
+            home_team: "Home".into(),
+            away_team: "Away".into(),
+            start_time: None,
+            is_live: false,
+            bookmaker_slug: "marathon".into(),
+            raw_url: None,
+            extra: HashMap::new(),
+        };
+        let mut odds = Vec::new();
+        assert!(!classify_and_add_odd(
+            &mut odds,
+            "marathon",
+            &event,
+            926,
+            1.90,
+            None,
+            "both_teams_score",
+            "команда",
+            Utc::now(),
+        ));
+        assert!(odds.is_empty());
     }
 
     #[test]
