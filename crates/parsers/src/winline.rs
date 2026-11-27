@@ -3523,7 +3523,9 @@ mod tests {
 
         assert_eq!(event.sport, Sport::Tennis);
         assert_eq!(odds.len(), 2);
-        assert!(odds.iter().all(|odd| odd.market == "Winner" && odd.line.is_none()));
+        assert!(odds
+            .iter()
+            .all(|odd| odd.market == "Winner" && odd.line.is_none()));
         assert_eq!(odds[0].selection, "1");
         assert_eq!(odds[1].selection, "2");
     }
@@ -3554,7 +3556,7 @@ mod tests {
                 "away": "Away",
                 "odds": [1.8, 2.0],
                 "totalLine": "2.5"
-            })
+            }),
         ] {
             assert!(
                 WinlineParser::parse_headless_item(
@@ -3576,15 +3578,13 @@ mod tests {
             "away": "Away",
             "odds": [2.15, 3.4, 3.05]
         });
-        assert!(
-            WinlineParser::parse_headless_item(
-                &payload,
-                Sport::Football,
-                false,
-                "https://winline.ru",
-            )
-                .is_none()
-        );
+        assert!(WinlineParser::parse_headless_item(
+            &payload,
+            Sport::Football,
+            false,
+            "https://winline.ru",
+        )
+        .is_none());
     }
 
     #[test]
