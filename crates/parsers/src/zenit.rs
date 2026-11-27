@@ -1573,6 +1573,7 @@ mod tests {
     use super::ZenitParser;
     use chrono::{Datelike, Timelike, Utc};
     use serde_json::json;
+    use std::collections::HashMap;
     use std::sync::Arc;
     use std::time::Duration;
 
