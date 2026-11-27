@@ -322,6 +322,12 @@ impl _24betParser {
 
 let (market, selection, odds_type) =
                                         Self::factor_to_market(fid);
+                                    // Unknown factor IDs are retained in diagnostics, not
+                                    // emitted as cross-book comparable markets. A numeric
+                                    // ID alone does not establish market semantics.
+                                    if market.starts_with("factor_") {
+                                        continue;
+                                    }
                                     let odd = crate::marathon::make_market_odd(
                                         "_24bet",
                                         &all_odds[idx].0,
@@ -579,7 +585,7 @@ mod parser_fixture_tests {
             }],
             "customFactors": [{
                 "e": 12345,
-                "factors": [{"f": 921, "v": 2.10}]
+                "factors": [{"f": 921, "v": 2.10}, {"f": 999999, "v": 3.40}]
             }]
         });
 
