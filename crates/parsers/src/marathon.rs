@@ -785,6 +785,14 @@ pub(crate) fn classify_catalog_factor(
     .flatten()
 }
 
+fn normalized_participant_key(value: &str) -> String {
+    value
+        .to_lowercase()
+        .chars()
+        .filter(|character| character.is_alphanumeric())
+        .collect()
+}
+
 fn classify_and_add_odd(
     odds: &mut Vec<Odd>,
     slug: &str,
@@ -806,13 +814,30 @@ fn classify_and_add_odd(
         // "хозяева" and can turn a home-win quote into a draw. Accept only
         // unambiguous canonical outcomes or explicit bookmaker synonyms.
         let selection_lower = selection.trim().to_lowercase();
-        let canonical_selection = match selection_lower.as_str() {
-            "1" | "п1" | "home" | "home win" | "хозяева" | "победа хозяев"
-            | "победа 1" | "команда 1" | "первая команда" => "1",
-            "x" | "х" | "draw" | "tie" | "ничья" => "X",
-            "2" | "п2" | "away" | "away win" | "гости" | "победа гостей"
-            | "победа 2" | "команда 2" | "вторая команда" => "2",
-            _ => return false,
+        let selection_key = normalized_participant_key(selection);
+        let home_key = normalized_participant_key(&event.home_team);
+        let away_key = normalized_participant_key(&event.away_team);
+        let canonical_selection = if !selection_key.is_empty()
+            && !home_key.is_empty()
+            && home_key != away_key
+            && selection_key == home_key
+        {
+            "1"
+        } else if !selection_key.is_empty()
+            && !away_key.is_empty()
+            && home_key != away_key
+            && selection_key == away_key
+        {
+            "2"
+        } else {
+            match selection_lower.as_str() {
+                "1" | "п1" | "home" | "home win" | "хозяева" | "победа хозяев"
+                | "победа 1" | "команда 1" | "первая команда" => "1",
+                "x" | "х" | "draw" | "tie" | "ничья" => "X",
+                "2" | "п2" | "away" | "away win" | "гости" | "победа гостей"
+                | "победа 2" | "команда 2" | "вторая команда" => "2",
+                _ => return false,
+            }
         };
         let (selection, odds_type) = match canonical_selection {
             "1" => ("1", OddsType::Home),
@@ -1472,6 +1497,56 @@ mod parser_identity_tests {
             Utc::now(),
         ));
         assert_eq!(odds.len(), 1);
+    }
+
+    #[test]
+    fn shared_platform_resolves_named_winner_outcomes_to_event_participants() {
+        use chrono::Utc;
+        use shared::{Event, OddsType, Sport};
+        use std::collections::HashMap;
+
+        let event = Event {
+            id: "marathon-pre-tennis-winner-fixture".into(),
+            sport: Sport::Tennis,
+            league: "ATP".into(),
+            home_team: "Player One".into(),
+            away_team: "Player Two".into(),
+            start_time: None,
+            is_live: false,
+            bookmaker_slug: "marathon".into(),
+            raw_url: None,
+            extra: HashMap::new(),
+        };
+        let mut odds = Vec::new();
+        assert!(classify_and_add_odd(
+            &mut odds,
+            "marathon",
+            &event,
+            5001,
+            1.75,
+            None,
+            "to_win",
+            "PLAYER-ONE",
+            Utc::now(),
+        ));
+        assert_eq!(odds[0].market, "Winner");
+        assert_eq!(odds[0].selection, "1");
+        assert_eq!(odds[0].odds_type, OddsType::Home);
+
+        assert!(classify_and_add_odd(
+            &mut odds,
+            "marathon",
+            &event,
+            5002,
+            2.10,
+            None,
+            "to_win",
+            "Player Two",
+            Utc::now(),
+        ));
+        assert_eq!(odds[1].market, "Winner");
+        assert_eq!(odds[1].selection, "2");
+        assert_eq!(odds[1].odds_type, OddsType::Away);
     }
 
     #[test]
