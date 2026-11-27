@@ -510,19 +510,37 @@ pub fn parse_api_response(
                 }
 
                 let odds_before = odds.len();
+                let catalog_knows_factor = factors.contains_factor_id(fid);
                 let mut classified = false;
-                if let Some(factor_def) =
-                    factors.get_factor_for_sport(fid, source_sport_id.as_deref())
-                {
-                    let mt = factor_def.market_type.to_lowercase();
-                    let sel = factor_def.selection_name.to_lowercase();
-                    classified = classify_and_add_odd(
-                        &mut odds, slug, &event, fid, val, line, &mt, &sel, now,
-                    );
-                }
 
-                // Hardcoded fallback
-                if !classified {
+                if catalog_knows_factor {
+                    if let Some(factor_def) =
+                        factors.get_factor_for_sport(fid, source_sport_id.as_deref())
+                    {
+                        let mt = factor_def.market_type.to_lowercase();
+                        let sel = factor_def.selection_name.to_lowercase();
+                        classified = classify_and_add_odd(
+                            &mut odds, slug, &event, fid, val, line, &mt, &sel, now,
+                        );
+                    }
+
+                    // A catalog-known ID may be ambiguous for this sport or may
+                    // describe a market/outcome this classifier cannot safely
+                    // represent. Never reinterpret it using a numeric-ID guess.
+                    if !classified {
+                        debug!(
+                            bookmaker = slug,
+                            event_id,
+                            factor_id = fid,
+                            source_sport_id = ?source_sport_id,
+                            "Quarantined catalog-known factor without a safe classification"
+                        );
+                    }
+                } else {
+                    // Legacy mappings are allowed only for IDs absent from the
+                    // direct catalog. This prevents a catalog definition that
+                    // conflicts with a historical numeric mapping from becoming
+                    // a false cross-book market.
                     match fid {
                         921 => odds.push(make_odd(
                             slug,
@@ -1878,4 +1896,55 @@ mod parser_identity_tests {
             "to_win"
         );
     }
+    #[test]
+    fn catalog_known_factor_is_not_reclassified_by_legacy_numeric_fallback() {
+        let client = Arc::new(reqwest::Client::builder().build().expect("client"));
+        let factors = FactorsCatalog::new(client, "https://example.invalid", 3000);
+        let parsed = factors.parse_catalog(&serde_json::json!({
+            "configs": [{
+                "sports": ["1"],
+                "markets": [{
+                    "caption": "Тотал",
+                    "tag": "total",
+                    "marketEventKindsSets": [{
+                        "factorSets": [{
+                            "columns": [{
+                                "caption": "Больше",
+                                "columnType": 1,
+                                "factors": ["921"]
+                            }]
+                        }]
+                    }]
+                }]
+            }]
+        }));
+        assert_eq!(parsed, 1);
+
+        // 921 historically maps to Home (1X2), but the direct catalog says
+        // this ID is a total outcome. With no line value the total cannot be
+        // emitted safely; it must not fall through to the legacy Home mapping.
+        let payload = serde_json::json!({
+            "events": [{
+                "id": 12345,
+                "team1": "Home FC",
+                "team2": "Away FC",
+                "place": "line",
+                "sportId": "1",
+                "name": "Football: Premier League"
+            }],
+            "customFactors": [{
+                "e": 12345,
+                "factors": [{"f": 921, "v": 1.85}]
+            }]
+        });
+
+        let parsed = parse_api_response(&payload, false, "marathon", &factors)
+            .expect("valid direct-source fixture");
+        assert_eq!(parsed.len(), 1);
+        assert!(
+            parsed[0].1.is_empty(),
+            "a catalog-known but unclassifiable ID must not be reinterpreted as 1X2 Home"
+        );
+    }
+
 }
