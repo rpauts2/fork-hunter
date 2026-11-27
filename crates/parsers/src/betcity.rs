@@ -1245,8 +1245,13 @@ impl BetcityParser {
         value
             .get("lv")
             .and_then(Self::extract_numeric_value)
-            .or_else(|| value.get("lvt").and_then(Self::extract_numeric_value))
             .filter(|line| line.is_finite())
+            .or_else(|| {
+                value
+                    .get("lvt")
+                    .and_then(Self::extract_numeric_value)
+                    .filter(|line| line.is_finite())
+            })
     }
 
     fn is_period_market_name(market_name_lower: &str) -> bool {
