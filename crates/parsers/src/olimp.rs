@@ -434,7 +434,7 @@ impl OlimpParser {
                 })?;
 
             for comp in competitions {
-                let league_name = Self::competition_name(comp);
+                let league_name = Self::competition_name(comp).trim();
 
                 if let Some(events_array) = comp.get("events").and_then(|e| e.as_array()) {
                     for event_data in events_array {
@@ -474,31 +474,29 @@ impl OlimpParser {
                                 if let Some(selection) = outcome
                                     .get("shortName")
                                     .and_then(|value| value.as_str())
-                                    .filter(|value| !value.trim().is_empty())
+                                    .map(str::trim)
+                                    .filter(|value| !value.is_empty())
                                 {
-                                    let probability =
-                                        outcome.get("probability").and_then(|value| {
-                                            value.as_f64().or_else(|| {
-                                                value.as_str().and_then(|text| text.parse().ok())
-                                            })
-                                        });
+                                    let probability = outcome
+                                        .get("probability")
+                                        .and_then(Self::parse_f64_value);
                                     if let Some(prob) = probability
                                         .filter(|value| value.is_finite() && *value > 1.0)
                                     {
                                         let Some(market) = outcome
                                             .get("groupName")
                                             .and_then(|value| value.as_str())
-                                            .filter(|value| !value.trim().is_empty())
+                                            .map(str::trim)
+                                            .filter(|value| !value.is_empty())
                                         else {
                                             continue;
                                         };
                                         let odds_type =
                                             Self::selection_to_odds_type(selection, market);
-                                        let line = outcome.get("param").and_then(|value| {
-                                            value.as_f64().or_else(|| {
-                                                value.as_str().and_then(|text| text.parse().ok())
-                                            })
-                                        });
+                                        let line = outcome
+                                            .get("param")
+                                            .and_then(Self::parse_f64_value)
+                                            .filter(|value| value.is_finite());
                                         let line_key = line
                                             .map(|value| {
                                                 format!("{value:.6}")
@@ -637,6 +635,16 @@ impl OlimpParser {
         Some((event_id, home.to_string(), away.to_string()))
     }
 
+    fn parse_f64_value(value: &serde_json::Value) -> Option<f64> {
+        match value {
+            serde_json::Value::Number(number) => number.as_f64(),
+            serde_json::Value::String(text) => {
+                text.trim().replace(',', ".").parse::<f64>().ok()
+            }
+            _ => None,
+        }
+    }
+
     fn parse_identifier(value: &serde_json::Value) -> Option<String> {
         match value {
             serde_json::Value::String(value) => {
@@ -746,6 +754,40 @@ mod tests {
             parser.section_url(0, "live"),
             "https://www.olimp.bet/api/v4/0/live/sports-with-competitions-with-events?vids%5B%5D="
         );
+    }
+
+    #[test]
+    fn parses_whitespace_and_comma_decimal_outcome_values() {
+        let payload = serde_json::json!([{
+            "payload": {
+                "sport": {"id": 1, "name": "Футбол"},
+                "competitionsWithEvents": [{
+                    "name": " Тестовая лига ",
+                    "events": [{
+                        "id": 8801,
+                        "team1Name": "Команда А",
+                        "team2Name": "Команда Б",
+                        "outcomes": [{
+                            "shortName": " ТБ ",
+                            "probability": " 2,05 ",
+                            "groupName": " Тотал ",
+                            "param": " 2,5 "
+                        }]
+                    }]
+                }]
+            }
+        }]);
+
+        let (events, odds) = OlimpParser::parse_api_response_all_sports(&payload, false)
+            .expect("Olimp numeric text values should parse");
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].league, "Тестовая лига");
+        assert_eq!(odds.len(), 1);
+        assert_eq!(odds[0].market, "Тотал");
+        assert_eq!(odds[0].selection, "ТБ");
+        assert_eq!(odds[0].odds, 2.05);
+        assert_eq!(odds[0].line, Some(2.5));
+        assert_eq!(odds[0].odds_type, OddsType::Over);
     }
 
     #[test]
