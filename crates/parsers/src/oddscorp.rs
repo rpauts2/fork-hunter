@@ -86,9 +86,7 @@ impl OddsCorpClient {
         allow_insecure_http: bool,
     ) -> Result<Self, OddsCorpError> {
         let base_url = Url::parse(base_url).map_err(|_| OddsCorpError::InvalidBaseUrl)?;
-        if base_url.scheme() != "https"
-            && !(base_url.scheme() == "http" && allow_insecure_http)
-        {
+        if base_url.scheme() != "https" && !(base_url.scheme() == "http" && allow_insecure_http) {
             return Err(OddsCorpError::InsecureTransportNotAllowed);
         }
         let token = token.into();
@@ -183,7 +181,6 @@ impl OddsCorpClient {
             .map_err(|_| OddsCorpError::InvalidJson)
     }
 }
-
 
 fn parse_market_collection(payload: Value) -> Result<Vec<OddsCorpMarket>, OddsCorpError> {
     if let Some(collection) = payload
@@ -435,7 +432,6 @@ mod tests {
         assert!(!debug.contains("secret-test-token"));
     }
 
-
     #[test]
     fn rejects_cleartext_http_unless_explicitly_enabled() {
         let client = Arc::new(Client::new());
@@ -443,13 +439,9 @@ mod tests {
             OddsCorpClient::new(client.clone(), DEFAULT_BASE_URL, "token"),
             Err(super::OddsCorpError::InsecureTransportNotAllowed)
         ));
-        assert!(OddsCorpClient::new_with_insecure_http(
-            client,
-            DEFAULT_BASE_URL,
-            "token",
-            true
-        )
-        .is_ok());
+        assert!(
+            OddsCorpClient::new_with_insecure_http(client, DEFAULT_BASE_URL, "token", true).is_ok()
+        );
     }
 
     #[test]
