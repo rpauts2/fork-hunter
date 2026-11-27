@@ -2269,22 +2269,13 @@ mod tests {
     fn grouping_market_normalization_preserves_period_and_team_scope() {
         let normalize = BaltbetParser::normalize_grouping_market_name;
         assert_eq!(normalize("Тотал", "total", false), "Total");
-        assert_eq!(
-            normalize("Тотал первого тайма", "total", false),
-            "1H_Total"
-        );
-        assert_eq!(
-            normalize("Тотал второго тайма", "total", false),
-            "2H_Total"
-        );
+        assert_eq!(normalize("Тотал первого тайма", "total", false), "1H_Total");
+        assert_eq!(normalize("Тотал второго тайма", "total", false), "2H_Total");
         assert_eq!(
             normalize("Победитель первого тайма", "winner", false),
             "1H_Winner"
         );
-        assert_eq!(
-            normalize("Исход второго тайма", "winner", true),
-            "2H_1X2"
-        );
+        assert_eq!(normalize("Исход второго тайма", "winner", true), "2H_1X2");
         assert_eq!(
             normalize("Фора первого тайма", "handicap", false),
             "1H_Handicap"
