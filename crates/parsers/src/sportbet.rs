@@ -737,10 +737,7 @@ mod tests {
             SportbetParser::normalize_market("2nd Half Handicap"),
             "2H_Handicap"
         );
-        assert_eq!(
-            SportbetParser::normalize_market("1H Total"),
-            "1H_Total"
-        );
+        assert_eq!(SportbetParser::normalize_market("1H Total"), "1H_Total");
         assert_eq!(
             SportbetParser::normalize_market("2H Team 1 Total"),
             "2H_Team1Total"
