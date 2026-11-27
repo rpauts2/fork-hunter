@@ -1063,7 +1063,7 @@ mod tests {
             ("Фора по сетам", "Handicap"),
             ("Тотал", "Total"),
             ("Тотал очков", "Total"),
-            ("Индивидуальный тотал 1К", "IndividualTotal"),
+            ("Индивидуальный тотал 1К", "Team1Total"),
         ] {
             assert_eq!(
                 SportbetParser::normalize_market(source),
