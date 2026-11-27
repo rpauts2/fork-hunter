@@ -1369,8 +1369,8 @@ impl BetcityParser {
             {
                 let vals: Vec<f64> = odds_arr
                     .iter()
-                    .filter_map(|v| v.as_f64())
-                    .filter(|&v| v > 1.01 && v < 100.0)
+                    .filter_map(Self::extract_numeric_value)
+                    .filter(|value| value.is_finite() && *value > 1.01 && *value < 100.0)
                     .collect();
 
                 Self::push_1x2_or_total(&mut odds, &event_id, &vals, now);
@@ -2031,6 +2031,30 @@ mod tests {
             BetcityParser::extract_line(&serde_json::json!({"lv": "NaN", "lvt": "1.5"})),
             Some(1.5)
         );
+    }
+
+    #[test]
+    fn generic_event_array_keeps_string_odds_with_decimal_comma() {
+        let now = Utc::now();
+        let payload = serde_json::json!([{
+            "home": "Home FC",
+            "away": "Away FC",
+            "league": "Test League",
+            "odds": ["2,10", "3,20", "3,50", "1.0", "NaN", "100.1"]
+        }]);
+
+        let (events, odds) = BetcityParser::parse_events_array(
+            payload.as_array().expect("event array"),
+            false,
+            now,
+        );
+
+        assert_eq!(events.len(), 1);
+        assert_eq!(odds.len(), 3);
+        assert_eq!(odds[0].odds, 2.1);
+        assert_eq!(odds[1].odds, 3.2);
+        assert_eq!(odds[2].odds, 3.5);
+        assert!(odds.iter().all(|odd| odd.event_id == events[0].id));
     }
 
     #[test]
