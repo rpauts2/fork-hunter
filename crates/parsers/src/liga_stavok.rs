@@ -129,9 +129,9 @@ impl LigaStavokParser {
                     message: "No live or prematch sports-line response has been captured and validated; scan enablement remains disabled.".to_string(),
                 },
                 ParserDiagnosticCheck {
-                    code: "request_level_proxy_not_applied".to_string(),
-                    severity: DiagnosticSeverity::Warn,
-                    message: "The current reqwest Client cannot be switched to a different proxy per request. The legacy proxy rotation helper does not change the transport and is not counted as working proxy support.".to_string(),
+                    code: "request_level_proxy_applied_when_configured".to_string(),
+                    severity: DiagnosticSeverity::Info,
+                    message: "Proxy URLs from LIGASTAVOK_PROXY_LIST are now applied through a proxy-specific reqwest Client. Reachability and credentials are verified only by a successful runtime request.".to_string(),
                 },
             ],
         }
@@ -920,8 +920,8 @@ mod tests {
             check.code == "public_feed_not_verified" && check.severity == DiagnosticSeverity::Warn
         }));
         assert!(readiness.checks.iter().any(|check| {
-            check.code == "request_level_proxy_not_applied"
-                && check.severity == DiagnosticSeverity::Warn
+            check.code == "request_level_proxy_applied_when_configured"
+                && check.severity == DiagnosticSeverity::Info
         }));
     }
 
