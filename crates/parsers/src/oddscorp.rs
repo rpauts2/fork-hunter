@@ -16,6 +16,7 @@ use thiserror::Error;
 pub const DEFAULT_BASE_URL: &str = "http://api.oddscp.com:8111";
 pub const TOKEN_ENV_VAR: &str = "ODDSCORP_API_TOKEN";
 pub const BASE_URL_ENV_VAR: &str = "ODDSCORP_BASE_URL";
+pub const ALLOW_INSECURE_HTTP_ENV_VAR: &str = "ODDSCORP_ALLOW_INSECURE_HTTP";
 
 #[derive(Debug, Error)]
 pub enum OddsCorpError {
@@ -25,6 +26,8 @@ pub enum OddsCorpError {
     InvalidBaseUrl,
     #[error("ODDSCORP event identifier is empty or contains an invalid path segment")]
     InvalidEventId,
+    #[error("ODDSCORP requires HTTPS; set ODDSCORP_ALLOW_INSECURE_HTTP=1 only after accepting the cleartext-token risk")]
+    InsecureTransportNotAllowed,
     #[error("ODDSCORP request failed: {0}")]
     Transport(String),
     #[error("ODDSCORP returned HTTP {0}")]
@@ -62,7 +65,10 @@ impl OddsCorpClient {
             .ok_or(OddsCorpError::MissingToken)?;
         let base_url = std::env::var(BASE_URL_ENV_VAR)
             .unwrap_or_else(|_| DEFAULT_BASE_URL.to_string());
-        Self::new(client, &base_url, token)
+        let allow_insecure_http = std::env::var(ALLOW_INSECURE_HTTP_ENV_VAR)
+            .map(|value| value.trim() == "1")
+            .unwrap_or(false);
+        Self::new_with_insecure_http(client, &base_url, token, allow_insecure_http)
     }
 
     pub fn new(
@@ -70,7 +76,21 @@ impl OddsCorpClient {
         base_url: &str,
         token: impl Into<String>,
     ) -> Result<Self, OddsCorpError> {
+        Self::new_with_insecure_http(client, base_url, token, false)
+    }
+
+    pub fn new_with_insecure_http(
+        client: Arc<Client>,
+        base_url: &str,
+        token: impl Into<String>,
+        allow_insecure_http: bool,
+    ) -> Result<Self, OddsCorpError> {
         let base_url = Url::parse(base_url).map_err(|_| OddsCorpError::InvalidBaseUrl)?;
+        if base_url.scheme() != "https"
+            && !(base_url.scheme() == "http" && allow_insecure_http)
+        {
+            return Err(OddsCorpError::InsecureTransportNotAllowed);
+        }
         let token = token.into();
         if token.trim().is_empty() {
             return Err(OddsCorpError::MissingToken);
@@ -377,13 +397,30 @@ mod tests {
     fn client_debug_never_exposes_api_token() {
         let client = OddsCorpClient::new(
             Arc::new(Client::new()),
-            DEFAULT_BASE_URL,
+            "https://provider.example",
             "secret-test-token",
         )
         .expect("client");
         let debug = format!("{client:?}");
         assert!(debug.contains("token_configured"));
         assert!(!debug.contains("secret-test-token"));
+    }
+
+
+    #[test]
+    fn rejects_cleartext_http_unless_explicitly_enabled() {
+        let client = Arc::new(Client::new());
+        assert!(matches!(
+            OddsCorpClient::new(client.clone(), DEFAULT_BASE_URL, "token"),
+            Err(super::OddsCorpError::InsecureTransportNotAllowed)
+        ));
+        assert!(OddsCorpClient::new_with_insecure_http(
+            client,
+            DEFAULT_BASE_URL,
+            "token",
+            true
+        )
+        .is_ok());
     }
 
     #[test]
