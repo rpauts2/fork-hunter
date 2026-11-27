@@ -145,7 +145,7 @@ impl OddsCorpClient {
             .push(bk_event_id);
 
         let payload = self.get_json(url, &[]).await?;
-        parse_collection(payload)
+        parse_market_collection(payload)
     }
 
     fn endpoint(&self, path: &str) -> Result<Url, OddsCorpError> {
@@ -182,6 +182,33 @@ impl OddsCorpClient {
             .await
             .map_err(|_| OddsCorpError::InvalidJson)
     }
+}
+
+
+fn parse_market_collection(payload: Value) -> Result<Vec<OddsCorpMarket>, OddsCorpError> {
+    if let Some(collection) = payload
+        .as_array()
+        .or_else(|| payload.get("data").and_then(Value::as_array))
+        .or_else(|| payload.get("result").and_then(Value::as_array))
+    {
+        return collection
+            .iter()
+            .cloned()
+            .map(|item| serde_json::from_value(item).map_err(|_| OddsCorpError::InvalidJson))
+            .collect();
+    }
+
+    let single_market = payload
+        .get("data")
+        .or_else(|| payload.get("result"))
+        .filter(|value| value.get("bet").is_some())
+        .cloned()
+        .or_else(|| payload.get("bet").map(|_| payload.clone()))
+        .ok_or(OddsCorpError::InvalidCollection)?;
+
+    serde_json::from_value(single_market)
+        .map(|market| vec![market])
+        .map_err(|_| OddsCorpError::InvalidJson)
 }
 
 fn is_safe_event_id(value: &str) -> bool {
@@ -470,6 +497,25 @@ mod tests {
             market.source_updated_at().unwrap().timestamp_millis(),
             1_795_770_000_123
         );
+    }
+
+    #[test]
+    fn accepts_single_market_object_and_market_arrays() {
+        let single = json!({
+            "bet": "WIN__P1",
+            "cf": "2.15",
+            "blocked": "0",
+            "meta": {"market_name": "Исходы", "outcome_name": "1"}
+        });
+        let markets = super::parse_market_collection(single).expect("single market");
+        assert_eq!(markets.len(), 1);
+        assert_eq!(markets[0].decimal_odds(), Some(2.15));
+
+        let array = json!([
+            {"bet": "WIN__P1", "cf": "2.15"},
+            {"bet": "WIN__P2", "cf": "1.75"}
+        ]);
+        assert_eq!(super::parse_market_collection(array).unwrap().len(), 2);
     }
 
     #[test]
