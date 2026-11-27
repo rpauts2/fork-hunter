@@ -771,9 +771,35 @@ impl FactorsCatalog {
 
     /// Угадать тип рынка по названию
     fn guess_market_type(name: &str) -> String {
-        let n = name.to_lowercase();
-        if n.contains("итб") || n.contains("итм") || n.contains("individual") {
-            "IndividualTotal".into()
+        let n = name.to_lowercase().replace('ё', "е");
+        let team1_total = n.contains("индивидуальный тотал команды 1")
+            || n.contains("инд. тотал 1")
+            || n.contains("итб1")
+            || n.contains("итм1")
+            || n.contains("итб 1")
+            || n.contains("итм 1")
+            || n.contains("тотал хозяев")
+            || n.contains("home team total");
+        let team2_total = n.contains("индивидуальный тотал команды 2")
+            || n.contains("инд. тотал 2")
+            || n.contains("итб2")
+            || n.contains("итм2")
+            || n.contains("итб 2")
+            || n.contains("итм 2")
+            || n.contains("тотал гостей")
+            || n.contains("away team total");
+        if team1_total {
+            "Team1Total".into()
+        } else if team2_total {
+            "Team2Total".into()
+        } else if n.contains("итб")
+            || n.contains("итм")
+            || n.contains("individual")
+            || n.contains("индивидуальн")
+            || n.contains("инд. тотал")
+        {
+            // An unscoped individual total is not interchangeable with match total.
+            "unresolved_individual".into()
         } else if n.contains("тб") || n.contains("тм") || n.contains("total") {
             "Total".into()
         } else if n.contains("фора") || n.contains("handicap") || n.contains("ф ") {
@@ -1398,6 +1424,22 @@ mod tests {
         assert_eq!(
             FactorsCatalog::normalize_selection("second_half_handicap", "Ф2 (-1.5)"),
             "2"
+        );
+    }
+
+    #[test]
+    fn fallback_market_guess_quarantines_unscoped_individual_totals() {
+        assert_eq!(
+            FactorsCatalog::guess_market_type("Индивидуальный тотал"),
+            "unresolved_individual"
+        );
+        assert_eq!(
+            FactorsCatalog::guess_market_type("Индивидуальный тотал команды 1"),
+            "Team1Total"
+        );
+        assert_eq!(
+            FactorsCatalog::guess_market_type("Индивидуальный тотал команды 2"),
+            "Team2Total"
         );
     }
 
