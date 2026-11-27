@@ -721,14 +721,42 @@ impl ZenitParser {
                 continue;
             };
 
-            // Preserve the bookmaker's original market tables, filters,
-            // first-line rows and "other" bets as raw data. They remain
-            // non-actionable until their market/selection/period semantics
-            // are normalized and tested against other bookmakers.
-            event.extra.insert(
-                "zenit_additional_markets".to_string(),
-                payload,
+            // The official frontend's printMode=1 payload contains:
+            // data.order/data.data (expanded market tables), other (standalone
+            // additional bets), filter (market filters), and f_l (first-line
+            // rows). Preserve all of it until market semantics are normalized.
+            let table_count = payload
+                .get("data")
+                .and_then(|data| data.get("order"))
+                .and_then(serde_json::Value::as_array)
+                .map(Vec::len)
+                .unwrap_or_default();
+            let other_bet_count = payload
+                .get("other")
+                .and_then(serde_json::Value::as_array)
+                .map(Vec::len)
+                .unwrap_or_default();
+            let first_line_count = payload
+                .get("f_l")
+                .and_then(serde_json::Value::as_array)
+                .map(Vec::len)
+                .unwrap_or_default();
+            let filter_group_count = payload
+                .get("filter")
+                .and_then(serde_json::Value::as_object)
+                .map(serde_json::Map::len)
+                .unwrap_or_default();
+
+            info!(
+                event_id = %event.id,
+                table_count,
+                other_bet_count,
+                first_line_count,
+                filter_group_count,
+                "Zenit raw expanded market payload attached"
             );
+            event.extra
+                .insert("zenit_additional_markets".to_string(), payload);
             attached += 1;
         }
 
