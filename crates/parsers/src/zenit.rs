@@ -470,9 +470,7 @@ impl ZenitParser {
             .checked_sub(1)
             .and_then(|prev| bets.get(prev))
             .and_then(line_marker_value);
-        let next = bets
-            .get(index + 1)
-            .and_then(line_marker_value);
+        let next = bets.get(index + 1).and_then(line_marker_value);
 
         if prefer_previous {
             previous.or(next)
@@ -1488,8 +1486,7 @@ impl ZenitParser {
                         } else {
                             header.trim()
                         };
-                        let key =
-                            format!("factor={factor};header={column};reason=missing_line");
+                        let key = format!("factor={factor};header={column};reason=missing_line");
                         *parsed.unmapped_factor_counts.entry(key).or_insert(0) += 1;
                         continue;
                     }
@@ -1933,7 +1930,7 @@ mod tests {
             json!({"o": "7", "h": "1.90", "id": "handicap-home"}),
             json!({"o": "8", "h": "1.85", "id": "handicap-away"}),
             json!({"o": "9", "h": "1.80", "id": "total-under"}),
-            json!({"o": "10", "h": "1.95", "id": "total-over"})
+            json!({"o": "10", "h": "1.95", "id": "total-over"}),
         ];
 
         assert_eq!(ZenitParser::adjacent_line_value(&bets, 0, true), None);
@@ -1954,22 +1951,13 @@ mod tests {
             json!({"o": "10", "h": "1.95", "id": "total-over"})
         ];
 
-        assert_eq!(
-            ZenitParser::adjacent_line_value(&bets, 1, true),
-            Some(-2.5)
-        );
-        assert_eq!(
-            ZenitParser::adjacent_line_value(&bets, 3, true),
-            Some(2.5)
-        );
+        assert_eq!(ZenitParser::adjacent_line_value(&bets, 1, true), Some(-2.5));
+        assert_eq!(ZenitParser::adjacent_line_value(&bets, 3, true), Some(2.5));
         assert_eq!(
             ZenitParser::adjacent_line_value(&bets, 4, false),
             Some(22.5)
         );
-        assert_eq!(
-            ZenitParser::adjacent_line_value(&bets, 6, true),
-            Some(22.5)
-        );
+        assert_eq!(ZenitParser::adjacent_line_value(&bets, 6, true), Some(22.5));
     }
 
     #[test]
