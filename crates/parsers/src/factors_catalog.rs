@@ -519,15 +519,54 @@ impl FactorsCatalog {
 
     fn normalize_market_type(market_name: &str, tag: &str) -> String {
         let combined = format!("{} {}", market_name, tag).to_lowercase();
+        // Keep first/second-half scope in the canonical market type. Without
+        // this, "1-й тайм Тотал" and the full-match total normalize identically
+        // and can be compared as if they were the same market.
+        let period_prefix = if [
+            "1-й тайм",
+            "1-го тайма",
+            "1-м тайме",
+            "1 тайм",
+            "первый тайм",
+            "первого тайма",
+            "первом тайме",
+            "first half",
+            "first_half",
+            "1st half",
+        ]
+        .iter()
+        .any(|marker| combined.contains(marker))
+        {
+            "first_half_"
+        } else if [
+            "2-й тайм",
+            "2-го тайма",
+            "2-м тайме",
+            "2 тайм",
+            "второй тайм",
+            "второго тайма",
+            "втором тайме",
+            "second half",
+            "second_half",
+            "2nd half",
+        ]
+        .iter()
+        .any(|marker| combined.contains(marker))
+        {
+            "second_half_"
+        } else {
+            ""
+        };
+
         if combined.contains("фора по сет") || combined.contains("sets_handicap") {
             "sets_handicap".to_string()
         } else if combined.contains("фора по карт") || combined.contains("maps_handicap")
         {
             "maps_handicap".to_string()
         } else if combined.contains("инд. тотал 1") || combined.contains("team1_total") {
-            "team1_total".to_string()
+            format!("{period_prefix}team1_total")
         } else if combined.contains("инд. тотал 2") || combined.contains("team2_total") {
-            "team2_total".to_string()
+            format!("{period_prefix}team2_total")
         } else if combined.contains("тотал сет") || combined.contains("sets_total") {
             "sets_total".to_string()
         } else if combined.contains("тотал карт") || combined.contains("maps_total") {
@@ -535,9 +574,9 @@ impl FactorsCatalog {
         } else if combined.contains("тотал серии") || combined.contains("series_total") {
             "series_total".to_string()
         } else if combined.contains("фор") || combined.contains("handicap") {
-            "handicap".to_string()
+            format!("{period_prefix}handicap")
         } else if combined.contains("тотал") || combined.contains("total") {
-            "total".to_string()
+            format!("{period_prefix}total")
         } else if combined.contains("двойн") || combined.contains("double_chance") {
             "double_chance".to_string()
         } else if combined.contains("обе забьют") || combined.contains("both_to_score") {
@@ -549,11 +588,11 @@ impl FactorsCatalog {
             "even_odd".to_string()
         } else if combined.contains("итоговая победа") || combined.contains("final_win")
         {
-            "final_win".to_string()
+            format!("{period_prefix}final_win")
         } else if combined.contains("побед") || combined.contains("to_win") {
-            "to_win".to_string()
+            format!("{period_prefix}to_win")
         } else if combined.contains("исход") || combined.contains("result") {
-            "1x2".to_string()
+            format!("{period_prefix}1x2")
         } else if combined.contains("кто выше") || combined.contains("head_to_head") {
             "head_to_head".to_string()
         } else if combined.contains("проход") || combined.contains("to_qualify") {
@@ -1067,5 +1106,29 @@ mod tests {
         assert_eq!(count, 2);
         assert_eq!(catalog.get_factor(910).unwrap().selection_name, "1");
         assert_eq!(catalog.get_factor(912).unwrap().selection_name, "2");
+    } 
+    #[test]
+    fn market_normalization_preserves_first_and_second_half_scope() {
+        assert_eq!(
+            FactorsCatalog::normalize_market_type("Тотал первого тайма", ""),
+            "first_half_total"
+        );
+        assert_eq!(
+            FactorsCatalog::normalize_market_type("Тотал второго тайма", ""),
+            "second_half_total"
+        );
+        assert_eq!(
+            FactorsCatalog::normalize_market_type("Фора 1-го тайма", ""),
+            "first_half_handicap"
+        );
+        assert_eq!(
+            FactorsCatalog::normalize_market_type("Исход 2-го тайма", ""),
+            "second_half_1x2"
+        );
+        assert_eq!(
+            FactorsCatalog::normalize_market_type("Тотал матча", ""),
+            "total"
+        );
     }
+
 }
