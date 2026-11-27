@@ -1000,9 +1000,7 @@ fn classify_and_add_odd(
             ));
             return true;
         }
-    } else if market_type.contains("double")
-        || market_type.contains("двойн")
-    {
+    } else if market_type.contains("double") || market_type.contains("двойн") {
         // Only canonical double-chance outcomes are actionable. Unknown
         // captions must not leak into cross-book market comparison.
         let normalized_selection = selection
