@@ -411,6 +411,8 @@ impl SportbetParser {
             "1st half",
             "1st_half",
             "1st-half",
+            "1h",
+            "1 h",
         ]
         .iter()
         .any(|marker| normalized.contains(marker))
@@ -432,6 +434,8 @@ impl SportbetParser {
             "2nd half",
             "2nd_half",
             "2nd-half",
+            "2h",
+            "2 h",
         ]
         .iter()
         .any(|marker| normalized.contains(marker))
@@ -732,6 +736,14 @@ mod tests {
         assert_eq!(
             SportbetParser::normalize_market("2nd Half Handicap"),
             "2H_Handicap"
+        );
+        assert_eq!(
+            SportbetParser::normalize_market("1H Total"),
+            "1H_Total"
+        );
+        assert_eq!(
+            SportbetParser::normalize_market("2H Team 1 Total"),
+            "2H_Team1Total"
         );
         assert_eq!(
             SportbetParser::normalize_market("Двойной шанс"),
