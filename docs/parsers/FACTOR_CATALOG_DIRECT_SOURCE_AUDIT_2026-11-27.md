@@ -48,7 +48,7 @@ Implementation details:
 2. Load the catalog through the existing cache/single-flight implementation before parsing the event snapshot; catalog failure must not break otherwise valid event ingestion.
 3. Resolve factor IDs with `get_factor_for_sport` using the event's source `sportId`.
 4. Reuse the proven market/selection classifier already used by the Marathon parser, or extract it into a shared helper with regression fixtures.
-5. Retain conservative hard-coded fallbacks only for IDs whose meaning is already proven. Unknown or ambiguous IDs remain unclassified and must not be normalized into a common market.
+5. Retain conservative hard-coded fallbacks only for IDs whose meaning is already proven. Unknown or ambiguous IDs remain unclassified and must not be normalized into a common market. The Fonbet, PARI and 24bet event parsers now explicitly drop unmapped `factor_<id>` values from comparable odds while preserving the source payload for diagnostics.
 6. Add fixtures for catalog definitions, sport-specific ID collisions, line values, child-market context, and unknown IDs before enabling dynamic classification.
 7. Compare catalog-derived definitions against raw event factor distributions for each bookmaker separately. Do not assume IDs are interchangeable merely because the APIs share a platform family.
 
@@ -62,3 +62,4 @@ The factory registers the same 24bet parser instance under both `_24bet` and `be
 - GitHub's commit-workflow lookup returned no workflow runs for that commit; no CI pass is claimed.
 - Rust formatting, compilation and parser tests still need to be run in a build environment.
 - No factor IDs have been newly mapped based solely on numeric patterns.
+- Fonbet/PARI/24bet now quarantine unknown numeric factor IDs instead of emitting synthetic `factor_<id>` markets. Their existing sport-ambiguity fixtures also include an unmapped factor regression case.
