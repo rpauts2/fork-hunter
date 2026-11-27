@@ -621,7 +621,10 @@ mod tests {
             .count();
 
         assert_eq!(all_24bet, 1, "24bet aliases must not duplicate full scans");
-        assert_eq!(enabled_24bet, 1, "24bet aliases must not duplicate enabled scans");
+        assert_eq!(
+            enabled_24bet, 1,
+            "24bet aliases must not duplicate enabled scans"
+        );
     }
 
     #[test]
