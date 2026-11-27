@@ -395,36 +395,103 @@ impl SportbetParser {
 
     fn normalize_market(name: &str) -> String {
         let normalized = name.to_lowercase();
-        if normalized.contains("победитель карты")
+        let period_prefix = if [
+            "1-й тайм",
+            "1-го тайма",
+            "1-м тайме",
+            "1 тайм",
+            "1й тайм",
+            "первый тайм",
+            "первого тайма",
+            "первом тайме",
+            "first half",
+            "first_half",
+            "first-half",
+            "firsthalf",
+            "1st half",
+            "1st_half",
+            "1st-half",
+        ]
+        .iter()
+        .any(|marker| normalized.contains(marker))
+        {
+            "1H_"
+        } else if [
+            "2-й тайм",
+            "2-го тайма",
+            "2-м тайме",
+            "2 тайм",
+            "2й тайм",
+            "второй тайм",
+            "второго тайма",
+            "втором тайме",
+            "second half",
+            "second_half",
+            "second-half",
+            "secondhalf",
+            "2nd half",
+            "2nd_half",
+            "2nd-half",
+        ]
+        .iter()
+        .any(|marker| normalized.contains(marker))
+        {
+            "2H_"
+        } else {
+            ""
+        };
+
+        let family = if normalized.contains("победитель карты")
             || normalized.contains("результат карты")
             || normalized.contains("map winner")
         {
-            "MapWinner".to_string()
+            "MapWinner"
         } else if normalized.contains("победитель сета") || normalized.contains("результат сета")
         {
-            "SetWinner".to_string()
+            "SetWinner"
         } else if normalized.contains("победитель раунда")
             || normalized.contains("результат раунда")
         {
-            "RoundWinner".to_string()
+            "RoundWinner"
+        } else if normalized.contains("обе забьют")
+            || normalized.contains("обе команды забьют")
+            || normalized.contains("btts")
+            || normalized.contains("both teams score")
+        {
+            "BothTeamsScore"
+        } else if normalized.contains("чёт/нечёт")
+            || normalized.contains("чет/нечет")
+            || normalized.contains("чётность")
+            || normalized.contains("четность")
+            || normalized.contains("even/odd")
+            || normalized.contains("even_odd")
+        {
+            "EvenOdd"
+        } else if normalized.contains("двойн") || normalized.contains("double chance") {
+            "DoubleChance"
         } else if normalized.contains("индивидуальн")
             || normalized.contains("командный тотал")
             || normalized.contains("team total")
         {
-            "IndividualTotal".to_string()
+            "IndividualTotal"
         } else if normalized.contains("исход") || normalized.contains("match result") {
-            "1X2".to_string()
+            "1X2"
         } else if normalized.contains("победител") || normalized.contains("winner") {
-            "winner".to_string()
+            "Winner"
         } else if normalized.contains("тотал") || normalized.contains("total") {
-            "Total".to_string()
+            "Total"
         } else if normalized.contains("фора") || normalized.contains("handicap") {
-            "Handicap".to_string()
-        } else if normalized.contains("двойн") || normalized.contains("double chance") {
-            "Double Chance".to_string()
+            "Handicap"
         } else {
-            name.trim().to_string()
-        }
+            return name.trim().to_string();
+        };
+
+        let canonical_family = match family {
+            "1X2" if period_prefix == "1H_" => "Result",
+            "1X2" if period_prefix == "2H_" => "Result",
+            other => other,
+        };
+        format!("{period_prefix}{canonical_family}")
     }
 
     fn normalize_outcome(
@@ -612,6 +679,38 @@ mod tests {
     use super::SportbetParser;
     use shared::odds::OddsType;
     use shared::Sport;
+
+    #[test]
+    fn market_normalization_preserves_half_period_and_canonical_families() {
+        assert_eq!(
+            SportbetParser::normalize_market("1-й тайм: Тотал"),
+            "1H_Total"
+        );
+        assert_eq!(
+            SportbetParser::normalize_market("Тотал второго тайма"),
+            "2H_Total"
+        );
+        assert_eq!(
+            SportbetParser::normalize_market("Исход 1-го тайма"),
+            "1H_Result"
+        );
+        assert_eq!(
+            SportbetParser::normalize_market("2nd Half Handicap"),
+            "2H_Handicap"
+        );
+        assert_eq!(
+            SportbetParser::normalize_market("Двойной шанс"),
+            "DoubleChance"
+        );
+        assert_eq!(
+            SportbetParser::normalize_market("Обе команды забьют"),
+            "BothTeamsScore"
+        );
+        assert_eq!(
+            SportbetParser::normalize_market("Чётность"),
+            "EvenOdd"
+        );
+    }
 
     fn sample_payload(status: &str) -> serde_json::Value {
         serde_json::json!({
