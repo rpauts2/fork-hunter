@@ -789,9 +789,9 @@ impl FactorsCatalog {
             || n.contains("тотал гостей")
             || n.contains("away team total");
         if team1_total {
-            "Team1Total".into()
+            "team1_total".into()
         } else if team2_total {
-            "Team2Total".into()
+            "team2_total".into()
         } else if n.contains("итб")
             || n.contains("итм")
             || n.contains("individual")
@@ -1435,11 +1435,11 @@ mod tests {
         );
         assert_eq!(
             FactorsCatalog::guess_market_type("Индивидуальный тотал команды 1"),
-            "Team1Total"
+            "team1_total"
         );
         assert_eq!(
             FactorsCatalog::guess_market_type("Индивидуальный тотал команды 2"),
-            "Team2Total"
+            "team2_total"
         );
     }
 
