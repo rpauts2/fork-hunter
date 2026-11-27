@@ -604,7 +604,11 @@ impl FactorsCatalog {
 
     fn normalize_selection(market_type: &str, caption: &str) -> String {
         let value = caption.trim().to_lowercase();
-        match market_type {
+        let base_market_type = market_type
+            .strip_prefix("first_half_")
+            .or_else(|| market_type.strip_prefix("second_half_"))
+            .unwrap_or(market_type);
+        match base_market_type {
             "handicap" | "sets_handicap" | "maps_handicap" => {
                 if value == "1" || value.contains("фора 1") || value.contains("фора1") {
                     "1".to_string()
@@ -1128,6 +1132,22 @@ mod tests {
         assert_eq!(
             FactorsCatalog::normalize_market_type("Тотал матча", ""),
             "total"
+        );
+    }
+
+    #[test]
+    fn period_scoped_selection_normalization_uses_base_market_family() {
+        assert_eq!(
+            FactorsCatalog::normalize_selection("first_half_total", "Б"),
+            "over"
+        );
+        assert_eq!(
+            FactorsCatalog::normalize_selection("second_half_handicap", "ФОРА 2"),
+            "2"
+        );
+        assert_eq!(
+            FactorsCatalog::normalize_selection("first_half_1x2", "Х"),
+            "x"
         );
     }
 
