@@ -418,7 +418,7 @@ const HEADLESS_EXTRACT_JS: &str = r#"(() => {
             return '';
         }
         if (/(?:исход|1x2|match result)/i.test(source)) return '1X2';
-        if (/(?:^|\\b)(?:тотал|total)(?:\\b|$)/i.test(source)) return 'Total';
+        if (/(?:^|\b)(?:тотал|total)(?:\b|$)/i.test(source)) return 'Total';
         if (/(?:победител|winner)/i.test(source) && !/(?:карты|раунда|сета|round|set|map)/i.test(source)) {
             return 'Winner';
         }
