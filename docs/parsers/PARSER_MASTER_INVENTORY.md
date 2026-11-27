@@ -16,7 +16,7 @@ This document distinguishes **parser code exists**, **real feed verified**, **en
 
 ## Feed access research — 2026-11-27
 
-Detailed provider and operator findings are recorded in [RUSSIAN_BK_FEED_ACCESS_RESEARCH_2026-11-27.md](RUSSIAN_BK_FEED_ACCESS_RESEARCH_2026-11-27.md). Key change: API-SPORT documents BetBoom and MelBet odds; ODDSCORP lists BetBoom, Liga Stavok, MelBet and Tennisi, but its older catalogue is not proof of current feed health. Tennisi is paused, Poolbet launch is announced for 2026-12-01, and Golden Bet / ABET have no verified public feed. No third-party provider is production-enabled without a trial, source-health evidence and written data-use terms.
+Detailed provider and operator findings are recorded in [RUSSIAN_BK_FEED_ACCESS_RESEARCH_2026-11-27.md](RUSSIAN_BK_FEED_ACCESS_RESEARCH_2026-11-27.md). Key change: API-SPORT documents BetBoom and MelBet odds; ODDSCORP currently states 43 connected bookmakers, lists BetBoom, Liga Stavok, MelBet and Tennisi, and offers a free two-week trial on request; this is a candidate feed, not yet a runtime-verified source. Tennisi is paused, Poolbet launch is announced for 2026-12-01, and Golden Bet / ABET have no verified public feed. No third-party provider is production-enabled without a trial, source-health evidence and written data-use terms.
 
 ## Runtime validation — 2026-11-27 04:06 UTC (off-peak snapshot)
 

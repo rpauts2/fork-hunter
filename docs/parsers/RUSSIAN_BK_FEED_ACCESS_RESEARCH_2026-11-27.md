@@ -33,15 +33,16 @@ No CAPTCHA, QRATOR, Cloudflare, authentication, geo-restriction, or account-cont
 - This is a documented commercial/third-party data source, not an official BetBoom or MelBet API. No API key or pricing/redistribution terms were available in the project environment, so no live feed can yet be asserted.
 
 ### ODDSCORP
-- Its API catalogue lists BetBoom, Liga Stavok, MelBet and Tennisi among supported bookmakers.
-- It advertises HTTP API and WebSocket odds updates, plus an API demo.
-- Published pricing page expresses cost per bookmaker and separates live/prematch, HTTP/WebSocket and additional products; the page does not expose a clear currency or final payable amount in its readable text. A written quote and trial are required.
-- Its bookmaker catalogue has a last-updated note of 2020 in the indexed Russian page; the live demo is more current but the default sample returned 0 events / 0 markets / no last push. Treat the catalogue as a lead, not proof of current feed health.
-- No key, trial credentials, sample payload or written usage rights are available in the repository. Do not wire it into production until verified.
+- The current ODDSCORP API page states 43 connected bookmakers and explicitly lists BetBoom, Liga Stavok, MelBet and Tennisi among available operators.
+- It advertises HTTP API and WebSocket odds updates, a public live demo, and a two-week trial on request via Telegram @oddscorp; the page says a manager issues trial access within 24 hours.
+- The pricing page separates live/prematch and HTTP/WebSocket by bookmaker. Visible price figures include 450 for live HTTP, 300 for prematch HTTP, and 675 for a combined HTTP option per bookmaker, but the page does not make the currency/unit explicit in the readable content. Confirm the payable amount in writing.
+- The provider advertises approximately 0.4-second average updates and claims 99% of data is under one second. These are vendor claims, not independently verified measurements.
+- No trial key, payload, or written usage rights are available in the repository. This is now the clearest trial path for BetBoom and Liga Stavok, and a second candidate for MelBet. Do not enable production until the trial proves the Russian bookmaker variant, event/market depth, source timestamps, and permitted use.
 
 ### Odds-API.io
 - Its current catalogue lists MelBet and provides live/prematch odds via REST/WebSocket.
-- Its public bookmaker list did not show BetBoom, Liga Stavok, Tennisi, Poolbet, Golden Bet, ABET or Bet-M in the inspected results.
+- Its public bookmaker list did not show BetBoom, Liga Stavok, Tennisi, Poolbet, Golden Bet, ABET or the Russian Bet-M operator in the inspected results.
+- OpticOdds also exposes a separate sportsbook identifier named betM, but the public coverage material describes a multi-region international catalogue and does not establish that this is the Russian ООО «БЕТ-М». Do not treat it as a confirmed Bet-M feed without written confirmation.
 - It is an independent commercial aggregator, not an official operator API. Treat MelBet as a potential fallback only after a trial verifies the Russian market variant, market depth, quote timestamps and redistribution rights.
 
 ## Implementation decision
@@ -57,7 +58,7 @@ Do not silently replace an operator parser with a generic aggregator feed. Imple
 
 ## Remaining work
 
-1. Obtain a trial key / written quote from API-SPORT and ODDSCORP; compare BetBoom, MelBet and Liga Stavok on the same sample events.
+1. Request the free two-week ODDSCORP trial for BetBoom, Liga Stavok and MelBet; in parallel request an API-SPORT trial for BetBoom and MelBet. Compare the same sample events.
 2. Confirm commercial use and redistribution rights, region variant, markets, rate limits, SLA, latency and cancellation terms.
 3. Evaluate Bet-M against licensed providers and permitted public feed behavior; do not evade regional restrictions.
 4. Recheck Poolbet after 2026-12-01 and Tennisi only after official resumption.
