@@ -2265,6 +2265,36 @@ mod parser_identity_tests {
     }
 
     #[test]
+    fn catalog_classifier_quarantines_unscoped_individual_totals() {
+        let event = shared::Event {
+            id: "marathon-prematch-individual-total".to_string(),
+            sport: Sport::Football,
+            league: "Test League".to_string(),
+            home_team: "Home FC".to_string(),
+            away_team: "Away FC".to_string(),
+            start_time: None,
+            is_live: false,
+            bookmaker_slug: "marathon".to_string(),
+            raw_url: None,
+            extra: std::collections::HashMap::new(),
+        };
+        let quote = classify_catalog_factor(
+            "marathon",
+            &event,
+            921,
+            1.85,
+            Some(2.5),
+            "unresolved_individual",
+            "over",
+            chrono::Utc::now(),
+        );
+        assert!(
+            quote.is_none(),
+            "an individual total without a proven team side must not become a match total"
+        );
+    }
+
+    #[test]
     fn catalog_classifier_keeps_half_time_markets_separate_from_full_match() {
         let event = shared::Event {
             id: "marathon-prematch-1".to_string(),
