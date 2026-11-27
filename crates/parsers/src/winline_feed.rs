@@ -1207,8 +1207,9 @@ impl FeedState {
             || lower.contains("итм")
             || lower.contains("ит 1")
             || lower.contains("ит 2");
-        let is_double_chance =
-            lower.contains("двойн") || lower.contains("double chance") || lower.contains("doublechance");
+        let is_double_chance = lower.contains("двойн")
+            || lower.contains("double chance")
+            || lower.contains("doublechance");
         let is_btts = lower.contains("обе забьют")
             || lower.contains("обе команды забьют")
             || lower.contains("both teams score")
@@ -1344,12 +1345,7 @@ impl FeedState {
             .unwrap_or(category);
         matches!(
             base,
-            "Total"
-                | "Handicap"
-                | "Team1Total"
-                | "Team2Total"
-                | "Team1Handicap"
-                | "Team2Handicap"
+            "Total" | "Handicap" | "Team1Total" | "Team2Total" | "Team1Handicap" | "Team2Handicap"
         )
     }
 
@@ -1405,12 +1401,8 @@ impl FeedState {
 
         if base == "BothTeamsScore" {
             return match lower.as_str() {
-                "да" | "yes" | "y" => {
-                    ("Yes".to_string(), OddsType::BothTeamsScoreYes)
-                }
-                "нет" | "no" | "n" => {
-                    ("No".to_string(), OddsType::BothTeamsScoreNo)
-                }
+                "да" | "yes" | "y" => ("Yes".to_string(), OddsType::BothTeamsScoreYes),
+                "нет" | "no" | "n" => ("No".to_string(), OddsType::BothTeamsScoreNo),
                 _ => (String::new(), OddsType::Custom),
             };
         }
@@ -1426,7 +1418,9 @@ impl FeedState {
         if base == "Total" || base.ends_with("Total") {
             return match lower.as_str() {
                 "больше" | "тб" | "итб" | "over" => ("Over".to_string(), OddsType::Over),
-                "меньше" | "тм" | "итм" | "under" => ("Under".to_string(), OddsType::Under),
+                "меньше" | "тм" | "итм" | "under" => {
+                    ("Under".to_string(), OddsType::Under)
+                }
                 _ => (String::new(), OddsType::Custom),
             };
         }
@@ -1543,20 +1537,14 @@ mod tests {
             name: name.to_string(),
             outcomes: vec!["Больше".into(), "Меньше".into()],
         };
-        let (unscoped, _) = FeedState::normalize_market(
-            &market("Индивидуальный тотал"),
-            "2.5",
-            0,
-        );
+        let (unscoped, _) = FeedState::normalize_market(&market("Индивидуальный тотал"), "2.5", 0);
         assert!(FeedState::has_unresolved_team_scope(
             &market("Индивидуальный тотал"),
             &unscoped
         ));
 
-        let (set_total, _) =
-            FeedState::normalize_market(&market("Тотал первого сета"), "2.5", 0);
-        let (map_total, _) =
-            FeedState::normalize_market(&market("Map total"), "2.5", 0);
+        let (set_total, _) = FeedState::normalize_market(&market("Тотал первого сета"), "2.5", 0);
+        let (map_total, _) = FeedState::normalize_market(&market("Map total"), "2.5", 0);
         assert_eq!(set_total, "Custom:Тотал первого сета");
         assert_eq!(map_total, "Custom:Map total");
 
