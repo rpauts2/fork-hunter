@@ -737,9 +737,7 @@ impl FactorsCatalog {
                     || compact.contains("2илиничья")
                 {
                     "X2".to_string()
-                } else if compact == "12"
-                    || compact.contains("1или2")
-                    || compact.contains("2или1")
+                } else if compact == "12" || compact.contains("1или2") || compact.contains("2или1")
                 {
                     "12".to_string()
                 } else {
