@@ -1038,11 +1038,16 @@ impl BetcityParser {
             if market_name_lower.contains("обе забьют")
                 || market_name_lower.contains("обе команды забьют")
             {
+                let market = if Self::is_period_market_name(&market_name_lower) {
+                    market_name
+                } else {
+                    "BTTS"
+                };
                 Self::push_named_outcome_unique(
                     odds,
                     seen,
                     event_id,
-                    "BTTS",
+                    market,
                     "Yes",
                     OddsType::BothTeamsScoreYes,
                     block_obj.get("Y"),
@@ -1053,7 +1058,7 @@ impl BetcityParser {
                     odds,
                     seen,
                     event_id,
-                    "BTTS",
+                    market,
                     "No",
                     OddsType::BothTeamsScoreNo,
                     block_obj.get("N"),
@@ -1106,11 +1111,16 @@ impl BetcityParser {
                     && block_obj.contains_key("12")
                     && block_obj.contains_key("X2"))
             {
+                let market = if Self::is_period_market_name(&market_name_lower) {
+                    market_name
+                } else {
+                    "DoubleChance"
+                };
                 Self::push_named_outcome_unique(
                     odds,
                     seen,
                     event_id,
-                    "DoubleChance",
+                    market,
                     "1X",
                     OddsType::Custom,
                     block_obj.get("1X"),
@@ -1121,7 +1131,7 @@ impl BetcityParser {
                     odds,
                     seen,
                     event_id,
-                    "DoubleChance",
+                    market,
                     "12",
                     OddsType::Custom,
                     block_obj.get("12"),
@@ -1132,7 +1142,7 @@ impl BetcityParser {
                     odds,
                     seen,
                     event_id,
-                    "DoubleChance",
+                    market,
                     "X2",
                     OddsType::Custom,
                     block_obj.get("X2"),
@@ -1200,11 +1210,16 @@ impl BetcityParser {
                     .and_then(Self::extract_numeric_value)
                     .or_else(|| block_obj.get("Kf_F2").and_then(Self::extract_line));
 
+                let market = if Self::is_period_market_name(&market_name_lower) {
+                    market_name
+                } else {
+                    "Handicap"
+                };
                 Self::push_named_outcome_unique(
                     odds,
                     seen,
                     event_id,
-                    "Handicap",
+                    market,
                     "1",
                     OddsType::Handicap,
                     block_obj.get("Kf_F1"),
@@ -1215,7 +1230,7 @@ impl BetcityParser {
                     odds,
                     seen,
                     event_id,
-                    "Handicap",
+                    market,
                     "2",
                     OddsType::Handicap,
                     block_obj.get("Kf_F2"),
@@ -1920,6 +1935,72 @@ mod tests {
                 && odd.selection == "T1"
                 && odd.odds_type == OddsType::Custom
                 && odd.line == Some(7.0)
+        }));
+    }
+
+    #[test]
+    fn period_scope_is_preserved_for_btts_double_chance_and_handicap() {
+        let blocks = serde_json::json!({
+            "btts": {
+                "Y": {"kf": 1.8},
+                "N": {"kf": 2.0}
+            },
+            "double": {
+                "1X": {"kf": 1.2},
+                "12": {"kf": 1.3},
+                "X2": {"kf": 1.4}
+            },
+            "handicap": {
+                "F1": -0.5,
+                "F2": 0.5,
+                "Kf_F1": {"kf": 1.9, "ps": 101},
+                "Kf_F2": {"kf": 1.9, "ps": 102}
+            }
+        }).as_object().cloned().expect("blocks object");
+        let mut odds = Vec::new();
+        let mut seen = std::collections::HashSet::new();
+        let now = Utc::now();
+
+        BetcityParser::extract_market_blocks(
+            &blocks,
+            "Обе забьют: 1-й тайм",
+            "betcity-live-701",
+            now,
+            &mut seen,
+            &mut odds,
+        );
+        BetcityParser::extract_market_blocks(
+            &blocks,
+            "Двойной шанс 1-го тайма",
+            "betcity-live-701",
+            now,
+            &mut seen,
+            &mut odds,
+        );
+        BetcityParser::extract_market_blocks(
+            &blocks,
+            "Фора 1-го тайма",
+            "betcity-live-701",
+            now,
+            &mut seen,
+            &mut odds,
+        );
+
+        assert!(odds.iter().any(|odd| {
+            odd.market == "Обе забьют: 1-й тайм" && odd.selection == "Yes"
+        }));
+        assert!(odds.iter().any(|odd| {
+            odd.market == "Двойной шанс 1-го тайма" && odd.selection == "1X"
+        }));
+        assert!(odds.iter().any(|odd| {
+            odd.market == "Фора 1-го тайма"
+                && odd.selection == "1"
+                && odd.line == Some(-0.5)
+        }));
+        assert!(odds.iter().all(|odd| {
+            odd.market != "BTTS"
+                && odd.market != "DoubleChance"
+                && odd.market != "Handicap"
         }));
     }
 
