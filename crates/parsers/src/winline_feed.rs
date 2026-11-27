@@ -1373,7 +1373,8 @@ impl FeedState {
             "2" | "п2" | "away" => ("2".to_string(), OddsType::Away),
             _ => (trimmed.to_string(), OddsType::Custom),
         }
-    }}
+    }
+}
 
 #[cfg(test)]
 mod tests {
