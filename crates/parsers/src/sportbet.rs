@@ -741,10 +741,7 @@ mod tests {
             SportbetParser::normalize_market("Обе команды забьют"),
             "BothTeamsScore"
         );
-        assert_eq!(
-            SportbetParser::normalize_market("Чётность"),
-            "EvenOdd"
-        );
+        assert_eq!(SportbetParser::normalize_market("Чётность"), "EvenOdd");
         assert_eq!(
             SportbetParser::normalize_market("Индивидуальный тотал команды 1"),
             "Team1Total"
