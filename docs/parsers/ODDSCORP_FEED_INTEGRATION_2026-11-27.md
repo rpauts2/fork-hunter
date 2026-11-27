@@ -10,14 +10,15 @@ The public ODDSCORP API reference currently documents:
 - A market contains bet, cf, blocked, meta, updated_at and updated_at_ms.
 - An event contains a provider event key (bk_event_id), the bookmaker-native ID (bk_event_native_id), the bookmaker slug, and a provider cross-bookmaker group ID (event_id).
 
-Authentication is documented as a URI token. The provider's docs explicitly say the available bookmaker list is limited to the bookmakers included in the active subscription. Its metadata format varies by bookmaker and sport.
+Authentication is documented as a URI token. The public API examples use plain HTTP; request an HTTPS endpoint from the provider before using a real token. The client blocks cleartext HTTP by default and requires an explicit ODDSCORP_ALLOW_INSECURE_HTTP=1 opt-in. The provider's docs explicitly say the available bookmaker list is limited to the bookmakers included in the active subscription. Its metadata format varies by bookmaker and sport.
 
 ## Current implementation
 
 The repository now has a guarded transport/data-contract client in crates/parsers/src/oddscorp.rs.
 
 It:
-- reads ODDSCORP_API_TOKEN and optional ODDSCORP_BASE_URL;
+- reads ODDSCORP_API_TOKEN, optional ODDSCORP_BASE_URL, and ODDSCORP_ALLOW_INSECURE_HTTP;
+- requires HTTPS by default. The provider's public examples currently show HTTP with a URI token, so cleartext transport is rejected unless ODDSCORP_ALLOW_INSECURE_HTTP=1 is explicitly set after accepting the token-exposure risk;
 - does not print the token in Debug output or request errors;
 - fetches subscribed bookmakers, live/pre-match event lists, and per-event markets;
 - tolerates numeric or string price payloads;
