@@ -282,7 +282,7 @@ impl _24betParser {
                                     let line =
                                         factor.get("p").and_then(parse_f64_value).map(|p| p / 100.0);
 
-                                                                        if let Some(catalog) = factor_catalog {
+                                    if let Some(catalog) = factor_catalog {
                                         let source_sport_id =
                                             source_sport_id.map(|id| id.to_string());
                                         if catalog.contains_factor_id(fid) {
@@ -313,7 +313,7 @@ impl _24betParser {
                                         }
                                     }
 
-                                    let (market, selection, odds_type) =
+let (market, selection, odds_type) =
                                         Self::factor_to_market(fid);
                                     let odd = crate::marathon::make_market_odd(
                                         "_24bet",
