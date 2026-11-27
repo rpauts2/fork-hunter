@@ -1328,9 +1328,13 @@ impl FeedState {
         if base == "DoubleChance" {
             let compact = lower
                 .replace('х', "x")
+                .replace("ничья", "x")
+                .replace("или", "")
                 .replace(' ', "")
                 .replace('-', "")
-                .replace('/', "");
+                .replace('/', "")
+                .replace('(', "")
+                .replace(')', "");
             return match compact.as_str() {
                 "1x" => ("1X".to_string(), OddsType::Custom),
                 "x2" => ("X2".to_string(), OddsType::Custom),
@@ -1367,12 +1371,34 @@ impl FeedState {
             };
         }
 
-        match lower.as_str() {
-            "1" | "п1" | "home" => ("1".to_string(), OddsType::Home),
-            "x" | "н" | "ничья" | "draw" => ("X".to_string(), OddsType::Draw),
-            "2" | "п2" | "away" => ("2".to_string(), OddsType::Away),
-            _ => (trimmed.to_string(), OddsType::Custom),
+        if base == "1X2" {
+            return match lower.as_str() {
+                "1" | "п1" | "home" | "home win" | "хозяева" | "победа хозяев" => {
+                    ("1".to_string(), OddsType::Home)
+                }
+                "x" | "х" | "н" | "ничья" | "draw" | "tie" => {
+                    ("X".to_string(), OddsType::Draw)
+                }
+                "2" | "п2" | "away" | "away win" | "гости" | "победа гостей" => {
+                    ("2".to_string(), OddsType::Away)
+                }
+                _ => (String::new(), OddsType::Custom),
+            };
         }
+
+        if base == "Winner" || base == "MatchWinner12" {
+            return match lower.as_str() {
+                "1" | "п1" | "home" | "home win" | "хозяева" | "победа хозяев" => {
+                    ("1".to_string(), OddsType::Home)
+                }
+                "2" | "п2" | "away" | "away win" | "гости" | "победа гостей" => {
+                    ("2".to_string(), OddsType::Away)
+                }
+                _ => (String::new(), OddsType::Custom),
+            };
+        }
+
+        (trimmed.to_string(), OddsType::Custom)
     }
 }
 
@@ -1499,6 +1525,48 @@ mod tests {
         );
         assert!(state.odds.is_empty());
         assert!(state.pending_odds.is_empty());
+    }
+
+    #[test]
+    fn rejects_unknown_winline_outcomes_for_canonical_markets() {
+        assert_eq!(
+            FeedState::normalize_selection("unknown", "1X2"),
+            (String::new(), OddsType::Custom)
+        );
+        assert_eq!(
+            FeedState::normalize_selection("draw or over 2.5", "DoubleChance"),
+            (String::new(), OddsType::Custom)
+        );
+        assert_eq!(
+            FeedState::normalize_selection("unknown", "1H_BothTeamsScore"),
+            (String::new(), OddsType::Custom)
+        );
+        assert_eq!(
+            FeedState::normalize_selection("unknown", "2H_Total"),
+            (String::new(), OddsType::Custom)
+        );
+
+        let market = MarketDefinition {
+            source_type: 0,
+            name: "Обе забьют".into(),
+            outcomes: vec!["Да".into(), "Неизвестный исход".into()],
+        };
+        let mut state = FeedState::default();
+        state.add_market_odds(
+            "prematch",
+            3,
+            "winline-prematch-43",
+            market,
+            "",
+            0,
+            vec![1.8, 2.0],
+        );
+        let inserted = state
+            .pending_odds
+            .get("winline-prematch-43")
+            .expect("known valid BTTS side remains");
+        assert_eq!(inserted.len(), 1);
+        assert!(inserted.values().all(|odd| odd.selection == "Yes"));
     }
 
     #[test]
