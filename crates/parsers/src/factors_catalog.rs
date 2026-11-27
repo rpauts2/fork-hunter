@@ -1018,6 +1018,11 @@ mod tests {
         }));
 
         assert!(catalog.get_factor_for_sport(921, None).is_none());
+        assert!(
+            catalog.contains_factor_id(921),
+            "ambiguous source IDs must be distinguishable from IDs absent in the catalog"
+        );
+        assert!(!catalog.contains_factor_id(999_999));
     }
 
     #[test]
