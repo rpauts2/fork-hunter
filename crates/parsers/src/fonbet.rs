@@ -1,4 +1,5 @@
 use crate::base::{BookmakerParser, ParserResult};
+use crate::factors_catalog::FactorsCatalog;
 use async_trait::async_trait;
 use chrono::Utc;
 use reqwest::Client;
@@ -45,6 +46,7 @@ fn line_id_component(line: Option<f64>) -> String {
 
 #[derive(Debug)]
 pub struct FonbetParser {
+    factors: Arc<FactorsCatalog>,
     client: Arc<Client>,
     live_url: String,
     prematch_url: String,
@@ -53,6 +55,11 @@ pub struct FonbetParser {
 impl FonbetParser {
     pub fn new(client: Arc<Client>) -> Self {
         Self {
+            factors: Arc::new(FactorsCatalog::new(
+                client.clone(),
+                "https://line-lb61-w.bk6bba-resources.com",
+                1600,
+            )),
             client,
             live_url: "https://line-lb61-w.bk6bba-resources.com/ma/events/list?lang=ru&scopeMarket=1600".to_string(),
             prematch_url: "https://line-lb61-w.bk6bba-resources.com/ma/events/listBase?lang=ru&scopeMarket=1600".to_string(),
@@ -177,13 +184,26 @@ impl FonbetParser {
             .into());
         }
 
+        match self.factors.load().await {
+            Ok(count) => debug!(factor_count = count, "Fonbet direct factor catalog loaded"),
+            Err(error) => warn!(error = %error, "Fonbet direct factor catalog unavailable; using verified fallback mappings"),
+        }
+
         let json: serde_json::Value = resp.json().await?;
-        Self::parse_api_response(&json, is_live)
+        Self::parse_api_response_with_catalog(&json, is_live, Some(&self.factors))
     }
 
     fn parse_api_response(
         json: &serde_json::Value,
         is_live: bool,
+    ) -> Result<(Vec<Event>, Vec<Odd>), Box<dyn std::error::Error + Send + Sync>> {
+        Self::parse_api_response_with_catalog(json, is_live, None)
+    }
+
+    fn parse_api_response_with_catalog(
+        json: &serde_json::Value,
+        is_live: bool,
+        factor_catalog: Option<&FactorsCatalog>,
     ) -> Result<(Vec<Event>, Vec<Odd>), Box<dyn std::error::Error + Send + Sync>> {
         let events_data = match json.get("events").and_then(|e| e.as_array()) {
             Some(events) => events,
@@ -275,7 +295,10 @@ impl FonbetParser {
                                     is_live,
                                     bookmaker_slug: "fonbet".to_string(),
                                     raw_url: None,
-                                    extra: HashMap::new(),
+                                    extra: HashMap::from([(
+                                        "source_sport_id".to_string(),
+                                        serde_json::Value::String(sport_id.to_string()),
+                                    )]),
                                 },
                                 Vec::new(),
                             ));
@@ -295,6 +318,32 @@ impl FonbetParser {
 
                                     let line =
                                         factor.get("p").and_then(|v| v.as_f64()).map(|p| p / 100.0);
+
+                                    let catalog_definition = factor_catalog.and_then(|catalog| {
+                                        let source_sport_id = sport_id.to_string();
+                                        catalog.get_factor_for_sport(fid, Some(&source_sport_id))
+                                    });
+                                    if let Some(definition) = catalog_definition {
+                                        let market_type = definition.market_type.to_lowercase();
+                                        let selection_name = definition.selection_name.to_lowercase();
+                                        let catalog_odd = crate::marathon::classify_catalog_factor(
+                                            "fonbet",
+                                            &all_odds[idx].0,
+                                            fid,
+                                            val,
+                                            line,
+                                            &market_type,
+                                            &selection_name,
+                                            now,
+                                        );
+                                        if let Some(odd) = catalog_odd {
+                                            all_odds[idx].1.push(odd);
+                                        }
+                                        // A catalog hit with unsupported semantics is
+                                        // quarantined; do not guess from the numeric ID.
+                                        continue;
+                                    }
+
                                     let (market, selection, odds_type) =
                                         Self::factor_to_market(fid);
 
