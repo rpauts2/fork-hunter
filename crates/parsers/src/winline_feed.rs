@@ -1037,6 +1037,15 @@ impl FeedState {
     ) {
         let event_is_known = self.events.contains_key(event_key);
         let (market_name, line) = Self::normalize_market(&market, koef, 0);
+        if Self::market_requires_line(&market, &market_name) && line.is_none() {
+            warn!(
+                event_id = event_key,
+                market = %market_name,
+                source_type = market.source_type,
+                "Winline total/handicap omitted because its line is missing"
+            );
+            return;
+        }
         let timestamp = Utc::now();
         for (index, price) in values.into_iter().enumerate() {
             if !price.is_finite() || price <= 1.0 {
@@ -1079,31 +1088,171 @@ impl FeedState {
         _favorite: u8,
     ) -> (String, Option<f64>) {
         let raw = market.name.trim();
-        let lower = raw.to_lowercase();
-        let mut category = if lower.contains("исход 1x2") || (market.source_type == 2) {
+        let lower = raw.to_lowercase().replace('ё', "е");
+
+        let period_prefix = if [
+            "1-й тайм",
+            "1-го тайма",
+            "1-м тайме",
+            "1 тайм",
+            "первый тайм",
+            "первого тайма",
+            "первом тайме",
+            "first half",
+            "first_half",
+            "first-half",
+            "firsthalf",
+            "1st half",
+            "1st_half",
+            "1st-half",
+            "1h",
+            "1 h",
+        ]
+        .iter()
+        .any(|marker| lower.contains(marker))
+        {
+            Some("1H_")
+        } else if [
+            "2-й тайм",
+            "2-го тайма",
+            "2-м тайме",
+            "2 тайм",
+            "второй тайм",
+            "второго тайма",
+            "втором тайме",
+            "second half",
+            "second_half",
+            "second-half",
+            "secondhalf",
+            "2nd half",
+            "2nd_half",
+            "2nd-half",
+            "2h",
+            "2 h",
+        ]
+        .iter()
+        .any(|marker| lower.contains(marker))
+        {
+            Some("2H_")
+        } else {
+            None
+        };
+
+        let team_scope = if [
+            "команды 1",
+            "команда 1",
+            "команды №1",
+            "1-й команды",
+            "первой команды",
+            "хозяев",
+            "home team",
+            "team 1",
+            "team1",
+            "1к",
+            "1 к",
+            "ит1",
+            "ит 1",
+            "итб1",
+            "итм1",
+            "итб 1",
+            "итм 1",
+        ]
+        .iter()
+        .any(|marker| lower.contains(marker))
+        {
+            Some("Team1")
+        } else if [
+            "команды 2",
+            "команда 2",
+            "команды №2",
+            "2-й команды",
+            "второй команды",
+            "гостей",
+            "away team",
+            "team 2",
+            "team2",
+            "2к",
+            "2 к",
+            "ит2",
+            "ит 2",
+            "итб2",
+            "итм2",
+            "итб 2",
+            "итм 2",
+        ]
+        .iter()
+        .any(|marker| lower.contains(marker))
+        {
+            Some("Team2")
+        } else {
+            None
+        };
+
+        let is_individual_total = lower.contains("индивидуальн")
+            || lower.contains("инд. тотал")
+            || lower.contains("инд тотал")
+            || lower.contains("итб")
+            || lower.contains("итм")
+            || lower.contains("ит 1")
+            || lower.contains("ит 2");
+        let is_double_chance = lower.contains("двойн") || lower.contains("double chance");
+        let is_btts = lower.contains("обе забьют")
+            || lower.contains("обе команды забьют")
+            || lower.contains("both teams score")
+            || lower.contains("btts");
+        let is_even_odd = lower.contains("чёт/нечёт")
+            || lower.contains("чет/нечет")
+            || lower.contains("even/odd")
+            || lower.contains("четность")
+            || lower.contains("чётность");
+
+        let mut category = if lower.contains("исход 1x2") || market.source_type == 2 {
             "1X2".to_string()
         } else if lower.contains("исход 12") || market.source_type == 1 {
             "MatchWinner12".to_string()
+        } else if is_double_chance {
+            "DoubleChance".to_string()
+        } else if is_btts {
+            "BothTeamsScore".to_string()
+        } else if is_even_odd {
+            "EvenOdd".to_string()
         } else if lower.contains("тотал") || matches!(market.source_type, 4 | 7 | 71) {
-            "Total".to_string()
+            match team_scope {
+                Some(team) => format!("{team}Total"),
+                None if is_individual_total => format!("Custom:{}", raw),
+                None => "Total".to_string(),
+            }
         } else if lower.contains("фора")
             || lower.contains("гандикап")
             || matches!(market.source_type, 3 | 6 | 61)
         {
-            "Handicap".to_string()
-        } else if lower.contains("двойн") {
-            "DoubleChance".to_string()
-        } else if lower.contains("обе забьют") || lower.contains("обе команды забьют")
-        {
-            "BothTeamsScore".to_string()
-        } else if lower.contains("чёт/нечёт")
-            || lower.contains("чет/нечет")
-            || lower.contains("even/odd")
-        {
-            "EvenOdd".to_string()
+            match team_scope {
+                Some(team) => format!("{team}Handicap"),
+                None => "Handicap".to_string(),
+            }
+        } else if lower.contains("победител") || lower.contains("winner") {
+            if lower.contains("карты") || lower.contains("map") {
+                "MapWinner".to_string()
+            } else {
+                "Winner".to_string()
+            }
         } else {
             raw.to_string()
         };
+
+        if let Some(prefix) = period_prefix {
+            category = format!("{prefix}{category}");
+        } else if lower.contains("период") || lower.contains("period") {
+            // Period captions need an explicit period number (carried in the
+            // protocol's coefficient prefix) before they can be comparable.
+            if !koef
+                .split('/')
+                .next()
+                .is_some_and(|value| value.trim().parse::<u8>().is_ok())
+            {
+                category = format!("Custom:{}", raw);
+            }
+        }
 
         let parts = koef.split('/').collect::<Vec<_>>();
         let line_value = parts
@@ -1114,41 +1263,114 @@ impl FeedState {
                 category = format!("{category}:period-{period}");
             }
         }
-        let line = line_value;
-        (category, line.filter(|value| value.is_finite()))
+        let line = line_value.filter(|value| value.is_finite());
+        (category, line)
+    }
+
+    fn market_requires_line(market: &MarketDefinition, category: &str) -> bool {
+        if matches!(market.source_type, 3 | 4 | 6 | 7 | 61 | 71) {
+            return true;
+        }
+
+        let base = category
+            .strip_prefix("1H_")
+            .or_else(|| category.strip_prefix("2H_"))
+            .unwrap_or(category)
+            .split(":period-")
+            .next()
+            .unwrap_or(category);
+        matches!(
+            base,
+            "Total"
+                | "Handicap"
+                | "Team1Total"
+                | "Team2Total"
+                | "Team1Handicap"
+                | "Team2Handicap"
+        )
     }
 
     fn normalize_selection(selection: &str, market: &str) -> (String, OddsType) {
         let trimmed = selection.trim();
-        let lower = trimmed.to_lowercase();
-        if market.starts_with("Handicap") {
-            return (trimmed.to_string(), OddsType::Handicap);
+        let lower = trimmed.to_lowercase().replace('ё', "е");
+        let base = market
+            .strip_prefix("1H_")
+            .or_else(|| market.strip_prefix("2H_"))
+            .unwrap_or(market)
+            .split(":period-")
+            .next()
+            .unwrap_or(market);
+
+        if base.starts_with("Handicap") || base.ends_with("Handicap") {
+            let side = if lower == "1"
+                || lower == "п1"
+                || lower.starts_with("ф1")
+                || lower == "home"
+                || lower.contains("команда 1")
+            {
+                "1"
+            } else if lower == "2"
+                || lower == "п2"
+                || lower.starts_with("ф2")
+                || lower == "away"
+                || lower.contains("команда 2")
+            {
+                "2"
+            } else {
+                return (String::new(), OddsType::Custom);
+            };
+            return (side.to_string(), OddsType::Handicap);
         }
-        if lower == "1" || lower == "п1" {
-            ("1".to_string(), OddsType::Home)
-        } else if lower == "x" || lower == "н" || lower == "ничья" {
-            ("X".to_string(), OddsType::Draw)
-        } else if lower == "2" || lower == "п2" {
-            ("2".to_string(), OddsType::Away)
-        } else if lower == "больше" || lower == "тб" {
-            ("Over".to_string(), OddsType::Over)
-        } else if lower == "меньше" || lower == "тм" {
-            ("Under".to_string(), OddsType::Under)
-        } else if market == "BothTeamsScore" && lower == "да" {
-            ("Yes".to_string(), OddsType::BothTeamsScoreYes)
-        } else if market == "BothTeamsScore" && lower == "нет" {
-            ("No".to_string(), OddsType::BothTeamsScoreNo)
-        } else if market == "EvenOdd" && (lower == "чёт" || lower == "чет" || lower == "even")
-        {
-            ("Even".to_string(), OddsType::Even)
-        } else if market == "EvenOdd" && (lower == "нечёт" || lower == "нечет" || lower == "odd")
-        {
-            ("Odd".to_string(), OddsType::Odd)
-        } else {
-            (trimmed.to_string(), OddsType::Custom)
+
+        if base == "DoubleChance" {
+            let compact = lower
+                .replace('х', "x")
+                .replace(' ', "")
+                .replace('-', "")
+                .replace('/', "");
+            return match compact.as_str() {
+                "1x" => ("1X".to_string(), OddsType::Custom),
+                "x2" => ("X2".to_string(), OddsType::Custom),
+                "12" => ("12".to_string(), OddsType::Custom),
+                _ => (String::new(), OddsType::Custom),
+            };
         }
-    }
-}
+
+        if base == "BothTeamsScore" {
+            return match lower.as_str() {
+                "да" | "yes" | "y" => {
+                    ("Yes".to_string(), OddsType::BothTeamsScoreYes)
+                }
+                "нет" | "no" | "n" => {
+                    ("No".to_string(), OddsType::BothTeamsScoreNo)
+                }
+                _ => (String::new(), OddsType::Custom),
+            };
+        }
+
+        if base == "EvenOdd" {
+            return match lower.as_str() {
+                "чёт" | "чет" | "even" => ("Even".to_string(), OddsType::Even),
+                "нечёт" | "нечет" | "odd" => ("Odd".to_string(), OddsType::Odd),
+                _ => (String::new(), OddsType::Custom),
+            };
+        }
+
+        if base == "Total" || base.ends_with("Total") {
+            return match lower.as_str() {
+                "больше" | "тб" | "итб" | "over" => ("Over".to_string(), OddsType::Over),
+                "меньше" | "тм" | "итм" | "under" => ("Under".to_string(), OddsType::Under),
+                _ => (String::new(), OddsType::Custom),
+            };
+        }
+
+        match lower.as_str() {
+            "1" | "п1" | "home" => ("1".to_string(), OddsType::Home),
+            "x" | "н" | "ничья" | "draw" => ("X".to_string(), OddsType::Draw),
+            "2" | "п2" | "away" => ("2".to_string(), OddsType::Away),
+            _ => (trimmed.to_string(), OddsType::Custom),
+        }
+    }}
 
 #[cfg(test)]
 mod tests {
@@ -1199,6 +1421,87 @@ mod tests {
         let (name, line) = FeedState::normalize_market(&period, "3/-2.5", 1);
         assert_eq!(name, "Handicap:period-3");
         assert_eq!(line, Some(-2.5));
+    }
+
+    #[test]
+    fn normalizes_team_totals_and_half_scoped_winline_markets() {
+        let market = |name: &str, source_type| MarketDefinition {
+            source_type,
+            name: name.to_string(),
+            outcomes: vec!["Больше".into(), "Меньше".into()],
+        };
+
+        let (team1, _) =
+            FeedState::normalize_market(&market("Индивидуальный тотал команды 1", 4), "2.5", 0);
+        let (team2, _) =
+            FeedState::normalize_market(&market("Индивидуальный тотал команды 2", 4), "2.5", 0);
+        assert_eq!(team1, "Team1Total");
+        assert_eq!(team2, "Team2Total");
+
+        let (first_half, _) =
+            FeedState::normalize_market(&market("Тотал первого тайма", 4), "2.5", 0);
+        let (second_half, _) =
+            FeedState::normalize_market(&market("Total second half", 4), "2.5", 0);
+        assert_eq!(first_half, "1H_Total");
+        assert_eq!(second_half, "2H_Total");
+    }
+
+    #[test]
+    fn requires_explicit_lines_for_winline_totals_and_handicaps() {
+        let total = MarketDefinition {
+            source_type: 4,
+            name: "Тотал".into(),
+            outcomes: vec!["Больше".into(), "Меньше".into()],
+        };
+        let handicap = MarketDefinition {
+            source_type: 3,
+            name: "Фора".into(),
+            outcomes: vec!["1".into(), "2".into()],
+        };
+        let (_, total_line) = FeedState::normalize_market(&total, "", 0);
+        let (_, handicap_line) = FeedState::normalize_market(&handicap, "", 0);
+        assert!(!FeedState::market_requires_line(&total, "Total") || total_line.is_some());
+        assert!(!FeedState::market_requires_line(&handicap, "Handicap") || handicap_line.is_some());
+
+        let mut state = FeedState::default();
+        state.add_market_odds(
+            "prematch",
+            1,
+            "winline-prematch-41",
+            total,
+            "",
+            0,
+            vec![1.8, 2.0],
+        );
+        assert!(state.odds.is_empty());
+    }
+
+    #[test]
+    fn normalizes_double_chance_and_segment_outcomes() {
+        assert_eq!(
+            FeedState::normalize_selection("1Х", "DoubleChance"),
+            ("1X".to_string(), OddsType::Custom)
+        );
+        assert_eq!(
+            FeedState::normalize_selection("Х2", "DoubleChance"),
+            ("X2".to_string(), OddsType::Custom)
+        );
+        assert_eq!(
+            FeedState::normalize_selection("12", "DoubleChance"),
+            ("12".to_string(), OddsType::Custom)
+        );
+        assert_eq!(
+            FeedState::normalize_selection("Да", "1H_BothTeamsScore"),
+            ("Yes".to_string(), OddsType::BothTeamsScoreYes)
+        );
+        assert_eq!(
+            FeedState::normalize_selection("Нечёт", "2H_EvenOdd"),
+            ("Odd".to_string(), OddsType::Odd)
+        );
+        assert_eq!(
+            FeedState::normalize_selection("Ф1 (+1.5)", "1H_Handicap"),
+            ("1".to_string(), OddsType::Handicap)
+        );
     }
 
     #[test]
