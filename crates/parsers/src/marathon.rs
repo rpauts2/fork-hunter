@@ -693,6 +693,34 @@ fn canonical_handicap_market(market_type: &str) -> &'static str {
     }
 }
 
+/// Reuse the source-catalog classifier from other direct parsers that share
+/// the bookmaker line platform. Returns no quote for unknown/ambiguous semantics.
+pub(crate) fn classify_catalog_factor(
+    slug: &str,
+    event: &Event,
+    factor_id: u64,
+    odds_value: f64,
+    line: Option<f64>,
+    market_type: &str,
+    selection: &str,
+    now: chrono::DateTime<Utc>,
+) -> Option<Odd> {
+    let mut classified = Vec::with_capacity(1);
+    classify_and_add_odd(
+        &mut classified,
+        slug,
+        event,
+        factor_id,
+        odds_value,
+        line,
+        market_type,
+        selection,
+        now,
+    )
+    .then(|| classified.into_iter().next())
+    .flatten()
+}
+
 fn classify_and_add_odd(
     odds: &mut Vec<Odd>,
     slug: &str,
