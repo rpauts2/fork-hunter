@@ -1266,11 +1266,12 @@ impl BaltbetParser {
     }
 
     fn parse_json_float(value: &Value) -> Option<f64> {
-        value.as_f64().or_else(|| {
+        let parsed = value.as_f64().or_else(|| {
             value
                 .as_str()
-                .and_then(|text| text.trim().replace(',', ".").parse().ok())
-        })
+                .and_then(|text| text.trim().replace(',', ".").parse::<f64>().ok())
+        })?;
+        parsed.is_finite().then_some(parsed)
     }
 
     fn normalize_whitespace(input: &str) -> String {
@@ -2026,6 +2027,16 @@ mod tests {
     use shared::ParserReadinessStage;
     use shared::Sport;
     use std::collections::{HashMap, HashSet};
+
+    #[test]
+    fn parses_decimal_comma_and_rejects_non_finite_market_values() {
+        assert_eq!(
+            BaltbetParser::parse_json_float(&serde_json::json!(" 2,05 ")),
+            Some(2.05)
+        );
+        assert!(BaltbetParser::parse_json_float(&serde_json::json!("NaN")).is_none());
+        assert!(BaltbetParser::parse_json_float(&serde_json::json!("Infinity")).is_none());
+    }
 
     #[test]
     fn exposes_post_kpi_readiness_snapshot() {
