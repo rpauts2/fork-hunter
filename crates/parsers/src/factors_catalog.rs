@@ -527,12 +527,17 @@ impl FactorsCatalog {
             "1-го тайма",
             "1-м тайме",
             "1 тайм",
+            "1й тайм",
             "первый тайм",
             "первого тайма",
             "первом тайме",
             "first half",
             "first_half",
+            "first-half",
+            "firsthalf",
             "1st half",
+            "1st_half",
+            "1st-half",
         ]
         .iter()
         .any(|marker| combined.contains(marker))
@@ -543,12 +548,17 @@ impl FactorsCatalog {
             "2-го тайма",
             "2-м тайме",
             "2 тайм",
+            "2й тайм",
             "второй тайм",
             "второго тайма",
             "втором тайме",
             "second half",
             "second_half",
+            "second-half",
+            "secondhalf",
             "2nd half",
+            "2nd_half",
+            "2nd-half",
         ]
         .iter()
         .any(|marker| combined.contains(marker))
@@ -563,9 +573,23 @@ impl FactorsCatalog {
         } else if combined.contains("фора по карт") || combined.contains("maps_handicap")
         {
             "maps_handicap".to_string()
-        } else if combined.contains("инд. тотал 1") || combined.contains("team1_total") {
+        } else if combined.contains("инд. тотал 1")
+            || combined.contains("индивидуальный тотал команды 1")
+            || combined.contains("тотал команды 1")
+            || combined.contains("тотал первой команды")
+            || combined.contains("тотал 1-й команды")
+            || combined.contains("team1_total")
+            || combined.contains("team 1 total")
+        {
             format!("{period_prefix}team1_total")
-        } else if combined.contains("инд. тотал 2") || combined.contains("team2_total") {
+        } else if combined.contains("инд. тотал 2")
+            || combined.contains("индивидуальный тотал команды 2")
+            || combined.contains("тотал команды 2")
+            || combined.contains("тотал второй команды")
+            || combined.contains("тотал 2-й команды")
+            || combined.contains("team2_total")
+            || combined.contains("team 2 total")
+        {
             format!("{period_prefix}team2_total")
         } else if combined.contains("тотал сет") || combined.contains("sets_total") {
             "sets_total".to_string()
@@ -577,9 +601,17 @@ impl FactorsCatalog {
             format!("{period_prefix}handicap")
         } else if combined.contains("тотал") || combined.contains("total") {
             format!("{period_prefix}total")
-        } else if combined.contains("двойн") || combined.contains("double_chance") {
+        } else if combined.contains("двойн")
+            || combined.contains("double_chance")
+            || combined.contains("double chance")
+        {
             format!("{period_prefix}double_chance")
-        } else if combined.contains("обе забьют") || combined.contains("both_to_score") {
+        } else if combined.contains("обе забьют")
+            || combined.contains("обе команды забьют")
+            || combined.contains("both_to_score")
+            || combined.contains("both_teams_score")
+            || combined.contains("both teams to score")
+        {
             format!("{period_prefix}both_teams_score")
         } else if combined.contains("чёт")
             || combined.contains("чет")
@@ -610,9 +642,16 @@ impl FactorsCatalog {
             .unwrap_or(market_type);
         match base_market_type {
             "handicap" | "sets_handicap" | "maps_handicap" => {
-                if value == "1" || value.contains("фора 1") || value.contains("фора1") {
+                if value == "1"
+                    || value.starts_with("ф1")
+                    || value.contains("фора 1")
+                    || value.contains("фора1")
+                {
                     "1".to_string()
-                } else if value == "2" || value.contains("фора 2") || value.contains("фора2")
+                } else if value == "2"
+                    || value.starts_with("ф2")
+                    || value.contains("фора 2")
+                    || value.contains("фора2")
                 {
                     "2".to_string()
                 } else {
@@ -621,9 +660,18 @@ impl FactorsCatalog {
             }
             "total" | "team1_total" | "team2_total" | "sets_total" | "maps_total"
             | "series_total" => {
-                if value == "б" || value.contains("больше") || value.contains("over") {
+                if value == "б"
+                    || value.starts_with("тб")
+                    || value.starts_with("итб")
+                    || value.contains("больше")
+                    || value.contains("over")
+                {
                     "over".to_string()
-                } else if value == "м" || value.contains("меньше") || value.contains("under")
+                } else if value == "м"
+                    || value.starts_with("тм")
+                    || value.starts_with("итм")
+                    || value.contains("меньше")
+                    || value.contains("under")
                 {
                     "under".to_string()
                 } else {
@@ -663,16 +711,28 @@ impl FactorsCatalog {
             "double_chance" => {
                 // Russian feeds commonly use Cyrillic Х where Latin X is
                 // expected. Normalize both alphabets and verbose captions.
-                let compact = value.replace('х', "x").replace(' ', "").replace('-', "");
-                if compact == "1x" || compact.contains("1илиx") || compact.contains("1илиничья")
+                let compact = value
+                    .replace('х', "x")
+                    .replace(' ', "")
+                    .replace('-', "")
+                    .replace('/', "")
+                    .replace('(', "")
+                    .replace(')', "");
+                if compact == "1x"
+                    || compact.contains("1илиx")
+                    || compact.contains("1илиничья")
+                    || compact.contains("xили1")
+                    || compact.contains("ничьяили1")
                 {
                     "1X".to_string()
                 } else if compact == "x2"
                     || compact.contains("xили2")
                     || compact.contains("ничьяили2")
+                    || compact.contains("2илиx")
+                    || compact.contains("2илиничья")
                 {
                     "X2".to_string()
-                } else if compact == "12" || compact.contains("1или2") {
+                } else if compact == "12" || compact.contains("1или2") || compact.contains("2или1") {
                     "12".to_string()
                 } else {
                     caption.trim().to_string()
@@ -1166,6 +1226,44 @@ mod tests {
         assert_eq!(
             FactorsCatalog::normalize_selection("first_half_1x2", "Х"),
             "x"
+        );
+    }
+
+    #[test]
+    fn market_normalization_recognizes_period_aliases_and_extended_market_labels() {
+        assert_eq!(
+            FactorsCatalog::normalize_market_type("Both teams to score", "1st_half"),
+            "first_half_both_teams_score"
+        );
+        assert_eq!(
+            FactorsCatalog::normalize_market_type("Индивидуальный тотал команды 1", "first-half"),
+            "first_half_team1_total"
+        );
+        assert_eq!(
+            FactorsCatalog::normalize_market_type("Тотал команды 2", "2nd_half"),
+            "second_half_team2_total"
+        );
+        assert_eq!(
+            FactorsCatalog::normalize_market_type("Double Chance", "2nd_half"),
+            "second_half_double_chance"
+        );
+        assert_eq!(
+            FactorsCatalog::normalize_market_type("Обе команды забьют", ""),
+            "both_teams_score"
+        );
+    }
+
+    #[test]
+    fn selection_normalization_accepts_common_bookmaker_short_labels() {
+        assert_eq!(FactorsCatalog::normalize_selection("total", "ТБ 2,5"), "over");
+        assert_eq!(FactorsCatalog::normalize_selection("total", "ТМ 2.5"), "under");
+        assert_eq!(
+            FactorsCatalog::normalize_selection("handicap", "Ф1 (+1.5)"),
+            "1"
+        );
+        assert_eq!(
+            FactorsCatalog::normalize_selection("second_half_handicap", "Ф2 (-1.5)"),
+            "2"
         );
     }
 
