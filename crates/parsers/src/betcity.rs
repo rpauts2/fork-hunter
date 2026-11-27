@@ -1271,11 +1271,18 @@ impl BetcityParser {
     }
 
     fn is_period_market_name(market_name_lower: &str) -> bool {
-        market_name_lower.contains("тайм")
-            || market_name_lower.contains("period")
-            || market_name_lower.contains("период")
-            || market_name_lower.contains("сет")
-            || market_name_lower.contains("четвер")
+        [
+            "тайм",
+            "period",
+            "период",
+            "сет",
+            "четвер",
+            "half",
+            "1h",
+            "2h",
+        ]
+        .iter()
+        .any(|marker| market_name_lower.contains(marker))
     }
 
     fn push_named_outcome_unique(
@@ -1853,6 +1860,25 @@ mod tests {
     use shared::{Event, Odd};
     use std::collections::HashMap;
     use std::time::Duration;
+
+    #[test]
+    fn recognizes_russian_and_english_period_market_markers() {
+        for market in [
+            "1-й тайм",
+            "2-й тайм",
+            "First Half Total",
+            "2nd Half Handicap",
+            "1H Double Chance",
+            "2H Both Teams To Score",
+            "Первый тайм: тотал",
+        ] {
+            assert!(
+                BetcityParser::is_period_market_name(&market.to_lowercase()),
+                "period marker was not recognized: {market}"
+            );
+        }
+        assert!(!BetcityParser::is_period_market_name("match total"));
+    }
 
     #[test]
     fn checked_api_parser_rejects_missing_or_empty_real_feed() {
