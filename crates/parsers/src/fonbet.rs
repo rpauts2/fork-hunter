@@ -25,25 +25,6 @@ fn parse_f64_value(value: &serde_json::Value) -> Option<f64> {
     })
 }
 
-fn id_label(value: &str) -> String {
-    let normalized = value
-        .trim()
-        .to_lowercase()
-        .chars()
-        .map(|ch| if ch.is_alphanumeric() { ch } else { '_' })
-        .collect::<String>();
-    normalized
-        .split('_')
-        .filter(|part| !part.is_empty())
-        .collect::<Vec<_>>()
-        .join("_")
-}
-
-fn line_id_component(line: Option<f64>) -> String {
-    line.map(|value| format!("{value:.6}").replace('-', "m").replace('.', "p"))
-        .unwrap_or_else(|| "no-line".to_string())
-}
-
 #[derive(Debug)]
 pub struct FonbetParser {
     factors: Arc<FactorsCatalog>,
@@ -346,31 +327,17 @@ impl FonbetParser {
 
                                     let (market, selection, odds_type) =
                                         Self::factor_to_market(fid);
-
-                                    let (_, odds_vec) = &mut all_odds[idx];
-                                    odds_vec.push(Odd {
-                                        id: format!(
-                                            "fonbet-{}-{}-{}-{}-{}-{}",
-                                            if is_live { "live" } else { "pre" },
-                                            event_id,
-                                            fid,
-                                            id_label(&market),
-                                            id_label(&selection),
-                                            line_id_component(line)
-                                        ),
-                                        event_id: format!(
-                                            "fonbet-{}-{}",
-                                            if is_live { "live" } else { "pre" },
-                                            event_id
-                                        ),
-                                        bookmaker_slug: "fonbet".to_string(),
-                                        market,
-                                        selection,
-                                        odds: val,
-                                        odds_type,
+                                    let odd = crate::marathon::make_market_odd(
+                                        "fonbet",
+                                        &all_odds[idx].0,
+                                        &market,
+                                        &selection,
+                                        val,
                                         line,
-                                        timestamp: now,
-                                    });
+                                        odds_type,
+                                        now,
+                                    );
+                                    all_odds[idx].1.push(odd);
                                 }
                             }
                         }
@@ -379,8 +346,17 @@ impl FonbetParser {
             }
         }
 
-        let events = all_odds.iter().map(|(e, _)| e.clone()).collect();
-        let odds = all_odds.into_iter().flat_map(|(_, o)| o).collect();
+        let events = all_odds.iter().map(|(event, _)| event.clone()).collect();
+        let odds = all_odds.into_iter().flat_map(|(_, odds)| odds).collect();
+        let (odds, collapsed_duplicates) =
+            crate::marathon::deduplicate_same_market_quotes(odds);
+        if collapsed_duplicates > 0 {
+            warn!(
+                bookmaker = "fonbet",
+                collapsed_duplicates,
+                "Collapsed duplicate direct-source quotes for the same market, selection and line"
+            );
+        }
         Ok((events, odds))
     }
 
