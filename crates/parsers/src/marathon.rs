@@ -972,21 +972,14 @@ fn classify_and_add_odd(
     } else if market_type.contains("even")
         || market_type.contains("odd")
         || market_type.contains("чёт")
-        || market_type.contains("нечет")
+        || market_type.contains("чет")
     {
-        if selection.contains("чёт") || selection.contains("even") {
-            odds.push(make_odd(
-                slug,
-                event,
-                canonical_even_odd_market(market_type),
-                "Even",
-                val,
-                None,
-                OddsType::Even,
-                now,
-            ));
-            return true;
-        } else if selection.contains("нечет") || selection.contains("odd") {
+        // Check the negative form first: "нечёт" contains "чёт".
+        let selection_lower = selection.trim().to_lowercase();
+        if selection_lower.contains("нечёт")
+            || selection_lower.contains("нечет")
+            || selection_lower == "odd"
+        {
             odds.push(make_odd(
                 slug,
                 event,
@@ -998,13 +991,44 @@ fn classify_and_add_odd(
                 now,
             ));
             return true;
+        } else if selection_lower.contains("чёт")
+            || selection_lower.contains("чет")
+            || selection_lower == "even"
+        {
+            odds.push(make_odd(
+                slug,
+                event,
+                canonical_even_odd_market(market_type),
+                "Even",
+                val,
+                None,
+                OddsType::Even,
+                now,
+            ));
+            return true;
         }
-    } else if market_type.contains("double") || market_type.contains("двойн") {
+    } else if market_type.contains("double")
+        || market_type.contains("двойн")
+    {
+        // Only canonical double-chance outcomes are actionable. Unknown
+        // captions must not leak into cross-book market comparison.
+        let normalized_selection = selection
+            .trim()
+            .to_lowercase()
+            .replace('х', "x")
+            .replace(' ', "")
+            .replace('-', "");
+        let canonical_selection = match normalized_selection.as_str() {
+            "1x" => "1X",
+            "x2" => "X2",
+            "12" => "12",
+            _ => return false,
+        };
         odds.push(make_odd(
             slug,
             event,
             canonical_double_chance_market(market_type),
-            selection,
+            canonical_selection,
             val,
             None,
             OddsType::Custom,
@@ -1446,6 +1470,109 @@ mod parser_identity_tests {
         assert_eq!(odds[0].market, "EvenOdd");
         assert_eq!(odds[0].selection, "Odd");
         assert_eq!(odds[0].odds_type, OddsType::Odd);
+    }
+
+    #[test]
+    fn shared_platform_classifies_cyrillic_odd_before_even_substring() {
+        use chrono::Utc;
+        use shared::{Event, OddsType};
+        use std::collections::HashMap;
+
+        let event = Event {
+            id: "marathon-pre-odd-cyrillic-fixture".into(),
+            sport: Sport::Football,
+            league: "League".into(),
+            home_team: "Home".into(),
+            away_team: "Away".into(),
+            start_time: None,
+            is_live: false,
+            bookmaker_slug: "marathon".into(),
+            raw_url: None,
+            extra: HashMap::new(),
+        };
+        let mut odds = Vec::new();
+        assert!(classify_and_add_odd(
+            &mut odds,
+            "marathon",
+            &event,
+            929,
+            1.91,
+            None,
+            "even_odd",
+            "Нечёт",
+            Utc::now(),
+        ));
+        assert_eq!(odds.len(), 1);
+        assert_eq!(odds[0].selection, "Odd");
+        assert_eq!(odds[0].odds_type, OddsType::Odd);
+    }
+
+    #[test]
+    fn shared_platform_rejects_unknown_double_chance_outcomes() {
+        use chrono::Utc;
+        use shared::{Event, Sport};
+        use std::collections::HashMap;
+
+        let event = Event {
+            id: "marathon-pre-double-chance-fixture".into(),
+            sport: Sport::Football,
+            league: "League".into(),
+            home_team: "Home".into(),
+            away_team: "Away".into(),
+            start_time: None,
+            is_live: false,
+            bookmaker_slug: "marathon".into(),
+            raw_url: None,
+            extra: HashMap::new(),
+        };
+        let mut odds = Vec::new();
+        assert!(!classify_and_add_odd(
+            &mut odds,
+            "marathon",
+            &event,
+            1014,
+            2.10,
+            None,
+            "double_chance",
+            "home wins or over 2.5",
+            Utc::now(),
+        ));
+        assert!(odds.is_empty());
+    }
+
+    #[test]
+    fn shared_platform_normalizes_cyrillic_double_chance_outcomes() {
+        use chrono::Utc;
+        use shared::{Event, OddsType, Sport};
+        use std::collections::HashMap;
+
+        let event = Event {
+            id: "marathon-pre-double-chance-cyrillic-fixture".into(),
+            sport: Sport::Football,
+            league: "League".into(),
+            home_team: "Home".into(),
+            away_team: "Away".into(),
+            start_time: None,
+            is_live: false,
+            bookmaker_slug: "marathon".into(),
+            raw_url: None,
+            extra: HashMap::new(),
+        };
+        let mut odds = Vec::new();
+        assert!(classify_and_add_odd(
+            &mut odds,
+            "marathon",
+            &event,
+            1014,
+            1.62,
+            None,
+            "double_chance",
+            "1Х",
+            Utc::now(),
+        ));
+        assert_eq!(odds.len(), 1);
+        assert_eq!(odds[0].selection, "1X");
+        assert_eq!(odds[0].odds_type, OddsType::Custom);
     }
 
     #[test]
