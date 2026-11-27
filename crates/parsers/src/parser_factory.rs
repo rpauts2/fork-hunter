@@ -232,7 +232,7 @@ const BOOKMAKER_REGISTRY: &[BookmakerRegistryEntry] = &[
         source: "crates/parsers/src/tennisi.rs",
         execution_supported: false,
         notes: Some(
-            "Operator suspended acceptance of bets from 2026-09-01; public reporting says the site/app were left for withdrawals only through 2026-09-30. ODDSCORP still lists Tennisi in its bookmaker catalogue, but that legacy listing does not prove a live feed. Keep disabled until the operator resumes betting and a provider confirms current quotes.",
+            "Operator suspended acceptance of bets from 2026-09-01; public reporting says the site/app were left for withdrawals only through 2026-09-30. Keep disabled until the operator officially resumes interactive betting and the direct bookmaker line can be verified.",
         ),
     },
     BookmakerRegistryEntry {
@@ -765,7 +765,7 @@ mod tests {
         assert_eq!(
             coverage.notes.as_deref(),
             Some(
-                "Operator suspended acceptance of bets from 2026-09-01; public reporting says the site/app were left for withdrawals only through 2026-09-30. ODDSCORP still lists Tennisi in its bookmaker catalogue, but that legacy listing does not prove a live feed. Keep disabled until the operator resumes betting and a provider confirms current quotes."
+                "Operator suspended acceptance of bets from 2026-09-01; public reporting says the site/app were left for withdrawals only through 2026-09-30. Keep disabled until the operator officially resumes interactive betting and the direct bookmaker line can be verified."
             )
         );
     }
