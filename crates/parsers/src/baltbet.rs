@@ -996,6 +996,23 @@ impl BaltbetParser {
                 } else {
                     None
                 };
+
+                // A total/handicap without its source line is not a comparable
+                // quote. Do not let a missing line match another market with
+                // an unknown line at the engine layer.
+                if (market_kind.eq_ignore_ascii_case("handicap")
+                    || market_kind.eq_ignore_ascii_case("total"))
+                    && line.is_none()
+                {
+                    warn!(
+                        event_id,
+                        market_name,
+                        market_kind,
+                        outcome_id = source_id,
+                        "Baltbet grouped total/handicap skipped because line is missing"
+                    );
+                    continue;
+                }
                 let context = Self::grouping_outcome_context(outcome);
                 let market_key = if context.is_empty() {
                     base_market.clone()
@@ -2397,6 +2414,33 @@ mod tests {
                 && odd.selection == "1"
                 && odd.odds_type == OddsType::Home
         }));
+    }
+
+    #[test]
+    fn grouped_totals_and_handicaps_without_lines_are_quarantined() {
+        let item = serde_json::json!({
+            "c": [
+                {"o": 501, "s": 1, "v": 1.85},
+                {"o": 502, "s": 1, "v": 1.95}
+            ]
+        });
+        let grouping = serde_json::json!({
+            "id": 55,
+            "markets": [
+                {
+                    "id": 51,
+                    "name": "Тотал",
+                    "kind": "Total",
+                    "outcomes": [
+                        {"oid": 501, "kind": "OVER", "params": []},
+                        {"oid": 502, "kind": "UNDER", "params": []}
+                    ]
+                }
+            ]
+        });
+
+        let odds = BaltbetParser::extract_live_grouping_odds("baltbet-55", &item, &grouping);
+        assert!(odds.is_empty());
     }
 
     #[test]
