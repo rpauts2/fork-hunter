@@ -1,0 +1,34 @@
+name: One-time parser formatting
+on:
+  push:
+    branches: [work/core-engine-refactor]
+    paths:
+      - ".github/workflows/parser-format-once.yml"
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install stable Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Format parser crate, remove this one-shot workflow, and validate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cargo fmt -p parsers
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add crates/parsers
+          git rm .github/workflows/parser-format-once.yml
+          git commit -m "Apply rustfmt to parser crate"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+          gh workflow run parser-validation.yml --ref "${GITHUB_REF_NAME}"
