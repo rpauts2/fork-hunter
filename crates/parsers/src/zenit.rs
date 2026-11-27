@@ -1470,6 +1470,20 @@ impl ZenitParser {
 
             parsed.odds.extend(event_odds);
 
+            let mut event_extra = HashMap::new();
+            for field in [
+                "ross",
+                "ross_stats_count",
+                "ross_count_with_double_chances",
+            ] {
+                if let Some(count) = game_obj.get(field).and_then(Self::parse_u64_value) {
+                    event_extra.insert(
+                        format!("zenit_{field}"),
+                        serde_json::Value::from(count),
+                    );
+                }
+            }
+
             parsed.events.push(Event {
                 id: event_id.clone(),
                 sport,
@@ -1480,7 +1494,7 @@ impl ZenitParser {
                 is_live,
                 bookmaker_slug: "zenit".to_string(),
                 raw_url: Some("https://zenit.win".to_string()),
-                extra: HashMap::new(),
+                extra: event_extra,
             });
         }
 
@@ -1612,6 +1626,16 @@ mod tests {
         assert_eq!(parsed.schema_error, None);
         assert_eq!(parsed.events.len(), 2);
         assert_eq!(parsed.additional_market_game_ids, vec!["77".to_string()]);
+        let flagged_event = parsed
+            .events
+            .iter()
+            .find(|event| event.id == "zenit-prematch-77")
+            .expect("flagged event");
+        assert_eq!(flagged_event.extra.get("zenit_ross"), Some(&json!(4)));
+        assert_eq!(
+            flagged_event.extra.get("zenit_ross_count_with_double_chances"),
+            Some(&json!(6))
+        );
     }
 
     #[test]
