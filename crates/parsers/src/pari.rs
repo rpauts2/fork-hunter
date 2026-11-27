@@ -192,7 +192,7 @@ impl PariParser {
 
         match self.factors.load().await {
             Ok(count) => info!(factor_count = count, "Pari direct factor catalog loaded"),
-            Err(error) => warn!(error = %error, "Pari direct factor catalog unavailable; using verified fallback mappings"),
+            Err(error) => warn!(error = %error, "Pari direct factor catalog unavailable; using legacy fallback mappings for factors absent from the direct catalog"),
         }
 
         let json: serde_json::Value = resp.json().await?;
@@ -532,8 +532,84 @@ impl PariParser {
 #[cfg(test)]
 mod parser_fixture_tests {
     use super::PariParser;
+    use crate::factors_catalog::FactorsCatalog;
+    use std::sync::Arc;
     use shared::odds::OddsType;
     use shared::Sport;
+
+    fn catalog_with_sport_scoped_totals() -> FactorsCatalog {
+        let catalog = FactorsCatalog::new(
+            Arc::new(reqwest::Client::new()),
+            "https://example.invalid",
+            2300,
+        );
+        let parsed = catalog.parse_catalog(&serde_json::json!({
+            "configs": [{
+                "sports": ["1"],
+                "markets": [{
+                    "caption": "Тотал",
+                    "tag": "total",
+                    "marketEventKindsSets": [{
+                        "factorSets": [{
+                            "columns": [
+                                {"caption": "Больше", "columnType": 1, "factors": ["1696"]},
+                                {"caption": "Меньше", "columnType": 1, "factors": ["1697"]}
+                            ]
+                        }]
+                    }]
+                }]
+            }]
+        }));
+        assert_eq!(parsed, 2);
+        catalog
+    }
+
+    #[test]
+    fn direct_factor_catalog_resolves_unknown_ids_by_sport_and_selection() {
+        let catalog = catalog_with_sport_scoped_totals();
+        let payload = serde_json::json!({
+            "events": [{
+                "id": 12345,
+                "team1": "Home FC",
+                "team2": "Away FC",
+                "place": "line",
+                "sportId": 1,
+                "startTime": 1795618800_i64,
+                "name": "Football: Premier League"
+            }],
+            "customFactors": [{
+                "e": 12345,
+                "factors": [
+                    {"f": 1696, "v": 1.85, "p": 150},
+                    {"f": 1697, "v": 1.95, "p": 150}
+                ]
+            }]
+        });
+
+        let (events, odds) = PariParser::parse_api_response_with_catalog(
+            &payload,
+            false,
+            Some(&catalog),
+        )
+        .expect("direct catalog fixture should parse");
+
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].id, "pari-pre-12345");
+        assert_eq!(odds.len(), 2);
+        assert!(odds.iter().any(|odd| {
+            odd.market == "Total"
+                && odd.selection == "Over"
+                && odd.line == Some(1.5)
+                && (odd.odds - 1.85).abs() < 1e-9
+        }));
+        assert!(odds.iter().any(|odd| {
+            odd.market == "Total"
+                && odd.selection == "Under"
+                && odd.line == Some(1.5)
+                && (odd.odds - 1.95).abs() < 1e-9
+        }));
+        assert!(odds.iter().all(|odd| !odd.market.starts_with("factor_")));
+    }
 
     #[test]
     fn factor_mapping_uses_semantic_btts_and_even_odd_types() {
