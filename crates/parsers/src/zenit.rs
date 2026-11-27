@@ -1220,6 +1220,22 @@ impl ZenitParser {
 
             parsed.raw_game_ids.push(game_id.clone());
 
+            let advertises_additional_markets = [
+                "ross",
+                "ross_stats_count",
+                "ross_count_with_double_chances",
+            ]
+            .iter()
+            .any(|field| {
+                game_obj
+                    .get(*field)
+                    .and_then(Self::parse_u64_value)
+                    .is_some_and(|count| count > 0)
+            });
+            if advertises_additional_markets {
+                parsed.additional_market_game_ids.push(game_id.clone());
+            }
+
             let c1_id = game_obj.get("c1_id").and_then(Self::parse_string_id);
             let c2_id = game_obj.get("c2_id").and_then(Self::parse_string_id);
 
