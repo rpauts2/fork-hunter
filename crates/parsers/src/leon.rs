@@ -232,10 +232,10 @@ impl LeonParser {
                     let market_name = market
                         .get("name")
                         .and_then(|value| value.as_str())
+                        .map(str::trim)
+                        .filter(|value| !value.is_empty())
                         .unwrap_or("unknown");
-                    let market_id = market
-                        .get("id")
-                        .map(|value| value.to_string())
+                    let market_id = Self::source_id(market.get("id"))
                         .unwrap_or_else(|| market_name.to_lowercase().replace([' ', '/'], "_"));
                     let market_line = market
                         .get("specifiers")
@@ -264,15 +264,15 @@ impl LeonParser {
                         let selection = runner
                             .get("name")
                             .and_then(|value| value.as_str())
+                            .map(str::trim)
+                            .filter(|value| !value.is_empty())
                             .unwrap_or("unknown");
                         let odds_type = Self::runner_odds_type(runner, selection, market_name);
                         let line = runner
                             .get("handicap")
                             .and_then(Self::parse_line_value)
                             .or(market_line);
-                        let runner_id = runner
-                            .get("id")
-                            .map(|value| value.to_string())
+                        let runner_id = Self::source_id(runner.get("id"))
                             .unwrap_or_else(|| format!("{}-{}", market_name, selection));
 
                         let line_key = line
@@ -304,6 +304,17 @@ impl LeonParser {
 
         debug!(events = events.len(), odds = all_odds.len(), "Leon: parsed");
         Ok((events, all_odds))
+    }
+
+    fn source_id(value: Option<&serde_json::Value>) -> Option<String> {
+        match value? {
+            serde_json::Value::String(text) => {
+                let text = text.trim();
+                (!text.is_empty()).then(|| text.to_string())
+            }
+            serde_json::Value::Number(number) => Some(number.to_string()),
+            _ => None,
+        }
     }
 
     fn parse_numeric_value(value: &serde_json::Value) -> Option<f64> {
@@ -538,6 +549,61 @@ mod tests {
             .map(|odd| &odd.id)
             .collect::<std::collections::HashSet<_>>();
         assert_eq!(ids.len(), 2);
+    }
+
+    #[test]
+    fn normalizes_market_and_runner_ids_when_source_values_are_strings_or_null() {
+        let payload = serde_json::json!({
+            "events": [{
+                "id": 900,
+                "competitors": [
+                    {"id": 1, "name": "Home FC", "homeAway": "HOME"},
+                    {"id": 2, "name": "Away FC", "homeAway": "AWAY"}
+                ],
+                "league": {
+                    "name": "Test League",
+                    "sport": {"family": "Soccer"}
+                },
+                "markets": [
+                    {
+                        "id": " 100 ",
+                        "name": " Total ",
+                        "open": true,
+                        "specifiers": {"total": "2.5"},
+                        "runners": [
+                            {"id": " 1001 ", "name": " Over ", "open": true, "price": " 2,05 ", "handicap": "2.5"}
+                        ]
+                    },
+                    {
+                        "id": null,
+                        "name": "Winner",
+                        "open": true,
+                        "runners": [
+                            {"id": null, "name": "Home", "open": true, "price": 1.8}
+                        ]
+                    }
+                ]
+            }]
+        });
+
+        let (events, odds) =
+            LeonParser::parse_api_response(&payload, false).expect("valid Leon response");
+        assert_eq!(events.len(), 1);
+        assert_eq!(odds.len(), 2);
+        assert!(odds.iter().any(|odd| {
+            odd.market == "Total"
+                && odd.selection == "Over"
+                && (odd.odds - 2.05).abs() < 1e-9
+                && odd.line == Some(2.5)
+                && odd.id.contains("market-100-runner-1001")
+        }));
+        assert!(odds.iter().any(|odd| {
+            odd.market == "Winner"
+                && odd.selection == "Home"
+                && odd.id.contains("market-winner-runner-Winner-Home")
+        }));
+        let ids = odds.iter().map(|odd| &odd.id).collect::<std::collections::HashSet<_>>();
+        assert_eq!(ids.len(), odds.len());
     }
 
     #[test]
