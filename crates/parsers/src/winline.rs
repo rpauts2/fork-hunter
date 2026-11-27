@@ -3507,8 +3507,8 @@ mod tests {
     #[test]
     fn parses_headless_two_way_winner_without_misclassifying_it_as_total() {
         let payload = serde_json::json!({
-            "home": "Player One",
-            "away": "Player Two",
+            "home": "Djokovic",
+            "away": "Medvedev",
             "sportName": "теннис",
             "marketName": "Winner",
             "odds": [1.75, 2.10]
