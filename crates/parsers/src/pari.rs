@@ -1,4 +1,5 @@
 use crate::base::{BookmakerParser, ParserResult};
+use crate::factors_catalog::FactorsCatalog;
 use async_trait::async_trait;
 use chrono::Utc;
 use reqwest::Client;
@@ -47,6 +48,7 @@ fn line_id_component(line: Option<f64>) -> String {
 
 #[derive(Debug)]
 pub struct PariParser {
+    factors: Arc<FactorsCatalog>,
     client: Arc<Client>,
     live_url: String,
     prematch_url: String,
@@ -55,6 +57,11 @@ pub struct PariParser {
 impl PariParser {
     pub fn new(client: Arc<Client>) -> Self {
         Self {
+            factors: Arc::new(FactorsCatalog::new(
+                client.clone(),
+                "https://line-lb51-w.pb06e2-resources.ru",
+                2300,
+            )),
             client,
             live_url:
                 "https://line-lb51-w.pb06e2-resources.ru/events/list?lang=ru&scopeMarket=2300"
@@ -183,14 +190,26 @@ impl PariParser {
             );
         }
 
+        match self.factors.load().await {
+            Ok(count) => info!(factor_count = count, "Pari direct factor catalog loaded"),
+            Err(error) => warn!(error = %error, "Pari direct factor catalog unavailable; using verified fallback mappings"),
+        }
+
         let json: serde_json::Value = resp.json().await?;
-        let result = Self::parse_api_response(&json, is_live);
-        result
+        Self::parse_api_response_with_catalog(&json, is_live, Some(&self.factors))
     }
 
     fn parse_api_response(
         json: &serde_json::Value,
         is_live: bool,
+    ) -> Result<(Vec<Event>, Vec<Odd>), Box<dyn std::error::Error + Send + Sync>> {
+        Self::parse_api_response_with_catalog(json, is_live, None)
+    }
+
+    fn parse_api_response_with_catalog(
+        json: &serde_json::Value,
+        is_live: bool,
+        factor_catalog: Option<&FactorsCatalog>,
     ) -> Result<(Vec<Event>, Vec<Odd>), Box<dyn std::error::Error + Send + Sync>> {
         // Parse events
         let events_data = match json.get("events").and_then(|e| e.as_array()) {
@@ -212,7 +231,7 @@ impl PariParser {
             .unwrap_or_default();
 
         // Build event lookup: id -> (sport, league, team1, team2, start_time)
-        let mut event_map: HashMap<u64, (Sport, String, String, String, Option<i64>)> =
+        let mut event_map: HashMap<u64, (Sport, String, String, String, Option<i64>, u64)> =
             HashMap::new();
         for event_data in events_data {
             if !crate::marathon::event_place_matches_feed(event_data, is_live) {
@@ -242,6 +261,7 @@ impl PariParser {
                         team1.to_string(),
                         team2.to_string(),
                         start_time,
+                        sport_id,
                     ),
                 );
             }
@@ -268,7 +288,7 @@ impl PariParser {
                     cf.get("e").and_then(|v| v.as_u64()),
                     cf.get("factors").and_then(|f| f.as_array()),
                 ) {
-                    if let Some((sport, league, team1, team2, start_time)) =
+                    if let Some((sport, league, team1, team2, start_time, source_sport_id)) =
                         event_map.get(&event_id)
                     {
                         // Create event if not seen
@@ -292,7 +312,10 @@ impl PariParser {
                                     is_live,
                                     bookmaker_slug: "pari".to_string(),
                                     raw_url: None,
-                                    extra: HashMap::new(),
+                                    extra: HashMap::from([(
+                                        "source_sport_id".to_string(),
+                                        serde_json::Value::String(source_sport_id.to_string()),
+                                    )]),
                                 },
                                 Vec::new(),
                             ));
@@ -313,6 +336,30 @@ impl PariParser {
 
                                     let line =
                                         factor.get("p").and_then(|v| v.as_f64()).map(|p| p / 100.0);
+
+                                    let catalog_definition = factor_catalog.and_then(|catalog| {
+                                        let source_sport_id = source_sport_id.to_string();
+                                        catalog.get_factor_for_sport(fid, Some(&source_sport_id))
+                                    });
+                                    if let Some(definition) = catalog_definition {
+                                        let market_type = definition.market_type.to_lowercase();
+                                        let selection_name = definition.selection_name.to_lowercase();
+                                        let catalog_odd = crate::marathon::classify_catalog_factor(
+                                            "pari",
+                                            &all_odds[idx].0,
+                                            fid,
+                                            val,
+                                            line,
+                                            &market_type,
+                                            &selection_name,
+                                            now,
+                                        );
+                                        if let Some(odd) = catalog_odd {
+                                            all_odds[idx].1.push(odd);
+                                        }
+                                        continue;
+                                    }
+
                                     let (market, selection, odds_type) =
                                         Self::factor_to_market(fid);
 
