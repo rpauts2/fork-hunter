@@ -203,11 +203,13 @@ impl ZenitParser {
             ("timezone".to_string(), "3".to_string()),
             ("offset".to_string(), offset.to_string()),
             ("show_from_main".to_string(), "0".to_string()),
-            ("client_v".to_string(), String::new()),
+            // The official line frontend sends its actual build version.
+            // An empty client_v and forced popular=1 do not match the normal
+            // sport-line request and can restrict the returned market catalogue.
+            ("client_v".to_string(), Self::frontversion()),
             ("length".to_string(), Self::PAGE_LENGTH.to_string()),
             ("sort_mode".to_string(), "2".to_string()),
             ("b_id".to_string(), String::new()),
-            ("popular".to_string(), "1".to_string()),
         ]
     }
 
@@ -1402,7 +1404,14 @@ mod tests {
 
         assert_eq!(query.get("all").map(String::as_str), Some("0"));
         assert_eq!(query.get("onlyview").map(String::as_str), Some("0"));
-        assert_eq!(query.get("popular").map(String::as_str), Some("1"));
+        assert!(
+            !query.contains_key("popular"),
+            "normal sport-line requests must not be forced into the popular-only view"
+        );
+        assert_eq!(
+            query.get("client_v").map(String::as_str),
+            Some(ZenitParser::DEFAULT_FRONT_VERSION)
+        );
         assert_eq!(query.get("length").map(String::as_str), Some("3000"));
         assert_eq!(query.get("offset").map(String::as_str), Some("150"));
         assert_eq!(query.get("sport").map(String::as_str), Some("3"));
