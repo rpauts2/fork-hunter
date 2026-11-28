@@ -508,7 +508,15 @@ impl BetMParser {
         let sport = item
             .get("sport")
             .and_then(|value| value.as_str())
-            .map(Sport::from_str)
+            .map(|value| {
+                let parsed = Sport::from_str(value);
+                if parsed != Sport::Other {
+                    parsed
+                } else {
+                    let normalized = value.replace('_', " ").replace('-', " ");
+                    Sport::from_str(&normalized)
+                }
+            })
             .filter(|sport| *sport != Sport::Other)
             .unwrap_or_else(|| Self::sport_from_source_url(source_url));
         let source_event_id = item
@@ -1027,6 +1035,25 @@ mod tests {
             BetMParser::sport_from_source_url("https://bet-m.ru/ru/sport/live"),
             Sport::Other
         );
+    }
+
+    #[test]
+    fn parses_snake_case_sport_slug_from_live_event_metadata() {
+        let item = serde_json::json!({
+            "home": "Команда А",
+            "away": "Команда Б",
+            "sport": "table_tennis",
+            "sourceEventId": "live-table-tennis-77",
+            "sourceUrl": "https://bet-m.ru/ru/sport/live",
+            "labelledOdds": []
+        });
+
+        let (events, odds) = BetMParser::parse_headless_payload(&[item], false);
+
+        assert_eq!(events.len(), 1);
+        assert!(odds.is_empty());
+        assert_eq!(events[0].sport, Sport::TableTennis);
+        assert!(events[0].is_live);
     }
 
     #[test]
