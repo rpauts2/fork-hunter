@@ -473,7 +473,7 @@ impl BetMParser {
 
         let mut extra = HashMap::new();
         if let Some(source_id) = source_event_id.as_ref() {
-            extra.insert("source_event_id".to_string(), source_id.clone());
+            extra.insert("source_event_id".to_string(), serde_json::Value::String(source_id.clone()));
         }
 
         let event = Event {
