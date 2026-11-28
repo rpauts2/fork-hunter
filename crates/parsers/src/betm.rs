@@ -147,7 +147,48 @@ const HEADLESS_EXTRACT_JS: &str = r#"(() => {
         if (path.includes('/sports/american-football')) return 'other';
         if (path.includes('/sports/formula/')) return 'motorsport';
         if (path.includes('/sports/esports')) return 'esports';
-        if (path.includes('/sports/football') || path.includes('/live')) return 'football';
+        if (path.includes('/sports/football')) return 'football';
+        return 'other';
+    };
+
+    const sportFromLabel = (label) => {
+        const value = String(label || '').toLowerCase();
+        if (/настольн|table tennis|ping.?pong/.test(value)) return 'table_tennis';
+        if (/футбол|football|soccer/.test(value)) return 'football';
+        if (/баскет|basketball/.test(value)) return 'basketball';
+        if (/теннис|tennis/.test(value)) return 'tennis';
+        if (/хоккей|hockey/.test(value)) return 'hockey';
+        if (/волейбол|volleyball/.test(value)) return 'volleyball';
+        if (/гандбол|handball/.test(value)) return 'handball';
+        if (/киберспорт|esports|e-sports/.test(value)) return 'esports';
+        if (/бейсбол|baseball/.test(value)) return 'baseball';
+        if (/бокс|boxing/.test(value)) return 'boxing';
+        if (/единоборств|martial arts|mma|ufc/.test(value)) return 'mma';
+        if (/крикет|cricket/.test(value)) return 'cricket';
+        if (/регби|rugby/.test(value)) return 'rugby';
+        if (/футзал|futsal/.test(value)) return 'futsal';
+        if (/бадминтон|badminton/.test(value)) return 'badminton';
+        if (/дартс|darts/.test(value)) return 'darts';
+        if (/снукер|snooker|бильярд/.test(value)) return 'snooker';
+        if (/водное поло|water polo/.test(value)) return 'water_polo';
+        if (/гольф|golf/.test(value)) return 'golf';
+        if (/биатлон|лыжи|winter sports/.test(value)) return 'winter_sports';
+        if (/формула|автоспорт|motorsport|formula 1|f1/.test(value)) return 'motorsport';
+        return 'other';
+    };
+
+    const sportFromNode = (el) => {
+        let node = el;
+        for (let depth = 0; node && depth < 6; depth += 1, node = node.parentElement) {
+            const label = firstAttribute(node, [
+                'data-sport',
+                'data-sport-name',
+                'data-sport-title',
+                'aria-label'
+            ]);
+            const mapped = sportFromLabel(label);
+            if (mapped !== 'other') return mapped;
+        }
         return 'other';
     };
 
@@ -207,6 +248,7 @@ const HEADLESS_EXTRACT_JS: &str = r#"(() => {
                 ? el
                 : el.querySelector('[data-event-id], [data-eventid], [data-id]');
             const sourceEventId = idNode ? firstAttribute(idNode, ['data-event-id', 'data-eventid', 'data-id']) : '';
+            const eventSport = sport !== 'other' ? sport : sportFromNode(el);
 
             // Only keep prices whose source DOM explicitly supplies a market and selection label.
             const labelledOdds = [];
@@ -227,11 +269,11 @@ const HEADLESS_EXTRACT_JS: &str = r#"(() => {
             });
 
             const key = sourceEventId
-                ? [sport, sourceEventId, sourceUrl].join('|')
-                : [sport, home, away, sourceUrl].join('|');
+                ? [eventSport, sourceEventId, sourceUrl].join('|')
+                : [eventSport, home, away, sourceUrl].join('|');
             if (seen.has(key)) continue;
             seen.add(key);
-            results.push({ home, away, sourceEventId: sourceEventId || null, sport, labelledOdds, sourceUrl });
+            results.push({ home, away, sourceEventId: sourceEventId || null, sport: eventSport, labelledOdds, sourceUrl });
         } catch (_) {}
     }
     return results;
@@ -370,7 +412,7 @@ impl BetMParser {
             Sport::Motorsport
         } else if normalized.contains("/sports/esports") {
             Sport::Esports
-        } else if normalized.contains("/sports/football") || normalized.contains("/live") {
+        } else if normalized.contains("/sports/football") {
             Sport::Football
         } else {
             Sport::Other
@@ -386,8 +428,14 @@ impl BetMParser {
     ) -> String {
         let sport_key = sport.to_string().to_ascii_lowercase().replace('_', "-");
         let mode = if is_live { "live" } else { "prematch" };
-        if let Some(source_id) = source_event_id.map(str::trim).filter(|value| !value.is_empty()) {
-            return format!("betm-{sport_key}-{mode}-{}", Self::normalize_identifier(source_id));
+        if let Some(source_id) = source_event_id
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            return format!(
+                "betm-{sport_key}-{mode}-{}",
+                Self::normalize_identifier(source_id)
+            );
         }
 
         format!(
@@ -457,7 +505,12 @@ impl BetMParser {
             .unwrap_or("");
         let route_kind = RouteKind::from_source_url(source_url);
         let is_live = route_kind.is_live(fallback_live);
-        let sport = Self::sport_from_source_url(source_url);
+        let sport = item
+            .get("sport")
+            .and_then(|value| value.as_str())
+            .map(Sport::from_str)
+            .filter(|sport| *sport != Sport::Other)
+            .unwrap_or_else(|| Self::sport_from_source_url(source_url));
         let source_event_id = item
             .get("sourceEventId")
             .and_then(|value| value.as_str().map(str::to_string))
@@ -477,7 +530,10 @@ impl BetMParser {
 
         let mut extra = HashMap::new();
         if let Some(source_id) = source_event_id.as_ref() {
-            extra.insert("source_event_id".to_string(), serde_json::Value::String(source_id.clone()));
+            extra.insert(
+                "source_event_id".to_string(),
+                serde_json::Value::String(source_id.clone()),
+            );
         }
 
         let event = Event {
@@ -837,9 +893,9 @@ mod tests {
     #[test]
     fn runtime_probes_cover_current_public_live_and_multisport_routes() {
         assert_eq!(super::PROBES.len(), 16);
-        assert!(super::PROBES.iter().any(|probe| {
-            probe.is_live && probe.url == "https://bet-m.ru/ru/sport/live"
-        }));
+        assert!(super::PROBES
+            .iter()
+            .any(|probe| { probe.is_live && probe.url == "https://bet-m.ru/ru/sport/live" }));
         let prematch = super::PROBES
             .iter()
             .filter(|probe| !probe.is_live)
@@ -932,27 +988,12 @@ mod tests {
 
     #[test]
     fn same_source_event_id_is_namespaced_by_sport_and_feed_mode() {
-        let football = BetMParser::build_event_id(
-            Sport::Football,
-            "Team A",
-            "Team B",
-            false,
-            Some("123"),
-        );
-        let basketball = BetMParser::build_event_id(
-            Sport::Basketball,
-            "Team A",
-            "Team B",
-            false,
-            Some("123"),
-        );
-        let live_football = BetMParser::build_event_id(
-            Sport::Football,
-            "Team A",
-            "Team B",
-            true,
-            Some("123"),
-        );
+        let football =
+            BetMParser::build_event_id(Sport::Football, "Team A", "Team B", false, Some("123"));
+        let basketball =
+            BetMParser::build_event_id(Sport::Basketball, "Team A", "Team B", false, Some("123"));
+        let live_football =
+            BetMParser::build_event_id(Sport::Football, "Team A", "Team B", true, Some("123"));
 
         assert_ne!(football, basketball);
         assert_ne!(football, live_football);
@@ -984,7 +1025,7 @@ mod tests {
         }
         assert_eq!(
             BetMParser::sport_from_source_url("https://bet-m.ru/ru/sport/live"),
-            Sport::Football
+            Sport::Other
         );
     }
 
