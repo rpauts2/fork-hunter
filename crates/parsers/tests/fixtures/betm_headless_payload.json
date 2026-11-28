@@ -4,7 +4,6 @@
     "away": "Зенит",
     "sourceEventId": "football-live-1001",
     "sport": "football",
-    "sport": "football",
     "sourceUrl": "https://bet-m.ru/ru/sport/live",
     "odds": [
       2.18,
@@ -77,7 +76,8 @@
         "selection": "2",
         "odds": 3.12
       }
-    ]
+    ],
+    "sport": "football"
   },
   {
     "home": "404 Not Found",
