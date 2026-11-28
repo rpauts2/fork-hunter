@@ -175,7 +175,7 @@ impl FactorsCatalog {
         if let Some(factors) = json.get("factors").and_then(|f| f.as_array()) {
             for factor in factors {
                 if let (Some(fid), Some(name)) = (
-                    factor.get("id").and_then(|v| v.as_u64()),
+                    factor.get("id").and_then(Self::value_as_u64),
                     factor.get("name").and_then(|v| v.as_str()),
                 ) {
                     let market_type = factor
@@ -188,7 +188,7 @@ impl FactorsCatalog {
                     if let Some(outcomes_arr) = &outcomes {
                         for outcome in outcomes_arr.iter() {
                             if let (Some(oid), Some(oname)) = (
-                                outcome.get("id").and_then(|v| v.as_u64()),
+                                outcome.get("id").and_then(Self::value_as_u64),
                                 outcome.get("name").and_then(|v| v.as_str()),
                             ) {
                                 cache.insert(
@@ -236,7 +236,7 @@ impl FactorsCatalog {
         if let Some(data) = json.get("data").and_then(|d| d.as_array()) {
             for item in data {
                 if let (Some(fid), Some(fname)) = (
-                    item.get("factorId").and_then(|v| v.as_u64()),
+                    item.get("factorId").and_then(Self::value_as_u64),
                     item.get("factorName").and_then(|v| v.as_str()),
                 ) {
                     let market_type = item
@@ -254,7 +254,7 @@ impl FactorsCatalog {
                         Some(outcomes) if !outcomes.is_empty() => {
                             for outcome in outcomes {
                                 if let (Some(oid), Some(oname)) = (
-                                    outcome.get("id").and_then(|value| value.as_u64()),
+                                    outcome.get("id").and_then(Self::value_as_u64),
                                     outcome.get("name").and_then(|value| value.as_str()),
                                 ) {
                                     cache.insert(
@@ -346,7 +346,7 @@ impl FactorsCatalog {
                             value
                                 .as_str()
                                 .map(str::to_owned)
-                                .or_else(|| value.as_u64().map(|id| id.to_string()))
+                                .or_else(|| Self::value_as_u64(value).map(|id| id.to_string()))
                         })
                         .collect::<Vec<_>>()
                         .join(",")
@@ -1018,6 +1018,38 @@ mod tests {
             FactorsCatalog::normalize_selection("even_odd", "Odd"),
             "odd"
         );
+    }
+
+    #[test]
+    fn catalog_accepts_numeric_string_factor_and_outcome_ids() {
+        let catalog = catalog();
+        let count = catalog.parse_catalog(&serde_json::json!({
+            "factors": [{
+                "id": "920",
+                "name": "Total",
+                "type": "Total",
+                "outcomes": [
+                    {"id": "9201", "name": "Over"},
+                    {"id": "9202", "name": "Under"}
+                ]
+            }],
+            "data": [{
+                "factorId": "930",
+                "factorName": "Result",
+                "marketType": "1X2",
+                "sport": "Football",
+                "outcomes": [
+                    {"id": "9301", "name": "1"},
+                    {"id": "9302", "name": "2"}
+                ]
+            }]
+        }));
+
+        assert_eq!(count, 4);
+        assert_eq!(catalog.get_factor(9201).unwrap().selection_name, "Over");
+        assert_eq!(catalog.get_factor(9202).unwrap().selection_name, "Under");
+        assert_eq!(catalog.get_factor(9301).unwrap().selection_name, "1");
+        assert_eq!(catalog.get_factor(9302).unwrap().selection_name, "2");
     }
 
     #[test]
