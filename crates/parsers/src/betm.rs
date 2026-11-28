@@ -1040,8 +1040,8 @@ mod tests {
     #[test]
     fn parses_snake_case_sport_slug_from_live_event_metadata() {
         let item = serde_json::json!({
-            "home": "Команда А",
-            "away": "Команда Б",
+            "home": "Спартак Москва",
+            "away": "Зенит",
             "sport": "table_tennis",
             "sourceEventId": "live-table-tennis-77",
             "sourceUrl": "https://bet-m.ru/ru/sport/live",
