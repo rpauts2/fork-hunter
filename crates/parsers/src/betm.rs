@@ -36,7 +36,7 @@ impl RouteKind {
 
         if normalized.contains("/live") {
             Self::Live
-        } else if normalized.contains("/line") {
+        } else if normalized.contains("/line") || normalized.contains("/ru/sport/sports/") {
             Self::Prematch
         } else {
             Self::Unknown
@@ -120,11 +120,11 @@ struct Probe {
 
 const PROBES: &[Probe] = &[
     Probe {
-        url: "https://bet-m.ru/live",
+        url: "https://bet-m.ru/ru/sport/live",
         is_live: true,
     },
     Probe {
-        url: "https://bet-m.ru/line",
+        url: "https://bet-m.ru/ru/sport/sports/football",
         is_live: false,
     },
 ];
@@ -583,7 +583,7 @@ impl BetMParser {
         // access restriction; it turns a known 403 into a fast, explicit result.
         match self
             .client
-            .get("https://bet-m.ru/ru/sport/")
+            .get("https://bet-m.ru/ru/sport/sports/football")
             .header("User-Agent", "Mozilla/5.0")
             .timeout(Duration::from_secs(8))
             .send()
@@ -688,10 +688,14 @@ mod tests {
     }
 
     #[test]
-    fn runtime_probes_cover_each_public_route_once() {
+    fn runtime_probes_cover_current_public_live_and_prematch_routes() {
         assert_eq!(super::PROBES.len(), 2);
-        assert!(super::PROBES.iter().any(|probe| probe.is_live));
-        assert!(super::PROBES.iter().any(|probe| !probe.is_live));
+        assert!(super::PROBES.iter().any(|probe| {
+            probe.is_live && probe.url == "https://bet-m.ru/ru/sport/live"
+        }));
+        assert!(super::PROBES.iter().any(|probe| {
+            !probe.is_live && probe.url == "https://bet-m.ru/ru/sport/sports/football"
+        }));
     }
 
     #[test]
@@ -741,11 +745,11 @@ mod tests {
     #[test]
     fn detects_live_state_from_source_url_with_fallback_for_unknown_routes() {
         assert!(BetMParser::detect_live_state(
-            "https://bet-m.ru/live",
+            "https://bet-m.ru/ru/sport/live",
             false
         ));
         assert!(!BetMParser::detect_live_state(
-            "https://bet-m.ru/line",
+            "https://bet-m.ru/ru/sport/sports/football",
             true
         ));
         assert!(BetMParser::detect_live_state(
@@ -758,11 +762,11 @@ mod tests {
     #[test]
     fn classifies_route_kind_explicitly() {
         assert_eq!(
-            RouteKind::from_source_url("https://bet-m.ru/live"),
+            RouteKind::from_source_url("https://bet-m.ru/ru/sport/live"),
             RouteKind::Live
         );
         assert_eq!(
-            RouteKind::from_source_url("https://bet-m.ru/line"),
+            RouteKind::from_source_url("https://bet-m.ru/ru/sport/sports/football"),
             RouteKind::Prematch
         );
         assert_eq!(
