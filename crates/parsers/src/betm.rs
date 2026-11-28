@@ -109,12 +109,12 @@ const HEADLESS_EXTRACT_JS: &str = r#"(() => {
         const normalized = normalizeText(value);
         if (!normalized || normalized.length < 2 || normalized.length > 80) return false;
         if (/^(live|match|event|game|line|football|basketball|tennis|события|линия|лайв)$/i.test(normalized)) return false;
-        if (/^\\d+[.,]?\\d*$/.test(normalized)) return false;
+        if (/^\d+[.,]?\d*$/.test(normalized)) return false;
         if (/^(today|tomorrow|сегодня|завтра)$/i.test(normalized)) return false;
         return true;
     };
     const splitPair = (value) => {
-        const normalized = normalizeText(value).replace(/\\s+/g, ' ');
+        const normalized = normalizeText(value).replace(/\s+/g, ' ');
         for (const separator of [' - ', ' – ', ' — ', ' vs ', ' VS ', ' v ', ' против ']) {
             const index = normalized.indexOf(separator);
             if (index <= 0) continue;
@@ -183,7 +183,7 @@ const HEADLESS_EXTRACT_JS: &str = r#"(() => {
             if (participants.length >= 2) {
                 [home, away] = participants.slice(0, 2);
             } else {
-                const lines = rawText.split(/\\n+/).map(normalizeText).filter(Boolean);
+                const lines = rawText.split(/\n+/).map(normalizeText).filter(Boolean);
                 for (const line of lines) {
                     const pair = splitPair(line);
                     if (pair) { [home, away] = pair; break; }
@@ -192,7 +192,7 @@ const HEADLESS_EXTRACT_JS: &str = r#"(() => {
                     else if (line !== home && !away) away = line;
                     if (home && away) break;
                 }
-                if ((!home || !away) && !rawText.includes('\\n')) {
+                if ((!home || !away) && !rawText.includes('\n')) {
                     const pair = splitPair(rawText);
                     if (pair) [home, away] = pair;
                 }
@@ -319,32 +319,103 @@ impl BetMParser {
         None
     }
 
-    fn build_event_id(home: &str, away: &str, is_live: bool) -> String {
-        let normalize = |value: &str| {
-            value
-                .chars()
-                .map(|ch| {
-                    if ch.is_ascii_alphanumeric() {
-                        ch.to_ascii_lowercase()
-                    } else if ch.is_alphanumeric() {
-                        ch
-                    } else {
-                        '-'
-                    }
-                })
-                .collect::<String>()
-                .split('-')
-                .filter(|part| !part.is_empty())
-                .collect::<Vec<_>>()
-                .join("-")
-        };
+    fn normalize_identifier(value: &str) -> String {
+        value
+            .chars()
+            .map(|ch| {
+                if ch.is_ascii_alphanumeric() {
+                    ch.to_ascii_lowercase()
+                } else if ch.is_alphanumeric() {
+                    ch
+                } else {
+                    '-'
+                }
+            })
+            .collect::<String>()
+            .split('-')
+            .filter(|part| !part.is_empty())
+            .collect::<Vec<_>>()
+            .join("-")
+    }
+
+    fn sport_from_source_url(source_url: &str) -> Sport {
+        let normalized = source_url.trim().to_ascii_lowercase();
+        if normalized.contains("/sports/basketball") {
+            Sport::Basketball
+        } else if normalized.contains("/sports/tennis") {
+            Sport::Tennis
+        } else if normalized.contains("/sports/ice-hockey") {
+            Sport::Hockey
+        } else if normalized.contains("/sports/table-tennis") {
+            Sport::TableTennis
+        } else if normalized.contains("/sports/handball") {
+            Sport::Handball
+        } else if normalized.contains("/sports/volleyball") {
+            Sport::Volleyball
+        } else if normalized.contains("/sports/boxing") {
+            Sport::Boxing
+        } else if normalized.contains("/sports/martial-arts") {
+            Sport::Mma
+        } else if normalized.contains("/sports/cricket") {
+            Sport::Cricket
+        } else if normalized.contains("/sports/baseball") {
+            Sport::Baseball
+        } else if normalized.contains("/sports/badminton") {
+            Sport::Badminton
+        } else if normalized.contains("/sports/formula/") {
+            Sport::Motorsport
+        } else if normalized.contains("/sports/esports") {
+            Sport::Esports
+        } else if normalized.contains("/sports/football") || normalized.contains("/live") {
+            Sport::Football
+        } else {
+            Sport::Other
+        }
+    }
+
+    fn build_event_id(
+        sport: Sport,
+        home: &str,
+        away: &str,
+        is_live: bool,
+        source_event_id: Option<&str>,
+    ) -> String {
+        let sport_key = sport.to_string().to_ascii_lowercase().replace('_', "-");
+        let mode = if is_live { "live" } else { "prematch" };
+        if let Some(source_id) = source_event_id.map(str::trim).filter(|value| !value.is_empty()) {
+            return format!("betm-{sport_key}-{mode}-{}", Self::normalize_identifier(source_id));
+        }
 
         format!(
-            "betm-{}-{}-{}",
-            if is_live { "live" } else { "prematch" },
-            normalize(home),
-            normalize(away)
+            "betm-{sport_key}-{mode}-{}-{}",
+            Self::normalize_identifier(home),
+            Self::normalize_identifier(away)
         )
+    }
+
+    fn parse_numeric_value(value: &serde_json::Value) -> Option<f64> {
+        let parsed = value.as_f64().or_else(|| {
+            value
+                .as_str()
+                .and_then(|raw| raw.trim().replace(',', ".").parse::<f64>().ok())
+        })?;
+        (parsed.is_finite() && (1.01..=100.0).contains(&parsed)).then_some(parsed)
+    }
+
+    fn odds_type_from_selection(selection: &str) -> OddsType {
+        let normalized = selection.trim().to_lowercase().replace('ё', "е");
+        match normalized.as_str() {
+            "1" | "п1" | "home" | "home win" | "хозяева" => OddsType::Home,
+            "x" | "х" | "ничья" | "draw" => OddsType::Draw,
+            "2" | "п2" | "away" | "away win" | "гости" => OddsType::Away,
+            "больше" | "б" | "тб" | "over" => OddsType::Over,
+            "меньше" | "м" | "тм" | "under" => OddsType::Under,
+            "да" | "yes" | "обе забьют да" => OddsType::BothTeamsScoreYes,
+            "нет" | "no" | "обе забьют нет" => OddsType::BothTeamsScoreNo,
+            "чет" | "even" | "четное" => OddsType::Even,
+            "нечет" | "odd" | "нечетное" => OddsType::Odd,
+            _ => OddsType::Custom,
+        }
     }
 
     #[cfg(test)]
@@ -376,36 +447,38 @@ impl BetMParser {
             _ => return None,
         };
 
-        let odds_values = item
-            .get("odds")
-            .and_then(|value| value.as_array())?
-            .iter()
-            .filter_map(|value| {
-                value.as_f64().or_else(|| {
-                    value
-                        .as_str()
-                        .and_then(|raw| raw.replace(',', ".").parse::<f64>().ok())
-                })
-            })
-            .filter(|value| (1.01..=50.0).contains(value))
-            .collect::<Vec<_>>();
-        if odds_values.len() < 2 {
-            return None;
-        }
-
         let source_url = item
             .get("sourceUrl")
             .and_then(|value| value.as_str())
             .unwrap_or("");
         let route_kind = RouteKind::from_source_url(source_url);
         let is_live = route_kind.is_live(fallback_live);
-        let event_id = Self::build_event_id(&home_team, &away_team, is_live);
+        let sport = Self::sport_from_source_url(source_url);
+        let source_event_id = item
+            .get("sourceEventId")
+            .and_then(|value| value.as_str().map(str::to_string))
+            .or_else(|| {
+                item.get("sourceEventId")
+                    .filter(|value| value.is_number())
+                    .map(ToString::to_string)
+            });
+        let event_id = Self::build_event_id(
+            sport,
+            &home_team,
+            &away_team,
+            is_live,
+            source_event_id.as_deref(),
+        );
         let league = route_kind.league_label(fallback_live);
-        let market_kind = MarketKind::from_odds_len(odds_values.len())?;
+
+        let mut extra = HashMap::new();
+        if let Some(source_id) = source_event_id.as_ref() {
+            extra.insert("source_event_id".to_string(), source_id.clone());
+        }
 
         let event = Event {
             id: event_id.clone(),
-            sport: Sport::Football,
+            sport,
             league,
             home_team: home_team.clone(),
             away_team: away_team.clone(),
@@ -413,25 +486,62 @@ impl BetMParser {
             is_live,
             bookmaker_slug: BOOKMAKER_SLUG.to_string(),
             raw_url: (!source_url.is_empty()).then(|| source_url.to_string()),
-            extra: HashMap::new(),
+            extra,
         };
 
+        // Do not infer a 1X2 or Moneyline market from an unlabelled list of
+        // numbers. Only emit prices when the source DOM explicitly supplies
+        // both the market and selection labels.
         let now = Utc::now();
         let mut odds = Vec::new();
-        for (selection, odds_type, value) in
-            market_kind.selections(&odds_values).into_iter().flatten()
-        {
-            odds.push(Odd {
-                id: format!("{}-{}", event_id, selection),
-                event_id: event_id.clone(),
-                bookmaker_slug: BOOKMAKER_SLUG.to_string(),
-                market: market_kind.market_name().into(),
-                selection: selection.into(),
-                odds: value,
-                odds_type,
-                line: None,
-                timestamp: now,
-            });
+        if let Some(labelled_odds) = item.get("labelledOdds").and_then(|value| value.as_array()) {
+            for quote in labelled_odds {
+                let Some(market) = quote
+                    .get("market")
+                    .and_then(|value| value.as_str())
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                else {
+                    continue;
+                };
+                let Some(selection) = quote
+                    .get("selection")
+                    .and_then(|value| value.as_str())
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                else {
+                    continue;
+                };
+                let Some(price) = quote.get("odds").and_then(Self::parse_numeric_value) else {
+                    continue;
+                };
+                let line = quote
+                    .get("line")
+                    .and_then(|value| {
+                        value.as_f64().or_else(|| {
+                            value
+                                .as_str()
+                                .and_then(|raw| raw.trim().replace(',', ".").parse::<f64>().ok())
+                        })
+                    })
+                    .filter(|value| value.is_finite());
+                let market_key = Self::normalize_identifier(market);
+                let selection_key = Self::normalize_identifier(selection);
+                let line_key = line
+                    .map(|value| format!("{value:.4}"))
+                    .unwrap_or_else(|| "none".into());
+                odds.push(Odd {
+                    id: format!("{event_id}-{market_key}-{selection_key}-{line_key}"),
+                    event_id: event_id.clone(),
+                    bookmaker_slug: BOOKMAKER_SLUG.to_string(),
+                    market: market.to_string(),
+                    selection: selection.to_string(),
+                    odds: price,
+                    odds_type: Self::odds_type_from_selection(selection),
+                    line,
+                    timestamp: now,
+                });
+            }
         }
 
         Some((event, odds))
