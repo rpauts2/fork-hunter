@@ -60,46 +60,6 @@ impl RouteKind {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum MarketKind {
-    ThreeWay,
-    Moneyline,
-}
-
-impl MarketKind {
-    fn from_odds_len(odds_len: usize) -> Option<Self> {
-        if odds_len >= 3 {
-            Some(Self::ThreeWay)
-        } else if odds_len >= 2 {
-            Some(Self::Moneyline)
-        } else {
-            None
-        }
-    }
-
-    fn market_name(self) -> &'static str {
-        match self {
-            Self::ThreeWay => "1X2",
-            Self::Moneyline => "Moneyline",
-        }
-    }
-
-    fn selections(self, odds_values: &[f64]) -> [Option<(&'static str, OddsType, f64)>; 3] {
-        match self {
-            Self::ThreeWay => [
-                Some(("1", OddsType::Home, odds_values[0])),
-                Some(("X", OddsType::Draw, odds_values[1])),
-                Some(("2", OddsType::Away, odds_values[2])),
-            ],
-            Self::Moneyline => [
-                Some(("1", OddsType::Home, odds_values[0])),
-                Some(("2", OddsType::Away, odds_values[1])),
-                None,
-            ],
-        }
-    }
-}
-
 #[derive(Debug, Default)]
 struct RuntimeProbeStats {
     probes_attempted: usize,
@@ -119,33 +79,43 @@ struct Probe {
 }
 
 const PROBES: &[Probe] = &[
-    Probe {
-        url: "https://bet-m.ru/ru/sport/live",
-        is_live: true,
-    },
-    Probe {
-        url: "https://bet-m.ru/ru/sport/sports/football",
-        is_live: false,
-    },
+    Probe { url: "https://bet-m.ru/ru/sport/live", is_live: true },
+    Probe { url: "https://bet-m.ru/ru/sport/sports/football", is_live: false },
+    Probe { url: "https://bet-m.ru/ru/sport/sports/basketball", is_live: false },
+    Probe { url: "https://bet-m.ru/ru/sport/sports/tennis", is_live: false },
+    Probe { url: "https://bet-m.ru/ru/sport/sports/ice-hockey", is_live: false },
+    Probe { url: "https://bet-m.ru/ru/sport/sports/table-tennis", is_live: false },
+    Probe { url: "https://bet-m.ru/ru/sport/sports/handball", is_live: false },
+    Probe { url: "https://bet-m.ru/ru/sport/sports/volleyball", is_live: false },
+    Probe { url: "https://bet-m.ru/ru/sport/sports/boxing", is_live: false },
+    Probe { url: "https://bet-m.ru/ru/sport/sports/martial-arts", is_live: false },
+    Probe { url: "https://bet-m.ru/ru/sport/sports/cricket", is_live: false },
+    Probe { url: "https://bet-m.ru/ru/sport/sports/baseball", is_live: false },
+    Probe { url: "https://bet-m.ru/ru/sport/sports/badminton", is_live: false },
+    Probe { url: "https://bet-m.ru/ru/sport/sports/american-football", is_live: false },
+    Probe { url: "https://bet-m.ru/ru/sport/sports/formula/formula-1", is_live: false },
+    Probe { url: "https://bet-m.ru/ru/sport/sports/esports", is_live: false },
 ];
 
 const HEADLESS_EXTRACT_JS: &str = r#"(() => {
-    const normalizeText = (value) => (value || '').replace(/\s+/g, ' ').trim();
+    const normalizeText = (value) => String(value || '').replace(/[ \\t\\r\\f\\v]+/g, ' ').trim();
     const parseOdds = (value) => {
         const normalized = normalizeText(value).replace(',', '.');
         if (!normalized) return null;
         const parsed = Number.parseFloat(normalized);
-        return Number.isFinite(parsed) && parsed >= 1.01 && parsed <= 50 ? parsed : null;
+        return Number.isFinite(parsed) && parsed >= 1.01 && parsed <= 100 ? parsed : null;
     };
     const isName = (value) => {
-        if (!value || value.length < 2 || value.length > 80) return false;
-        if (/^(live|match|event|game|line)$/i.test(value)) return false;
-        if (/^\d+[.,]?\d*$/.test(value)) return false;
+        const normalized = normalizeText(value);
+        if (!normalized || normalized.length < 2 || normalized.length > 80) return false;
+        if (/^(live|match|event|game|line|football|basketball|tennis|события|линия|лайв)$/i.test(normalized)) return false;
+        if (/^\\d+[.,]?\\d*$/.test(normalized)) return false;
+        if (/^(today|tomorrow|сегодня|завтра)$/i.test(normalized)) return false;
         return true;
     };
     const splitPair = (value) => {
-        const normalized = normalizeText(value);
-        for (const separator of [' - ', ' -', '- ', ' – ', ' — ', ' vs ', ' VS ', ' v ']) {
+        const normalized = normalizeText(value).replace(/\\s+/g, ' ');
+        for (const separator of [' - ', ' – ', ' — ', ' vs ', ' VS ', ' v ', ' против ']) {
             const index = normalized.indexOf(separator);
             if (index <= 0) continue;
             const home = normalizeText(normalized.slice(0, index));
@@ -154,49 +124,112 @@ const HEADLESS_EXTRACT_JS: &str = r#"(() => {
         }
         return null;
     };
+    const firstAttribute = (node, names) => {
+        for (const name of names) {
+            const value = node.getAttribute(name);
+            if (value && value.trim()) return value.trim();
+        }
+        return '';
+    };
+    const sportFromPath = (pathname) => {
+        const path = String(pathname || '').toLowerCase();
+        if (path.includes('/sports/basketball')) return 'basketball';
+        if (path.includes('/sports/tennis')) return 'tennis';
+        if (path.includes('/sports/ice-hockey')) return 'hockey';
+        if (path.includes('/sports/table-tennis')) return 'table_tennis';
+        if (path.includes('/sports/handball')) return 'handball';
+        if (path.includes('/sports/volleyball')) return 'volleyball';
+        if (path.includes('/sports/boxing')) return 'boxing';
+        if (path.includes('/sports/martial-arts')) return 'mma';
+        if (path.includes('/sports/cricket')) return 'cricket';
+        if (path.includes('/sports/baseball')) return 'baseball';
+        if (path.includes('/sports/badminton')) return 'badminton';
+        if (path.includes('/sports/american-football')) return 'other';
+        if (path.includes('/sports/formula/')) return 'motorsport';
+        if (path.includes('/sports/esports')) return 'esports';
+        if (path.includes('/sports/football') || path.includes('/live')) return 'football';
+        return 'other';
+    };
+
     const seen = new Set();
     const results = [];
     const selectors = [
-        '.event-item', '.match-item', '.game-item', '.sport-event', '.event-line',
+        '[data-event-id]', '[data-eventid]', '.event-item', '.match-item', '.game-item',
+        '.sport-event', '.event-line', '[class*="event-card"]', '[class*="match-card"]',
         '[class*="event"]', '[class*="match"]', '[class*="game"]'
     ];
     const containers = Array.from(new Set(selectors.flatMap((selector) => Array.from(document.querySelectorAll(selector)))));
+    const sourceUrl = window.location.href;
+    const sport = sportFromPath(window.location.pathname);
 
     for (const el of containers) {
         try {
-            const text = normalizeText(el.innerText || el.textContent || '');
-            if (!text || text.length < 15) continue;
+            const rawText = String(el.innerText || el.textContent || '');
+            if (normalizeText(rawText).length < 8) continue;
 
-            const odds = [];
-            el.querySelectorAll('[class*="coef"], [class*="kef"], .coef, .kef, span').forEach((node) => {
-                const value = parseOdds(node.textContent || '');
-                if (value !== null) odds.push(value);
-            });
-
-            const lines = text.split(/\n+/).map(normalizeText).filter(Boolean);
             let home = '';
             let away = '';
-            for (const line of lines) {
-                const pair = splitPair(line);
-                if (pair) {
-                    [home, away] = pair;
-                    break;
+            const participantSelectors = [
+                '[data-team-name]', '[data-participant-name]', '[class*="participant"]',
+                '[class*="competitor"]', '[class*="team-name"]', '[class*="team_name"]'
+            ];
+            const participants = Array.from(new Set(participantSelectors.flatMap((selector) => {
+                try { return Array.from(el.querySelectorAll(selector)); } catch (_) { return []; }
+            })))
+                .map((node) => normalizeText(firstAttribute(node, ['data-team-name', 'data-participant-name']) || node.innerText || node.textContent))
+                .filter(isName)
+                .filter((name, index, list) => list.indexOf(name) === index);
+
+            if (participants.length >= 2) {
+                [home, away] = participants.slice(0, 2);
+            } else {
+                const lines = rawText.split(/\\n+/).map(normalizeText).filter(Boolean);
+                for (const line of lines) {
+                    const pair = splitPair(line);
+                    if (pair) { [home, away] = pair; break; }
+                    if (!isName(line) || /live|prematch|pre-match/i.test(line)) continue;
+                    if (!home) home = line;
+                    else if (line !== home && !away) away = line;
+                    if (home && away) break;
                 }
-                if (!isName(line) || /live/i.test(line)) continue;
-                if (!home) home = line;
-                else if (line !== home && !away) away = line;
-                if (home && away) break;
+                if ((!home || !away) && !rawText.includes('\\n')) {
+                    const pair = splitPair(rawText);
+                    if (pair) [home, away] = pair;
+                }
             }
 
-            if (!home || !away || odds.length < 2) continue;
+            if (!home || !away || home === away || !isName(home) || !isName(away)) continue;
+            const idNode = (el.matches && el.matches('[data-event-id], [data-eventid], [data-id]'))
+                ? el
+                : el.querySelector('[data-event-id], [data-eventid], [data-id]');
+            const sourceEventId = idNode ? firstAttribute(idNode, ['data-event-id', 'data-eventid', 'data-id']) : '';
 
-            const key = `${home}|${away}|${window.location.href}`;
+            // Only keep prices whose source DOM explicitly supplies a market and selection label.
+            const labelledOdds = [];
+            const priceNodes = el.querySelectorAll(
+                '[data-odd][data-selection], [data-odd][data-outcome], ' +
+                '[data-coefficient][data-selection], [data-price][data-selection]'
+            );
+            priceNodes.forEach((node) => {
+                const selectionNode = node.closest('[data-selection], [data-outcome], [data-outcome-name]') || node;
+                const marketNode = node.closest('[data-market], [data-market-name]') || node;
+                const market = firstAttribute(marketNode, ['data-market-name', 'data-market']);
+                const selection = firstAttribute(selectionNode, ['data-selection', 'data-outcome-name', 'data-outcome']);
+                const rawPrice = firstAttribute(node, ['data-odd', 'data-coefficient', 'data-price']) || node.textContent;
+                const price = parseOdds(rawPrice);
+                const lineNode = node.closest('[data-line]');
+                const line = firstAttribute(node, ['data-line']) || (lineNode ? lineNode.getAttribute('data-line') : '');
+                if (market && selection && price !== null) labelledOdds.push({ market, selection, odds: price, line: line || null });
+            });
+
+            const key = sourceEventId
+                ? [sport, sourceEventId, sourceUrl].join('|')
+                : [sport, home, away, sourceUrl].join('|');
             if (seen.has(key)) continue;
             seen.add(key);
-            results.push({ home, away, odds: odds.slice(0, 3), sourceUrl: window.location.href });
+            results.push({ home, away, sourceEventId: sourceEventId || null, sport, labelledOdds, sourceUrl });
         } catch (_) {}
     }
-
     return results;
 })()"#;
 
