@@ -71,5 +71,5 @@ This information is retained only to explain why it was considered during initia
 2. Compare raw bookmaker payloads with the website's rendered line for the twelve reachable feeds, especially where runtime market-label counts are unexpectedly low.
 3. For BetBoom and Liga Stavok, document the official session/bootstrap contract only when it can be observed through a permitted route or authorized account session.
 4. For MelBet and Bet-M, retry the direct official Russian endpoints only from a permitted environment; do not route around regional blocks.
-5. Recheck Tennisi only after an official resumption notice, and Poolbet after its announced 2026-12-01 launch.
+5. Recheck Tennisi's public page and existing first-party CGI probes after the 2026-11-27 site relaunch; the current development environment returns HTTP 403. Recheck Poolbet after its announced 2026-12-01 launch.
 6. Implement Golden Bet and ABET only after a real official interactive line or authorized direct feed is demonstrated.
