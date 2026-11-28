@@ -1030,6 +1030,26 @@ mod tests {
     }
 
     #[test]
+    fn generic_live_route_uses_explicit_event_sport_metadata() {
+        let item = serde_json::json!({
+            "home": "Локомотив Кубань",
+            "away": "УНИКС",
+            "sport": "basketball",
+            "sourceEventId": "live-basketball-42",
+            "sourceUrl": "https://bet-m.ru/ru/sport/live",
+            "labelledOdds": []
+        });
+
+        let (events, odds) = BetMParser::parse_headless_payload(&[item], false);
+
+        assert_eq!(events.len(), 1);
+        assert!(odds.is_empty());
+        assert_eq!(events[0].sport, Sport::Basketball);
+        assert!(events[0].is_live);
+        assert!(events[0].id.starts_with("betm-basketball-live-"));
+    }
+
+    #[test]
     fn parses_prices_only_when_market_and_selection_are_explicit() {
         let explicit = serde_json::json!({
             "home": "Спартак Москва",
