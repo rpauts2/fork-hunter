@@ -991,8 +991,8 @@ mod tests {
     #[test]
     fn parses_prices_only_when_market_and_selection_are_explicit() {
         let explicit = serde_json::json!({
-            "home": "Team A",
-            "away": "Team B",
+            "home": "Спартак Москва",
+            "away": "Зенит",
             "sourceEventId": "456",
             "sourceUrl": "https://bet-m.ru/ru/sport/sports/football",
             "odds": [2.0, 3.0, 4.0],
@@ -1003,8 +1003,8 @@ mod tests {
             ]
         });
         let unlabelled = serde_json::json!({
-            "home": "Team C",
-            "away": "Team D",
+            "home": "Локомотив Кубань",
+            "away": "УНИКС",
             "sourceUrl": "https://bet-m.ru/ru/sport/sports/football",
             "odds": [1.5, 2.5, 3.5]
         });
