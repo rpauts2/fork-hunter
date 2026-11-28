@@ -690,9 +690,9 @@ mod tests {
     #[test]
     fn runtime_probes_cover_current_public_live_and_prematch_routes() {
         assert_eq!(super::PROBES.len(), 2);
-        assert!(super::PROBES.iter().any(|probe| {
-            probe.is_live && probe.url == "https://bet-m.ru/ru/sport/live"
-        }));
+        assert!(super::PROBES
+            .iter()
+            .any(|probe| { probe.is_live && probe.url == "https://bet-m.ru/ru/sport/live" }));
         assert!(super::PROBES.iter().any(|probe| {
             !probe.is_live && probe.url == "https://bet-m.ru/ru/sport/sports/football"
         }));
