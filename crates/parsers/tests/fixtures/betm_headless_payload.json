@@ -3,6 +3,8 @@
     "home": "Спартак Москва",
     "away": "Зенит",
     "sourceEventId": "football-live-1001",
+    "sport": "football",
+    "sport": "football",
     "sourceUrl": "https://bet-m.ru/ru/sport/live",
     "odds": [
       2.18,
@@ -89,6 +91,7 @@
   {
     "home": "Реал Мадрид - Барселона",
     "sourceEventId": "football-live-3003",
+    "sport": "football",
     "sourceUrl": "https://bet-m.ru/ru/sport/live",
     "odds": [
       1.91,
