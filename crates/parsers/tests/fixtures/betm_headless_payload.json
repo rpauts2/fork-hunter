@@ -2,36 +2,98 @@
   {
     "home": "Спартак Москва",
     "away": "Зенит",
-    "odds": [2.18, 3.55, 3.12],
-    "sourceUrl": "https://bet-m.ru/ru/sport/live"
+    "sourceEventId": "football-live-1001",
+    "sourceUrl": "https://bet-m.ru/ru/sport/live",
+    "odds": [
+      2.18,
+      3.55,
+      3.12
+    ],
+    "labelledOdds": [
+      {
+        "market": "1X2",
+        "selection": "1",
+        "odds": 2.18
+      },
+      {
+        "market": "1X2",
+        "selection": "X",
+        "odds": 3.55
+      },
+      {
+        "market": "1X2",
+        "selection": "2",
+        "odds": 3.12
+      }
+    ]
   },
   {
     "home": "Локомотив Кубань",
     "away": "УНИКС",
-    "odds": [1.79, 2.08],
-    "sourceUrl": "https://bet-m.ru/ru/sport/sports/football"
+    "sourceEventId": "basketball-pre-2002",
+    "sourceUrl": "https://bet-m.ru/ru/sport/sports/basketball",
+    "odds": [
+      1.79,
+      2.08
+    ],
+    "labelledOdds": [
+      {
+        "market": "Moneyline",
+        "selection": "1",
+        "odds": 1.79
+      },
+      {
+        "market": "Moneyline",
+        "selection": "2",
+        "odds": 2.08
+      }
+    ]
   },
   {
     "home": "Спартак Москва",
     "away": "Зенит",
-    "odds": [2.18, 3.55, 3.12],
-    "sourceUrl": "https://bet-m.ru/ru/sport/live"
+    "sourceEventId": "football-live-1001",
+    "sourceUrl": "https://bet-m.ru/ru/sport/live",
+    "odds": [
+      2.18,
+      3.55,
+      3.12
+    ],
+    "labelledOdds": [
+      {
+        "market": "1X2",
+        "selection": "1",
+        "odds": 2.18
+      },
+      {
+        "market": "1X2",
+        "selection": "X",
+        "odds": 3.55
+      },
+      {
+        "market": "1X2",
+        "selection": "2",
+        "odds": 3.12
+      }
+    ]
   },
   {
     "home": "404 Not Found",
     "away": "Bet-M",
-    "odds": [1.5, 2.5],
-    "sourceUrl": "https://bet-m.ru/ru/sport/live"
-  },
-  {
-    "home": "Спартак Москва",
-    "away": "Зенит",
-    "odds": [2.18, 3.55, 3.12],
-    "sourceUrl": "https://bet-m.ru/ru/sport/live"
+    "sourceUrl": "https://bet-m.ru/ru/sport/live",
+    "odds": [
+      1.5,
+      2.5
+    ]
   },
   {
     "home": "Реал Мадрид - Барселона",
-    "odds": [1.91, 3.62, 4.1],
-    "sourceUrl": "https://bet-m.ru/ru/sport/live"
+    "sourceEventId": "football-live-3003",
+    "sourceUrl": "https://bet-m.ru/ru/sport/live",
+    "odds": [
+      1.91,
+      3.62,
+      4.1
+    ]
   }
 ]
