@@ -180,21 +180,25 @@ const HEADLESS_EXTRACT_JS: &str = r#"(() => {
                 .filter(isName)
                 .filter((name, index, list) => list.indexOf(name) === index);
 
-            if (participants.length >= 2) {
+            const homeNode = el.querySelector('[data-home-team], [class*="home-team"], [class*="team-home"]');
+            const awayNode = el.querySelector('[data-away-team], [class*="away-team"], [class*="team-away"]');
+            const explicitHome = firstAttribute(el, ['data-home-team']) || (homeNode ? normalizeText(firstAttribute(homeNode, ['data-home-team']) || homeNode.innerText || homeNode.textContent) : '');
+            const explicitAway = firstAttribute(el, ['data-away-team']) || (awayNode ? normalizeText(firstAttribute(awayNode, ['data-away-team']) || awayNode.innerText || awayNode.textContent) : '');
+            if (isName(explicitHome) && isName(explicitAway) && explicitHome !== explicitAway) {
+                home = explicitHome;
+                away = explicitAway;
+            } else if (participants.length >= 2) {
                 [home, away] = participants.slice(0, 2);
             } else {
-                const lines = rawText.split(/\n+/).map(normalizeText).filter(Boolean);
-                for (const line of lines) {
-                    const pair = splitPair(line);
-                    if (pair) { [home, away] = pair; break; }
-                    if (!isName(line) || /live|prematch|pre-match/i.test(line)) continue;
-                    if (!home) home = line;
-                    else if (line !== home && !away) away = line;
-                    if (home && away) break;
-                }
-                if ((!home || !away) && !rawText.includes('\n')) {
-                    const pair = splitPair(rawText);
-                    if (pair) [home, away] = pair;
+                const titleCandidate = firstAttribute(el, ['data-event-name', 'data-match-name', 'aria-label', 'title']);
+                const titlePair = splitPair(titleCandidate);
+                if (titlePair) {
+                    [home, away] = titlePair;
+                } else {
+                    for (const line of rawText.split(/\\n+/).map(normalizeText).filter(Boolean)) {
+                        const pair = splitPair(line);
+                        if (pair) { [home, away] = pair; break; }
+                    }
                 }
             }
 
