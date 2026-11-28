@@ -1294,8 +1294,8 @@ fn make_odd(
 #[cfg(test)]
 mod parser_identity_tests {
     use super::{
-        classify_and_add_odd, deduplicate_same_market_quotes, detect_sport, extract_league,
-        make_odd, parse_api_response,
+        classify_and_add_odd, classify_catalog_factor, deduplicate_same_market_quotes,
+        detect_sport, extract_league, make_odd, parse_api_response,
     };
     use crate::factors_catalog::FactorsCatalog;
     use shared::Sport;
