@@ -99,7 +99,7 @@ struct HeadlessProbe {
 
 const HEADLESS_PROBES: &[HeadlessProbe] = &[
     HeadlessProbe {
-        url: "https://melbet.ru/live",
+        url: "https://melbet.ru/ru/sport/overview",
         is_live: true,
         surface: MelbetSurface::Desktop,
         route_hint: "desktop-live",
@@ -1758,7 +1758,9 @@ impl MelbetParser {
                 && source.contains("sportsbook/home")
         });
 
-        ((final_url.contains(route_token) || path.contains(route_token))
+        (((final_url.contains(route_token) || path.contains(route_token))
+            || (probe.is_live
+                && (path == "/ru/sport/overview" || path.starts_with("/ru/sport/live"))))
             && (final_url.contains(surface_token) || path.contains(surface_token)))
             || (probe.surface == MelbetSurface::Desktop
                 && (final_url.contains("/ru/sport") || path == "/ru/sport" || path == "/ru/sport/")
@@ -3694,7 +3696,7 @@ impl MelbetParser {
         // challenge pages, or session/cookie workarounds.
         for url in [
             "https://sport.melbet.ru/partner/SportsBook/Home",
-            "https://melbet.ru/ru/sport/pre-match/football",
+            "https://melbet.ru/ru/sport",
         ] {
             match self
                 .client
@@ -4758,6 +4760,20 @@ mod tests {
     }
 
     #[test]
+    fn matches_current_official_live_overview_route() {
+        let snapshot = MelbetBootstrapSnapshot::from_value(&serde_json::json!({
+            "url": "https://melbet.ru/ru/sport/overview",
+            "origin": "https://melbet.ru",
+            "path": "/ru/sport/overview",
+            "title": "Melbet",
+            "readyState": "complete",
+            "bodyTextSample": "Live sports events"
+        }));
+
+        assert!(MelbetParser::route_matches_probe(&HEADLESS_PROBES[0], &snapshot));
+    }
+
+    #[test]
     fn runtime_probe_plan_focuses_desktop_live_route() {
         let plan = MelbetParser::runtime_probe_plan();
         assert_eq!(plan.len(), 1);
@@ -4769,9 +4785,9 @@ mod tests {
     fn builds_synthetic_snapshot_for_navigation_failure() {
         let snapshot = MelbetParser::synthetic_navigation_failure_snapshot(&HEADLESS_PROBES[0]);
 
-        assert_eq!(snapshot.final_url, "https://melbet.ru/live");
+        assert_eq!(snapshot.final_url, "https://melbet.ru/ru/sport/overview");
         assert_eq!(snapshot.origin, "https://melbet.ru");
-        assert_eq!(snapshot.path, "/live");
+        assert_eq!(snapshot.path, "/ru/sport/overview");
         assert_eq!(snapshot.profile_label, "desktop");
         assert_eq!(snapshot.user_agent, super::DESKTOP_USER_AGENT);
         assert_eq!(snapshot.inner_width, 1440);
