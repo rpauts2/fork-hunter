@@ -98,7 +98,7 @@ const PROBES: &[Probe] = &[
 ];
 
 const HEADLESS_EXTRACT_JS: &str = r#"(() => {
-    const normalizeText = (value) => String(value || '').replace(/[ \\t\\r\\f\\v]+/g, ' ').trim();
+    const normalizeText = (value) => String(value || '').replace(/[ \t\r\f\v]+/g, ' ').trim();
     const parseOdds = (value) => {
         const normalized = normalizeText(value).replace(',', '.');
         if (!normalized) return null;
@@ -809,8 +809,8 @@ impl BookmakerParser for BetMParser {
 
 #[cfg(test)]
 mod tests {
-    use super::{BetMParser, MarketKind, RouteKind};
-    use shared::OddsType;
+    use super::{BetMParser, RouteKind};
+    use shared::{OddsType, Sport};
 
     #[test]
     fn payload_batches_are_merged_without_duplicate_source_items() {
@@ -831,18 +831,42 @@ mod tests {
     }
 
     #[test]
-    fn runtime_probes_cover_current_public_live_and_prematch_routes() {
-        assert_eq!(super::PROBES.len(), 2);
-        assert!(super::PROBES
-            .iter()
-            .any(|probe| { probe.is_live && probe.url == "https://bet-m.ru/ru/sport/live" }));
+    fn runtime_probes_cover_current_public_live_and_multisport_routes() {
+        assert_eq!(super::PROBES.len(), 16);
         assert!(super::PROBES.iter().any(|probe| {
-            !probe.is_live && probe.url == "https://bet-m.ru/ru/sport/sports/football"
+            probe.is_live && probe.url == "https://bet-m.ru/ru/sport/live"
         }));
+        let prematch = super::PROBES
+            .iter()
+            .filter(|probe| !probe.is_live)
+            .map(|probe| probe.url)
+            .collect::<std::collections::HashSet<_>>();
+        for route in [
+            "football",
+            "basketball",
+            "tennis",
+            "ice-hockey",
+            "table-tennis",
+            "handball",
+            "volleyball",
+            "boxing",
+            "martial-arts",
+            "cricket",
+            "baseball",
+            "badminton",
+            "american-football",
+            "formula/formula-1",
+            "esports",
+        ] {
+            assert!(
+                prematch.contains(format!("https://bet-m.ru/ru/sport/sports/{route}").as_str()),
+                "missing official prematch route: {route}"
+            );
+        }
     }
 
     #[test]
-    fn parses_three_way_fixture_payload() {
+    fn parses_events_without_guessing_unlabelled_prices() {
         let payload: Vec<serde_json::Value> =
             serde_json::from_str(include_str!("../tests/fixtures/betm_headless_payload.json"))
                 .expect("fixture should parse");
@@ -850,14 +874,16 @@ mod tests {
         let (events, odds) = BetMParser::parse_headless_payload(&payload, true);
 
         assert_eq!(events.len(), 3);
-        assert_eq!(odds.len(), 8);
+        assert_eq!(odds.len(), 5);
 
         let football = events
             .iter()
             .find(|event| event.home_team == "Спартак Москва")
             .expect("football event exists");
+        assert_eq!(football.sport, Sport::Football);
         assert!(football.is_live);
         assert_eq!(football.league, "Live");
+        assert!(football.id.contains("betm-football-live"));
 
         assert!(odds.iter().any(|odd| {
             odd.event_id == football.id
@@ -866,16 +892,31 @@ mod tests {
                 && odd.odds_type == OddsType::Draw
                 && (odd.odds - 3.55).abs() < f64::EPSILON
         }));
+
+        let basketball = events
+            .iter()
+            .find(|event| event.sport == Sport::Basketball)
+            .expect("basketball event exists");
+        assert_eq!(basketball.home_team, "Локомотив Кубань");
+        assert_eq!(basketball.away_team, "УНИКС");
+        assert!(!basketball.is_live);
+        assert!(basketball.id.starts_with("betm-basketball-prematch-"));
+
         assert!(odds.iter().any(|odd| {
-            odd.event_id.starts_with("betm-prematch")
+            odd.event_id == basketball.id
                 && odd.market == "Moneyline"
                 && odd.selection == "2"
                 && odd.odds_type == OddsType::Away
                 && (odd.odds - 2.08).abs() < f64::EPSILON
         }));
-        assert!(events.iter().any(|event| {
-            event.home_team == "Реал Мадрид" && event.away_team == "Барселона" && event.is_live
-        }));
+
+        let real_madrid = events
+            .iter()
+            .find(|event| event.home_team == "Реал Мадрид")
+            .expect("event without labelled prices still exists");
+        assert_eq!(real_madrid.sport, Sport::Football);
+        assert!(!odds.iter().any(|odd| odd.event_id == real_madrid.id));
+
         assert_eq!(
             events
                 .iter()
@@ -883,6 +924,94 @@ mod tests {
                 .count(),
             1
         );
+    }
+
+    #[test]
+    fn same_source_event_id_is_namespaced_by_sport_and_feed_mode() {
+        let football = BetMParser::build_event_id(
+            Sport::Football,
+            "Team A",
+            "Team B",
+            false,
+            Some("123"),
+        );
+        let basketball = BetMParser::build_event_id(
+            Sport::Basketball,
+            "Team A",
+            "Team B",
+            false,
+            Some("123"),
+        );
+        let live_football = BetMParser::build_event_id(
+            Sport::Football,
+            "Team A",
+            "Team B",
+            true,
+            Some("123"),
+        );
+
+        assert_ne!(football, basketball);
+        assert_ne!(football, live_football);
+    }
+
+    #[test]
+    fn maps_official_public_routes_to_their_sports() {
+        let cases = [
+            ("/ru/sport/sports/football", Sport::Football),
+            ("/ru/sport/sports/basketball", Sport::Basketball),
+            ("/ru/sport/sports/tennis", Sport::Tennis),
+            ("/ru/sport/sports/ice-hockey", Sport::Hockey),
+            ("/ru/sport/sports/table-tennis", Sport::TableTennis),
+            ("/ru/sport/sports/handball", Sport::Handball),
+            ("/ru/sport/sports/volleyball", Sport::Volleyball),
+            ("/ru/sport/sports/boxing", Sport::Boxing),
+            ("/ru/sport/sports/martial-arts", Sport::Mma),
+            ("/ru/sport/sports/cricket", Sport::Cricket),
+            ("/ru/sport/sports/baseball", Sport::Baseball),
+            ("/ru/sport/sports/badminton", Sport::Badminton),
+            ("/ru/sport/sports/formula/formula-1", Sport::Motorsport),
+            ("/ru/sport/sports/esports", Sport::Esports),
+            ("/ru/sport/sports/american-football", Sport::Other),
+        ];
+
+        for (route, expected) in cases {
+            let url = format!("https://bet-m.ru{route}");
+            assert_eq!(BetMParser::sport_from_source_url(&url), expected, "{route}");
+        }
+        assert_eq!(
+            BetMParser::sport_from_source_url("https://bet-m.ru/ru/sport/live"),
+            Sport::Football
+        );
+    }
+
+    #[test]
+    fn parses_prices_only_when_market_and_selection_are_explicit() {
+        let explicit = serde_json::json!({
+            "home": "Team A",
+            "away": "Team B",
+            "sourceEventId": "456",
+            "sourceUrl": "https://bet-m.ru/ru/sport/sports/football",
+            "odds": [2.0, 3.0, 4.0],
+            "labelledOdds": [
+                {"market": "1X2", "selection": "П1", "odds": "2,10"},
+                {"market": "1X2", "selection": "X", "odds": "3.20"},
+                {"market": "1X2", "selection": "П2", "odds": "4.00"}
+            ]
+        });
+        let unlabelled = serde_json::json!({
+            "home": "Team C",
+            "away": "Team D",
+            "sourceUrl": "https://bet-m.ru/ru/sport/sports/football",
+            "odds": [1.5, 2.5, 3.5]
+        });
+
+        let (_, explicit_odds) = BetMParser::parse_headless_payload(&[explicit], false);
+        let (_, unlabelled_odds) = BetMParser::parse_headless_payload(&[unlabelled], false);
+
+        assert_eq!(explicit_odds.len(), 3);
+        assert_eq!(explicit_odds[0].odds_type, OddsType::Home);
+        assert!((explicit_odds[0].odds - 2.1).abs() < f64::EPSILON);
+        assert!(unlabelled_odds.is_empty());
     }
 
     #[test]
@@ -917,13 +1046,6 @@ mod tests {
             RouteKind::Unknown
         );
         assert_eq!(RouteKind::from_source_url(""), RouteKind::Unknown);
-    }
-
-    #[test]
-    fn infers_market_kind_from_odds_arity() {
-        assert_eq!(MarketKind::from_odds_len(3), Some(MarketKind::ThreeWay));
-        assert_eq!(MarketKind::from_odds_len(2), Some(MarketKind::Moneyline));
-        assert_eq!(MarketKind::from_odds_len(1), None);
     }
 
     #[test]
