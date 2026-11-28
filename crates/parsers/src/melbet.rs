@@ -3694,10 +3694,13 @@ impl MelbetParser {
         // A normal request to the official sportsbook is used only to detect
         // an explicit regional denial. We do not try alternate locations,
         // challenge pages, or session/cookie workarounds.
-        for url in [
+        let preflight_urls = [
             "https://sport.melbet.ru/partner/SportsBook/Home",
             "https://melbet.ru/ru/sport",
-        ] {
+        ];
+        let mut region_blocked_urls = Vec::new();
+
+        for url in preflight_urls {
             match self
                 .client
                 .get(url)
@@ -3710,18 +3713,23 @@ impl MelbetParser {
                     let status = response.status().as_u16();
                     let body = response.text().await.unwrap_or_default();
                     if Self::is_regional_access_page(status, &body) {
-                        return Err(format!(
-                            "Melbet official sportsbook is region-blocked (HTTP {status}); headless feed inspection was not started"
-                        )
-                        .into());
+                        region_blocked_urls.push(format!("{url} (HTTP {status})"));
                     }
                 }
                 Err(error) => {
-                    debug!(url, error = %error, "Melbet public-page preflight failed; continuing with the bounded diagnostic probe");
-                    break;
+                    debug!(url, error = %error, "Melbet public-page preflight failed; continuing to the next official route");
                 }
             }
         }
+
+        if region_blocked_urls.len() == preflight_urls.len() {
+            return Err(format!(
+                "Melbet official sportsbook routes are region-blocked in this environment: {}",
+                region_blocked_urls.join(", ")
+            )
+            .into());
+        }
+
         let (events, odds) = tokio::task::spawn_blocking(move || {
             Self::run_blocking_with_wall_clock_timeout(
                 MELBET_RUNTIME_WALL_CLOCK_TIMEOUT_MS,
